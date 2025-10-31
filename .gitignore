@@ -1,0 +1,62 @@
+# 编译输出
+/bin/
+/obj/
+/Release/
+/Debug/
+
+# Visual Studio 相关文件
+.vs/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln.docstates
+
+# 包文件
+/packages/
+
+# 临时文件
+*.tmp
+*.temp
+*.cache
+
+# 日志文件
+*.log
+
+# 用户特定文件
+*.user
+*.userosscache
+*.sln.docstates
+
+# 资源文件
+*.resx~
+
+# 测试结果
+/TestResults/
+
+# 构建脚本生成的文件
+*.generated.cs
+
+# 环境变量文件
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE 相关文件
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS 生成的文件
+Thumbs.db
+.DS_Store
+
+# Windows 临时文件
+$RECYCLE.BIN/
+
+# Office 临时文件
+~$*.pptx
+~$*.docx
+~$*.xlsx
