@@ -1,0 +1,270 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="Bt121" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\Bt121.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Bt122" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\Bt122.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Bt123" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\Bt123.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Bt124" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\Bt124.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Bt204" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\Bt204.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Bt211" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\Bt211.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Bt212" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\Bt212.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Bt213" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\Bt213.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Bt214" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\Bt214.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Bt301" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\Bt301.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Bt302" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\Bt302.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Bt303" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\Bt303.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Bt311" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\Bt311.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Bt312" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\Bt312.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Bt313" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\Bt313.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Bt321" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\Bt321.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Bt322" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\Bt322.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Bt323" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\Bt323.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Bt401" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\Bt401.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Bt402" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\Bt402.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Bt601" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\Bt601.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="CustomRibbonXml" xml:space="preserve">
+    <value>&lt;customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui" onLoad="Ribbon_Load"&gt;
+ &lt;ribbon&gt;
+  &lt;tabs&gt;
+   &lt;tab id="CustomTabXml" label="PPA菜单" insertAfterMso="TabDeveloper"&gt;
+    &lt;group id="group1" label="对齐"&gt;
+     &lt;toggleButton id="Tb101" onAction="TbOnAction" size="large" screentip="对齐基准,默认形状为基准，按下或选中一个形状，则以页面为基准" getPressed="GetTbState" getLabel="GetTbLable"  getImage="GetIcon" /&gt;
+     &lt;separator id="sep101" /&gt;
+     &lt;button id="Bt101" onAction="OnAction" screentip="将选中对象左对齐" label="左对齐" imageMso="ObjectsAlignLeftSmart" /&gt;
+     &lt;button id="Bt102" onAction="OnAction" screentip="将选中对象水平居中" label="水平居中" imageMso="ObjectsAlignCenterHorizontalSmart" /&gt;
+     &lt;button id="Bt103" onAction="OnAction" screentip="将选中对象右对齐" label="右对齐" imageMso="ObjectsAlignRightSmart" /&gt;
+     &lt;button id="Bt111" onAction="OnAction" screentip="将选中对象顶对齐" label="顶对齐" imageMso="ObjectsAlignTopSmart" /&gt;
+     &lt;button id="Bt112" onAction="OnAction" screentip="将选中对象垂直居中" label="垂直居中" imageMso="ObjectsAlignMiddleVerticalSmart" /&gt;
+     &lt;button id="Bt113" onAction="OnAction" screentip="将选中对象底对齐" label="底对齐" imageMso="ObjectsAlignBottomSmart" /&gt;
+     &lt;button id="Bt104" onAction="OnAction" screentip="将选中对象横向分布" label="横向分布" imageMso="AlignDistributeHorizontally" /&gt;
+     &lt;labelControl id="lab104" /&gt;
+     &lt;button id="Bt114" onAction="OnAction" screentip="将选中对象纵向分布" label="纵向分布" imageMso="AlignDistributeVertically" /&gt;
+    &lt;/group&gt;
+    &lt;group id="group11" label="吸附"&gt;
+     &lt;box id="box120"&gt;
+      &lt;button id="Bt121" onAction="OnAction" screentip="以第一个形状为基准，将选中对象向左吸附" label="左吸附" getImage="GetIcon" /&gt;
+      &lt;button id="Bt122" onAction="OnAction" screentip="以第一个形状为基准，将选中对象向右吸附" label="右吸附" getImage="GetIcon" /&gt;
+     &lt;/box&gt;
+     &lt;box id="box121"&gt;
+      &lt;button id="Bt123" onAction="OnAction" screentip="以第一个形状为基准，将选中对象向上吸附" label="上吸附" getImage="GetIcon" /&gt;
+      &lt;button id="Bt124" onAction="OnAction" screentip="以第一个形状为基准，将选中对象向下吸附" label="下吸附" getImage="GetIcon" /&gt;
+     &lt;/box&gt;
+    &lt;/group&gt;
+    &lt;group id="group2" label="大小"&gt;
+     &lt;button id="Bt201" onAction="OnAction" screentip="以第一个形状为基准，将选中对象设置为等宽" label="等宽度"  imageMso="ShapeWidth" /&gt;
+     &lt;button id="Bt202" onAction="OnAction" screentip="以第一个形状为基准，将选中对象设置为等高" label="等高度" imageMso="ShapeHeight" /&gt;
+     &lt;button id="Bt203" onAction="OnAction" screentip="以第一个形状为基准，将选中对象设置为等宽、等高" label="等大小" imageMso="PowerPointPageSetup" /&gt;
+     &lt;button id="Bt204" onAction="OnAction" screentip="将选中的对象交换大小和位置" label="互　换" getImage="GetIcon" /&gt;
+     &lt;labelControl id="lab205" /&gt;
+     &lt;button id="Bt211" onAction="OnAction" screentip="将选中对象向左延伸对齐" label="左延伸" getImage="GetIcon" /&gt;
+     &lt;button id="Bt212" onAction="OnAction" screentip="将选中对象向右延伸对齐" label="右延伸" getImage="GetIcon" /&gt;
+     &lt;button id="Bt213" onAction="OnAction" screentip="将选中对象向上延伸对齐" label="上延伸" getImage="GetIcon" /&gt;
+     &lt;button id="Bt214" onAction="OnAction" screentip="将选中对象向下延伸对齐" label="下延伸" getImage="GetIcon" /&gt;
+    &lt;/group&gt;
+    &lt;group id="group3" label="参考线"&gt;
+     &lt;button id="Bt301" onAction="OnAction" screentip="将选中对象左对齐到参考线" label="左对齐" getImage="GetIcon" /&gt;
+     &lt;button id="Bt302" onAction="OnAction" screentip="将选中对象在参考线内水平居中" label="水平居中" getImage="GetIcon" /&gt;
+     &lt;button id="Bt303" onAction="OnAction" screentip="将选中对象右对齐到参考线" label="右对齐" getImage="GetIcon" /&gt;
+     &lt;button id="Bt311" onAction="OnAction" screentip="将选中对象顶对齐到参考线" label="顶对齐" getImage="GetIcon" /&gt;
+     &lt;button id="Bt312" onAction="OnAction" screentip="将选中对象在参考线内垂直居中" label="垂直居中" getImage="GetIcon" /&gt;
+     &lt;button id="Bt313" onAction="OnAction" screentip="将选中对象底对齐到参考线" label="底对齐" getImage="GetIcon" /&gt;
+     &lt;button id="Bt321" onAction="OnAction" screentip="将选中对象宽度扩展到两个参考线之间" label="宽扩展" getImage="GetIcon" /&gt;
+     &lt;button id="Bt322" onAction="OnAction" screentip="将选中对象高度扩展到两个参考线之间" label="高扩展" getImage="GetIcon" /&gt;
+     &lt;button id="Bt323" onAction="OnAction" screentip="将选中对象宽度高度扩展到参考线区域" label="宽高扩展" getImage="GetIcon" /&gt;
+    &lt;/group&gt;
+    &lt;group id="group4" label="选择"&gt;
+     &lt;button id="Bt401" onAction="OnAction" screentip="隐藏选中对象，无选中对象时显示所有" label="隐显对象"  getImage="GetIcon" /&gt;
+     &lt;button id="Bt402" onAction="OnAction" screentip="当设计元素超出 PPT 页面边缘时，点击可实现对边角料的快速裁除" label="裁剪出框" getImage="GetIcon" /&gt;
+     &lt;button id="Bt601" onAction="OnAction" label="插入形状" screentip="• 如果当前选中了形状，则在每个选中形状的相同位置和大小处新建一个无边框的矩形（矩形与原形状重叠），并选中新建的这些矩形。如果当前没有选中形状，而是选中了幻灯片，则在每个选中幻灯片上添加一个无边框的矩形" getImage="GetIcon" /&gt;
+    &lt;/group&gt;
+    &lt;group id="group5" label="格式"&gt;
+     &lt;button id="Bt501" onAction="OnAction" label="美化表格" screentip="格式化表格字体" imageMso="TableSelect" /&gt;
+     &lt;button id="Bt502" onAction="OnAction" label="美化文本" screentip="格式化文本框内字体" imageMso="TextBoxInsert" /&gt;
+     &lt;button id="Bt503" onAction="OnAction" label="美化图表" screentip="格式化图表字体" imageMso="ChartTrendline" /&gt;
+    &lt;/group&gt;
+    &lt;group id="group6" label="格式"&gt;
+    &lt;/group&gt;
+   &lt;/tab&gt;
+  &lt;/tabs&gt;
+ &lt;/ribbon&gt;
+&lt;/customUI&gt;
+
+&lt;!--
+getEnabled="GetButtonEnabled"
+--&gt;</value>
+  </data>
+  <data name="erro" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\erro.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Infom" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\Infom.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="shap" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\shap.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="slide" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\slide.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="warn" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\icon\warn.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+</root>
