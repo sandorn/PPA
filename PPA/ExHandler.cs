@@ -26,8 +26,13 @@ namespace Project.Utilities
 
 		/// <summary>
 		/// 日志文件路径
+		/// 统一使用Profiler的日志路径配置，确保日志一致性
 		/// </summary>
-		public static string LogFilePath { get; set; } = "Profiler.log";
+		public static string LogFilePath 
+		{ 
+			get { return Profiler.LogFilePath; }
+			set { Profiler.LogFilePath = value; }
+		}
 
 		#endregion Properties
 
@@ -50,14 +55,14 @@ namespace Project.Utilities
 				} else
 				{
 					action();
+					Debug.WriteLine($"[无返回值方法] {context ?? callerMethod} 调用文件: {Path.GetFileName(callerFile)}");
 				}
 			} catch(Exception ex)
 			{
 				HandleException(ex,
 					effectiveContext: context ?? callerMethod,
 					callerMethod: callerMethod,
-					callerFile: callerFile,
-					elapsed);
+					callerFile: callerFile);
 			}
 		}
 
@@ -80,6 +85,7 @@ namespace Project.Utilities
 				} else
 				{
 					result = func();
+					Debug.WriteLine($"[有返回值方法] {context ?? callerMethod} 调用文件: {Path.GetFileName(callerFile)}");
 				}
 
 				return result;
@@ -88,8 +94,7 @@ namespace Project.Utilities
 				HandleException(ex,
 					effectiveContext: context ?? callerMethod,
 					callerMethod: callerMethod,
-					callerFile: callerFile,
-					elapsed);
+					callerFile: callerFile);
 				return defaultValue;
 			}
 		}
@@ -123,15 +128,14 @@ namespace Project.Utilities
 		}
 
 		/// <summary>
-		/// 统一异常处理方法（增强版）
+		/// 统一异常处理方法
 		/// 记录异常信息、调用位置、耗时等详细信息
 		/// </summary>
 		/// <param name="ex">捕获的异常</param>
 		/// <param name="effectiveContext">操作上下文</param>
 		/// <param name="callerMethod">调用方法名</param>
 		/// <param name="callerFile">调用文件路径</param>
-		/// <param name="elapsedTime">已执行时间</param>
-		private static void HandleException(Exception ex,string effectiveContext,string callerMethod,string callerFile,TimeSpan elapsedTime = default)
+		private static void HandleException(Exception ex,string effectiveContext,string callerMethod,string callerFile)
 		{
 			// 获取调用者类名
 			var callerClass = Path.GetFileNameWithoutExtension(callerFile);
@@ -142,11 +146,6 @@ namespace Project.Utilities
 			// 构建日志内容
 			string logContent = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}]\t[{effectiveContext}] 出错！";
 
-			// 添加耗时信息（如果启用）
-			if(EnableTiming && elapsedTime != TimeSpan.Zero)
-			{
-				logContent += $"\n执行耗时: {elapsedTime.TotalMilliseconds}ms (异常前)";
-			}
 
 			logContent += $"\n调用位置: {callerClass}.{callerMethod}" +
 						   $"\n异常位置: {actualMethod}" +

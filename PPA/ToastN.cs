@@ -204,6 +204,7 @@ namespace ToastAPI
 			var contentPanel = CreateContentPanel();
 			this.Controls.Add(contentPanel);
 
+			Debug.WriteLine($"[Toast通知] 类型: {_type}, 消息: {message ?? "(null)"}");
 			AddContentToPanel(contentPanel,message);
 
 			_timer=new System.Windows.Forms.Timer { Interval=duration };

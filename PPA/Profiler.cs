@@ -43,9 +43,9 @@ namespace Project.Utilities
 		/// 自动记录性能数据到调试输出和可选的文件日志
 		/// </summary>
 		/// <param name="action">要执行的操作</param>
-		/// <param name="methodName">方法名称（默认为调用者方法名）</param>
+		/// <param name="callerMethod">方法名称（默认为调用者方法名）</param>
 		/// <returns>执行耗时</returns>
-		public static TimeSpan Time(Action action,[CallerMemberName] string methodName = "")
+		public static TimeSpan Time(Action action,[CallerMemberName] string callerMethod = "")
 		{
 			var sw = Stopwatch.StartNew();
 			try
@@ -55,7 +55,7 @@ namespace Project.Utilities
 			} finally
 			{
 				sw.Stop();
-				LogPerformance(methodName,sw.Elapsed);
+				LogPerformance(callerMethod,sw.Elapsed);
 			}
 		}
 
@@ -65,9 +65,9 @@ namespace Project.Utilities
 		/// </summary>
 		/// <typeparam name="T">返回值类型</typeparam>
 		/// <param name="func">要执行的函数</param>
-		/// <param name="methodName">方法名称（默认为调用者方法名）</param>
+		/// <param name="callerMethod">方法名称（默认为调用者方法名）</param>
 		/// <returns>包含结果和执行耗时的元组</returns>
-		public static (T Result, TimeSpan Elapsed) Time<T>(Func<T> func,[CallerMemberName] string methodName = "")
+		public static (T Result, TimeSpan Elapsed) Time<T>(Func<T> func,[CallerMemberName] string callerMethod = "")
 		{
 			var sw = Stopwatch.StartNew();
 			try
@@ -77,7 +77,7 @@ namespace Project.Utilities
 			} finally
 			{
 				sw.Stop();
-				LogPerformance(methodName,sw.Elapsed);
+				LogPerformance(callerMethod,sw.Elapsed);
 			}
 		}
 
@@ -118,15 +118,15 @@ namespace Project.Utilities
 			}
 		}
 
-		private static void LogPerformance(string methodName,TimeSpan elapsed)
+		private static void LogPerformance(string callerMethod,TimeSpan elapsed)
 		{
-			// 保持原有控制台日志功能
-			Debug.WriteLine($"[性能监控]\t{methodName}\t执行耗时: {elapsed.TotalMilliseconds:F3} ms");
+			// 控制台日志功能
+			Debug.WriteLine($"[性能监控]\t{callerMethod}\t执行耗时: {elapsed.TotalMilliseconds:F3} ms");
 
-			// 文件日志使用缓冲写入
+			// 文件日志使用缓冲写入，避免频繁IO操作
 			if(EnableFileLogging)
 			{
-				var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}]\t[性能监控]\t{methodName}\t执行耗时:{elapsed.TotalMilliseconds:F3} ms";
+				var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}]\t[性能监控]\t{callerMethod}\t执行耗时:{elapsed.TotalMilliseconds:F3} ms";
 
 				lock(_lockObj)
 				{
@@ -158,10 +158,10 @@ namespace Project.Utilities.Extensions
 		/// <remarks>注意：此方法会使所有Action获得Time()方法</remarks>
 		public static TimeSpan Time(
 			this Action action,
-			[CallerMemberName] string methodName = "",
+			[CallerMemberName] string callerMethod = "",
 			[CallerFilePath] string filePath = "")
 		{
-			return Profiler.Time(action,$"{Path.GetFileName(filePath)} | {methodName}");
+			return Profiler.Time(action,$"{Path.GetFileName(filePath)} | {callerMethod}");
 		}
 
 		/// <summary>
@@ -170,29 +170,29 @@ namespace Project.Utilities.Extensions
 		/// <remarks>注意：此方法会使所有Func获得Time()方法</remarks>
 		public static (TResult Result, TimeSpan Elapsed) Time<TResult>(
 			this Func<TResult> func,
-			[CallerMemberName] string methodName = "",
+			[CallerMemberName] string callerMethod = "",
 			[CallerFilePath] string filePath = "")
 		{
-			return Profiler.Time(func,$"{Path.GetFileName(filePath)} | {methodName}");
+			return Profiler.Time(func,$"{Path.GetFileName(filePath)} | {callerMethod}");
 		}
 
 		// 可选：添加常用参数类型的重载
 		public static TimeSpan Time<Targs>(
 			this Action<Targs> action,
 			Targs arg,
-			[CallerMemberName] string methodName = "",
+			[CallerMemberName] string callerMethod = "",
 			[CallerFilePath] string filePath = "")
 		{
-			return Time(() => action(arg),filePath,methodName);
+			return Time(() => action(arg),filePath,callerMethod);
 		}
 
 		public static (TResult Result, TimeSpan Elapsed) Time<Targs, TResult>(
 			this Func<Targs,TResult> func,
 			Targs arg,
-			[CallerMemberName] string methodName = "",
+			[CallerMemberName] string callerMethod = "",
 			[CallerFilePath] string filePath = "")
 		{
-			return Time(() => func(arg),filePath,methodName);
+			return Time(() => func(arg),filePath,callerMethod);
 		}
 
 		#endregion Public Methods
