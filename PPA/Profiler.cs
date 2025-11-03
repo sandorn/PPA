@@ -30,8 +30,8 @@ namespace Project.Utilities
 		#region Private Fields
 
 		private const int BufferCapacity = 100; // 日志缓冲区容量
-		private static readonly Queue<string> _buffer = new Queue<string>(); // 日志缓冲区
-		private static readonly object _lockObj = new object(); // 线程同步锁
+		private static readonly Queue<string> _buffer = new(); // 日志缓冲区
+		private static readonly object _lockObj = new(); // 线程同步锁
 		private static StreamWriter _writer; // 文件写入器
 
 		#endregion Private Fields

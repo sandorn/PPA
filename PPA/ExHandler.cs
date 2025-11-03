@@ -147,9 +147,7 @@ namespace Project.Utilities
 			string logContent = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}]\t[{effectiveContext}] 出错！";
 
 
-			logContent += $"\n调用位置: {callerClass}.{callerMethod}" +
-						   $"\n异常位置: {actualMethod}" +
-						   $"\n{ExFormatter.FormatFullException(ex)}";
+			logContent += $"\n调用位置: {callerClass}.{callerMethod}" + $"\n异常位置: {actualMethod}" + $"\n{ExFormatter.FormatFullException(ex)}";
 
 			try
 			{
