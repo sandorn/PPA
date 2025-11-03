@@ -226,9 +226,10 @@
     can be found.
   -->
   <ItemGroup>
+    <Compile Include="ComListExtensions.cs" />
     <Compile Include="CustomRibbon.cs" />
-    <Compile Include="ExFormatter.cs" />
     <Compile Include="ExHandler.cs" />
+    <Compile Include="FileLocator.cs" />
     <Compile Include="MSOICrop.cs" />
     <Compile Include="Profiler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
@@ -263,6 +264,9 @@
     <Compile Include="ThisAddIn.cs">
       <SubType>Code</SubType>
     </Compile>
+    <None Include="Properties\TableFormatter.vba">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="ThisAddIn.Designer.xml">
       <DependentUpon>ThisAddIn.cs</DependentUpon>
     </None>
@@ -272,7 +276,7 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Properties\CustomRibbonXml.xml">
+    <Content Include="Properties\Ribbon.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

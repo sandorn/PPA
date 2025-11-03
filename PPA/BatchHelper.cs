@@ -2,12 +2,11 @@ using NetOffice.OfficeApi.Enums;
 using Project.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
+using System.Linq;
 using ToastAPI;
 using NETOP = NetOffice.PowerPointApi;
-
+using ComListExtensions;
 //using NetOffice.PowerPointApi.Enums;
 
 namespace PPA.Helpers
@@ -79,13 +78,13 @@ namespace PPA.Helpers
 					// 有选中对象，处理选中的对象
 					foreach(NETOP.Shape shape in selection.ShapeRange)
 						if(shape.HasTable == MsoTriState.msoTrue) FormatHelper.FormatTables(shape.Table);
-					Toast.Show("格式化表格完成",Toast.ToastType.Success);
+					Toast.Show("格式表格完成",Toast.ToastType.Success);
 				} else
 				{
 					FormatHelper.FormatTablesbyVBA(app,slide);//无选中则处理当前页面所有表格，使用VBA
-					Toast.Show("格式化表格完成",Toast.ToastType.Success);
+					Toast.Show("VBA格式表格",Toast.ToastType.Success);
 				}
-			},"格式化表格启动");
+			},"格式化表格启动",enableTiming:true);
 		}
 
 		public static void Bt502_Click(NETOP.Application app)
@@ -182,7 +181,7 @@ namespace PPA.Helpers
 					return;
 				}
 
-				var createdShapes = new List<NETOP.Shape>();
+				List<NETOP.Shape> createdShapes = [];
 				string successMessage = "";
 
 				// 1. 处理选中形状
@@ -221,7 +220,7 @@ namespace PPA.Helpers
 				else
 				{
 					// 创建要处理的幻灯片列表
-					var slidesToProcess = new List<NETOP.Slide>();
+					List < NETOP.Slide > slidesToProcess =[];
 					// 判断处理类型
 					if(selection?.Type == NETOP.Enums.PpSelectionType.ppSelectionSlides)
 					{
@@ -284,7 +283,7 @@ namespace PPA.Helpers
 				MsoTriState alignToSlide = (shapes.Count == 1 || alignToSlideMode) ? MsoTriState.msoTrue : MsoTriState.msoFalse;
 
 				// 创建对齐命令字典
-				var alignCommands = new Dictionary<AlignmentType,Action>
+				Dictionary<AlignmentType,Action> alignCommands = new()
 				{
 					[AlignmentType.Left] = () => shapes.Align(MsoAlignCmd.msoAlignLefts,alignToSlide),
 					[AlignmentType.Right] = () => shapes.Align(MsoAlignCmd.msoAlignRights,alignToSlide),
@@ -309,53 +308,98 @@ namespace PPA.Helpers
 			},"对齐操作");
 		}
 
-		// 隐藏/显示对象：选中对象时隐藏选中对象，无选中对象时显示所有对象
+		/// <summary>
+		/// 隐藏/显示对象：选中对象时隐藏选中对象，无选中对象时显示所有对象。
+		/// </summary>
+		/// <param name="app">PowerPoint 应用程序实例。</param>
 		public static void ToggleShapeVisibility(NETOP.Application app)
 		{
-			app.StartNewUndoEntry(); // 开始新的撤销单元
 			ExHandler.Run(() =>
 			{
 				var slide = TryGetCurrentSlide(app);
-				if(slide == null)
+				if(slide==null)
 				{
 					Toast.Show("未找到当前幻灯片",Toast.ToastType.Warning);
 					return;
 				}
 
-				var sel = app.ActiveWindow?.Selection;
-				// 有选中对象时，隐藏选中对象
-				if(sel != null && sel.Type == NETOP.Enums.PpSelectionType.ppSelectionShapes && sel.ShapeRange.Count > 0)
+				var sel = app.ActiveWindow.Selection;
+				if(sel?.Type==NETOP.Enums.PpSelectionType.ppSelectionShapes&&sel.ShapeRange.Count>0)
 				{
-					// 先缓存所有 shape 引用，避免 selection 变化
-					var shapesToHide = new List<NETOP.Shape>();
-					for(int i = 1;i <= sel.ShapeRange.Count;i++)
-					{
-						shapesToHide.Add(sel.ShapeRange[i]);
-					}
-					foreach(var shape in shapesToHide)
-					{
-						shape.Visible = MsoTriState.msoFalse;
-					}
-					Toast.Show("已隐藏选中对象",Toast.ToastType.Success);
-				} else // 无选中对象时，显示所有对象
+					// --- 场景1: 隐藏选中的对象 ---
+					HideSelectedShapes(app,sel.ShapeRange);
+				} else
 				{
-					var shapes = slide.Shapes;
-					int showCount = 0;
-					for(int i = 1;i <= shapes.Count;i++)
-					{
-						var shape = shapes[i];
-						if(shape.Visible == MsoTriState.msoFalse)
-						{
-							shape.Visible = MsoTriState.msoTrue;
-							showCount++;
-						}
-					}
-					if(showCount > 0)
-						Toast.Show("已显示所有对象",Toast.ToastType.Success);
-					else
-						Toast.Show("没有需要显示的对象",Toast.ToastType.Info);
+					// --- 场景2: 显示所有对象 ---
+					ShowAllHiddenShapes(app,slide.Shapes);
 				}
-			},"显示/隐藏对象");
+			},"显示/隐藏对象",enableTiming: true);
+		}
+
+		/// <summary>
+		/// 隐藏指定形状范围内的所有形状。
+		/// </summary>
+		/// <param name="shapeRange">要隐藏的形状范围。</param>
+		private static void HideSelectedShapes(NETOP.Application app,NETOP.ShapeRange shapeRange)
+		{
+			// 使用目标类型 new() 和集合表达式 [] (C# 9.0+ & C# 12.0)
+			List<NETOP.Shape> shapesToHide = new(shapeRange.Count);
+			for(int i = 1;i<=shapeRange.Count;i++)
+			{
+				shapesToHide.Add(shapeRange[i]);
+			}
+
+			app.StartNewUndoEntry(); // 将撤销操作移到具体动作前，更精确
+			try
+			{
+				foreach(var shape in shapesToHide)
+				{
+					shape.Visible=MsoTriState.msoFalse;
+				}
+				Toast.Show($"已隐藏 {shapesToHide.Count} 个对象",Toast.ToastType.Success);
+			} finally
+			{
+				shapesToHide.DisposeAll();
+			}
+		}
+
+		/// <summary>
+		/// 显示幻灯片上所有被隐藏的形状。
+		/// </summary>
+		/// <param name="shapes">幻灯片的形状集合。</param>
+		private static void ShowAllHiddenShapes(NETOP.Application app,NETOP.Shapes shapes)
+		{
+			List<NETOP.Shape> shapesToShow = [];
+
+			// 1. 找出所有需要显示的对象
+			for(int i = 1;i<=shapes.Count;i++)
+			{
+				var shape = shapes[i];
+				if(shape.Visible==MsoTriState.msoFalse)
+				{
+					shapesToShow.Add(shape);
+				}
+			}
+
+			// 2. 根据列表内容执行操作和反馈
+			if(shapesToShow.Count>0)
+			{
+				app.StartNewUndoEntry();
+				try
+				{
+					foreach(var shape in shapesToShow)
+					{
+						shape.Visible=MsoTriState.msoTrue;
+					}
+					Toast.Show($"已显示 {shapesToShow.Count} 个对象",Toast.ToastType.Success);
+				} finally
+				{
+					shapesToShow.DisposeAll();
+				}
+			} else
+			{
+				Toast.Show("没有需要显示的对象",Toast.ToastType.Info);
+			}
 		}
 
 		#endregion Public Methods

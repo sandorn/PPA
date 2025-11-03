@@ -16,7 +16,8 @@ namespace PPA
 
 		private CustomRibbon _customRibbon; // 自定义功能区实例
 		private bool _resourcesDisposed = false; // 资源是否已释放的标记
-		public NETOP.Application App { get; private set; } // NetOffice PowerPoint 应用程序实例
+		public PowerPoint.Application NativeApp { get; private set; } // 本地PowerPoint应用程序实例
+		public NETOP.Application NetApp { get; private set; } // NetOffice PowerPoint 应用程序实例
 
 		#endregion Private Fields
 
@@ -65,17 +66,17 @@ namespace PPA
 				_customRibbon = null;
 
 				// 释放NetOffice应用程序实例
-				if (App != null)
+				if (NetApp != null)
 				{
 					try
 					{
-						App.Dispose();
+						NetApp.Dispose();
 					} catch (Exception ex)
 					{
 						Debug.WriteLine($"[ThisAddIn] 释放App对象时出错: {ex.Message}");
 					} finally
 					{
-						App = null;
+						NetApp = null;
 					}
 				}
 			} finally
@@ -95,7 +96,7 @@ namespace PPA
 			InitializeNetOfficeApplication();
 
 			// Startup 完成后，将 App 设置到 CustomRibbon
-			_customRibbon?.SetApplication(App);
+			_customRibbon?.SetApplication(NetApp);
 		}
 
 		/// <summary>
@@ -106,17 +107,17 @@ namespace PPA
 		{
 			try
 			{
-				PowerPoint.Application nativeApp = Globals.ThisAddIn.Application;
+				NativeApp= Globals.ThisAddIn.Application;
 
-				if (nativeApp == null)
+				if (NativeApp== null)
 				{
 					Debug.WriteLine("[ThisAddIn] 本地PowerPoint应用程序对象为空");
 					return;
 				}
 
-				App = new NETOP.Application(null, nativeApp);
+				NetApp = new NETOP.Application(null,NativeApp);
 
-				if (App != null)
+				if (NetApp != null)
 				{
 					Debug.WriteLine("[ThisAddIn] NetOffice包装器初始化成功");
 				}

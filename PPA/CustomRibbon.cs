@@ -1,4 +1,3 @@
-using NetOffice.OfficeApi;
 using PPA.Helpers;
 using PPA.MSOAPI;
 using PPA.Properties;
@@ -8,7 +7,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using ALT = PPA.Helpers.BatchHelper.AlignmentType;
 using NETOP = NetOffice.PowerPointApi;
@@ -116,7 +114,7 @@ namespace PPA
 
 			try
 			{
-				var icons = new Dictionary<string, Bitmap>
+				Dictionary<string,Bitmap> icons = new()
 				{
 					["Tb101_1"] = Properties.Resources.slide,
 					["Tb101_0"] = Properties.Resources.shap,
@@ -286,41 +284,111 @@ namespace PPA
 
 			switch(buttonId)
 			{
-				case "Bt101": BatchHelper.ExecuteAlignment(_app,ALT.Left,_tb101Press); break;
-				case "Bt102": BatchHelper.ExecuteAlignment(_app,ALT.Centers,_tb101Press); break;
-				case "Bt103": BatchHelper.ExecuteAlignment(_app,ALT.Right,_tb101Press); break;
-				case "Bt104": BatchHelper.ExecuteAlignment(_app,ALT.Horizontally,_tb101Press); break;
-				case "Bt111": BatchHelper.ExecuteAlignment(_app,ALT.Top,_tb101Press); break;
-				case "Bt112": BatchHelper.ExecuteAlignment(_app,ALT.Middles,_tb101Press); break;
-				case "Bt113": BatchHelper.ExecuteAlignment(_app,ALT.Bottom,_tb101Press); break;
-				case "Bt114": BatchHelper.ExecuteAlignment(_app,ALT.Vertically,_tb101Press); break;
-				case "Bt121": AlignHelper.AttachLeft(_app); break;
-				case "Bt122": AlignHelper.AttachRight(_app); break;
-				case "Bt123": AlignHelper.AttachTop(_app); break;
-				case "Bt124": AlignHelper.AttachBottom(_app); break;
-				case "Bt201": AlignHelper.SetEqualWidth(_app); break;
-				case "Bt202": AlignHelper.SetEqualHeight(_app); break;
-				case "Bt203": AlignHelper.SetEqualSize(_app); break;
-				case "Bt204": AlignHelper.SwapSize(_app); break;
-				case "Bt211": AlignHelper.StretchLeft(_app); break;
-				case "Bt212": AlignHelper.StretchRight(_app); break;
-				case "Bt213": AlignHelper.StretchTop(_app); break;
-				case "Bt214": AlignHelper.StretchBottom(_app); break;
-				case "Bt301": AlignHelper.GuideAlignLeft(_app); break;
-				case "Bt302": AlignHelper.GuideAlignHCenter(_app); break;
-				case "Bt303": AlignHelper.GuideAlignRight(_app); break;
-				case "Bt311": AlignHelper.GuideAlignTop(_app); break;
-				case "Bt312": AlignHelper.GuideAlignVCenter(_app); break;
-				case "Bt313": AlignHelper.GuideAlignBottom(_app); break;
-				case "Bt321": AlignHelper.GuidesStretchWidth(_app); break;
-				case "Bt322": AlignHelper.GuidesStretchHeight(_app); break;
-				case "Bt323": AlignHelper.GuidesStretchSize(_app); break;
-				case "Bt401": BatchHelper.ToggleShapeVisibility(_app); break;
-				case "Bt402": MSOICrop.CropShapesToSlide(); break;
-				case "Bt501": BatchHelper.Bt501_Click(_app); break;
-				case "Bt502": BatchHelper.Bt502_Click(_app); break;
-				case "Bt503": BatchHelper.Bt503_Click(_app); break;
-				case "Bt601": BatchHelper.Bt601_Click(_app); break;
+				case "Bt101": 
+					BatchHelper.ExecuteAlignment(_app,ALT.Left,_tb101Press); 
+					break;
+				case "Bt102": 
+					BatchHelper.ExecuteAlignment(_app,ALT.Centers,_tb101Press); 
+					break;
+				case "Bt103": 
+					BatchHelper.ExecuteAlignment(_app,ALT.Right,_tb101Press); 
+					break;
+				case "Bt104": 
+					BatchHelper.ExecuteAlignment(_app,ALT.Horizontally,_tb101Press); 
+					break;
+				case "Bt111": 
+					BatchHelper.ExecuteAlignment(_app,ALT.Top,_tb101Press); 
+					break;
+				case "Bt112": 
+					BatchHelper.ExecuteAlignment(_app,ALT.Middles,_tb101Press); 
+					break;
+				case "Bt113": 
+					BatchHelper.ExecuteAlignment(_app,ALT.Bottom,_tb101Press); 
+					break;
+				case "Bt114": 
+					BatchHelper.ExecuteAlignment(_app,ALT.Vertically,_tb101Press); 
+					break;
+				case "Bt121": 
+					AlignHelper.AttachLeft(_app); 
+					break;
+				case "Bt122": 
+					AlignHelper.AttachRight(_app); 
+					break;
+				case "Bt123": 
+					AlignHelper.AttachTop(_app); 
+					break;
+				case "Bt124": 
+					AlignHelper.AttachBottom(_app); 
+					break;
+				case "Bt201": 
+					AlignHelper.SetEqualWidth(_app); 
+					break;
+				case "Bt202":
+					AlignHelper.SetEqualHeight(_app); 
+					break;
+				case "Bt203": 
+					AlignHelper.SetEqualSize(_app); 
+					break;
+				case "Bt204": 
+					AlignHelper.SwapSize(_app); 
+					break;
+				case "Bt211": 
+					AlignHelper.StretchLeft(_app); 
+					break;
+				case "Bt212": 
+					AlignHelper.StretchRight(_app); 
+					break;
+				case "Bt213": 
+					AlignHelper.StretchTop(_app); 
+					break;
+				case "Bt214": 
+					AlignHelper.StretchBottom(_app); 
+					break;
+				case "Bt301": 
+					AlignHelper.GuideAlignLeft(_app); 
+					break;
+				case "Bt302": 
+					AlignHelper.GuideAlignHCenter(_app); 
+					break;
+				case "Bt303": 
+					AlignHelper.GuideAlignRight(_app); 
+					break;
+				case "Bt311": 
+					AlignHelper.GuideAlignTop(_app);
+					break;
+				case "Bt312": 
+					AlignHelper.GuideAlignVCenter(_app);
+					break;
+				case "Bt313": 
+					AlignHelper.GuideAlignBottom(_app); 
+					break;
+				case "Bt321": 
+					AlignHelper.GuidesStretchWidth(_app); 
+					break;
+				case "Bt322": 
+					AlignHelper.GuidesStretchHeight(_app); 
+					break;
+				case "Bt323": 
+					AlignHelper.GuidesStretchSize(_app); 
+					break;
+				case "Bt401": 
+					BatchHelper.ToggleShapeVisibility(_app);
+					break;
+				case "Bt402":
+					MSOICrop.CropShapesToSlide();
+					break;
+				case "Bt501": 
+					BatchHelper.Bt501_Click(_app); 
+					break;
+				case "Bt502": 
+					BatchHelper.Bt502_Click(_app); 
+					break;
+				case "Bt503": 
+					BatchHelper.Bt503_Click(_app); 
+					break;
+				case "Bt601": 
+					BatchHelper.Bt601_Click(_app); 
+					break;
 				default:
 					Debug.WriteLine($"[自定义功能区] 未知按钮ID: {buttonId}");
 					break;
@@ -394,25 +462,11 @@ namespace PPA
 		/// <returns>加载的XML字符串，如未找到则返回null</returns>
 		private string LoadRibbonXmlFromFile()
 		{
-			string assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? AppDomain.CurrentDomain.BaseDirectory;
-
-			string[] candidates =
-			[
-				Path.Combine(assemblyDir, "Properties", "CustomRibbonXml.xml"),
-				Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Properties", "CustomRibbonXml.xml"),
-				Path.Combine(assemblyDir, "CustomRibbonXml.xml"),
-				Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CustomRibbonXml.xml")
-			];
-
-			foreach(string path in candidates)
+			string filePath = FileLocator.FindFile("Properties\\Ribbon.xml");
+			if(filePath!=null)
 			{
-				if(File.Exists(path))
-				{
-					Debug.WriteLine($"[自定义功能区] 从文件加载XML: {path}");
-					return File.ReadAllText(path);
-				}
+				return File.ReadAllText(filePath);
 			}
-
 			Debug.WriteLine("[自定义功能区] 未找到外部XML文件，使用嵌入式资源");
 			return null;
 		}

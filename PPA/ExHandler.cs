@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace Project.Utilities
 {
@@ -12,7 +13,6 @@ namespace Project.Utilities
 	public static class ExHandler
 	{
 		#region Properties
-
 		/// <summary>
 		/// 是否启用文件日志记录
 		/// </summary>
@@ -34,6 +34,18 @@ namespace Project.Utilities
 			set { Profiler.LogFilePath = value; }
 		}
 
+		/// <summary>
+		/// 初始化 ExHandler 的全局配置
+		/// </summary>
+		/// <param name="enableFileLogging">是否启用文件日志</param>
+		/// <param name="enableTiming">是否启用性能监控</param>
+		/// <param name="logFilePath">日志文件路径</param>
+		public static void Initialize(bool enableFileLogging = false,bool enableTiming = false)
+		{
+			EnableFileLogging=enableFileLogging;
+			EnableTiming=enableTiming;
+		}
+
 		#endregion Properties
 
 		#region Methods
@@ -42,20 +54,23 @@ namespace Project.Utilities
 		public static void Run(
 			Action action,
 			string context = null,
+			bool? enableTiming = null, // 局部覆盖参数
 			[CallerMemberName] string callerMethod = "",
 			[CallerFilePath] string callerFile = "")
 		{
 			TimeSpan elapsed = TimeSpan.Zero;
+			// 决策逻辑：优先使用局部参数，否则使用全局默认值
+			bool shouldTime = enableTiming ?? EnableTiming;
 
 			try
 			{
-				if(EnableTiming)
+				if(shouldTime)
 				{
 					elapsed = Profiler.Time(action,$"{Path.GetFileName(callerFile)} | {callerMethod}");
 				} else
 				{
 					action();
-					Debug.WriteLine($"[无返回值方法] {context ?? callerMethod} 调用文件: {Path.GetFileName(callerFile)}");
+					Debug.WriteLine($"[ExHandler] {context ?? callerMethod} 调用文件: {Path.GetFileName(callerFile)}");
 				}
 			} catch(Exception ex)
 			{
@@ -70,22 +85,25 @@ namespace Project.Utilities
 		public static T Run<T>(
 			Func<T> func,
 			string context = null,
+			bool? enableTiming = null, // 局部覆盖参数
 			[CallerMemberName] string callerMethod = "",
 			[CallerFilePath] string callerFile = "",
 			T defaultValue = default)
 		{
 			TimeSpan elapsed = TimeSpan.Zero;
 			T result = defaultValue;
+			// 决策逻辑：优先使用局部参数，否则使用全局默认值
+			bool shouldTime = enableTiming ?? EnableTiming;
 
 			try
 			{
-				if(EnableTiming)
+				if(shouldTime)
 				{
 					(result, elapsed) = Profiler.Time(func,$"{Path.GetFileName(callerFile)} | {callerMethod}");
 				} else
 				{
 					result = func();
-					Debug.WriteLine($"[有返回值方法] {context ?? callerMethod} 调用文件: {Path.GetFileName(callerFile)}");
+					Debug.WriteLine($"[ExHandler] {context ?? callerMethod} 调用文件: {Path.GetFileName(callerFile)}");
 				}
 
 				return result;
@@ -165,6 +183,49 @@ namespace Project.Utilities
 
 		#endregion Methods
 	}
+
+	public static class ExFormatter
+	{
+		#region Methods
+
+		public static string FormatFullException(Exception ex)
+		{
+			if(ex==null) return string.Empty;
+
+			var sb = new StringBuilder();
+			AppendExceptionDetails(sb,ex,depth: 0);
+			return sb.ToString();
+		}
+
+		private static void AppendExceptionDetails(StringBuilder sb,Exception ex,int depth)
+		{
+			if(depth>0) sb.Append('\n').Append(' ',depth*2);
+
+			sb.Append($"[{ex.GetType().Name}] {ex.Message}");
+			sb.Append($"\n{"HResult:",-10} 0x{ex.HResult:X8}");
+
+			if(!string.IsNullOrWhiteSpace(ex.StackTrace))
+			{
+				sb.Append($"\n{"Stack Trace:",-10}");
+				sb.Append(FormatStackTrace(ex.StackTrace));
+			}
+
+			if(ex.InnerException!=null)
+			{
+				sb.Append($"\n{"Inner:",-10}");
+				AppendExceptionDetails(sb,ex.InnerException,depth+1);
+			}
+		}
+
+		private static string FormatStackTrace(string stackTrace)
+		{
+			var lines = stackTrace.Split(['\r','\n'],StringSplitOptions.RemoveEmptyEntries);
+			return "\n          "+string.Join("\n          ",lines);
+		}
+
+		#endregion Methods
+	}
+
 }
 
 /*

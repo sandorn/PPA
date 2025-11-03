@@ -186,71 +186,12 @@
  &lt;ribbon&gt;
   &lt;tabs&gt;
    &lt;tab id="CustomTabXml" label="PPA菜单" insertAfterMso="TabDeveloper"&gt;
-    &lt;group id="group1" label="对齐"&gt;
-     &lt;toggleButton id="Tb101" onAction="TbOnAction" size="large" screentip="对齐基准,默认形状为基准，按下或选中一个形状，则以页面为基准" getPressed="GetTbState" getLabel="GetTbLable"  getImage="GetIcon" /&gt;
-     &lt;separator id="sep101" /&gt;
-     &lt;button id="Bt101" onAction="OnAction" screentip="将选中对象左对齐" label="左对齐" imageMso="ObjectsAlignLeftSmart" /&gt;
-     &lt;button id="Bt102" onAction="OnAction" screentip="将选中对象水平居中" label="水平居中" imageMso="ObjectsAlignCenterHorizontalSmart" /&gt;
-     &lt;button id="Bt103" onAction="OnAction" screentip="将选中对象右对齐" label="右对齐" imageMso="ObjectsAlignRightSmart" /&gt;
-     &lt;button id="Bt111" onAction="OnAction" screentip="将选中对象顶对齐" label="顶对齐" imageMso="ObjectsAlignTopSmart" /&gt;
-     &lt;button id="Bt112" onAction="OnAction" screentip="将选中对象垂直居中" label="垂直居中" imageMso="ObjectsAlignMiddleVerticalSmart" /&gt;
-     &lt;button id="Bt113" onAction="OnAction" screentip="将选中对象底对齐" label="底对齐" imageMso="ObjectsAlignBottomSmart" /&gt;
-     &lt;button id="Bt104" onAction="OnAction" screentip="将选中对象横向分布" label="横向分布" imageMso="AlignDistributeHorizontally" /&gt;
-     &lt;labelControl id="lab104" /&gt;
-     &lt;button id="Bt114" onAction="OnAction" screentip="将选中对象纵向分布" label="纵向分布" imageMso="AlignDistributeVertically" /&gt;
-    &lt;/group&gt;
-    &lt;group id="group11" label="吸附"&gt;
-     &lt;box id="box120"&gt;
-      &lt;button id="Bt121" onAction="OnAction" screentip="以第一个形状为基准，将选中对象向左吸附" label="左吸附" getImage="GetIcon" /&gt;
-      &lt;button id="Bt122" onAction="OnAction" screentip="以第一个形状为基准，将选中对象向右吸附" label="右吸附" getImage="GetIcon" /&gt;
-     &lt;/box&gt;
-     &lt;box id="box121"&gt;
-      &lt;button id="Bt123" onAction="OnAction" screentip="以第一个形状为基准，将选中对象向上吸附" label="上吸附" getImage="GetIcon" /&gt;
-      &lt;button id="Bt124" onAction="OnAction" screentip="以第一个形状为基准，将选中对象向下吸附" label="下吸附" getImage="GetIcon" /&gt;
-     &lt;/box&gt;
-    &lt;/group&gt;
-    &lt;group id="group2" label="大小"&gt;
-     &lt;button id="Bt201" onAction="OnAction" screentip="以第一个形状为基准，将选中对象设置为等宽" label="等宽度"  imageMso="ShapeWidth" /&gt;
-     &lt;button id="Bt202" onAction="OnAction" screentip="以第一个形状为基准，将选中对象设置为等高" label="等高度" imageMso="ShapeHeight" /&gt;
-     &lt;button id="Bt203" onAction="OnAction" screentip="以第一个形状为基准，将选中对象设置为等宽、等高" label="等大小" imageMso="PowerPointPageSetup" /&gt;
-     &lt;button id="Bt204" onAction="OnAction" screentip="将选中的对象交换大小和位置" label="互　换" getImage="GetIcon" /&gt;
-     &lt;labelControl id="lab205" /&gt;
-     &lt;button id="Bt211" onAction="OnAction" screentip="将选中对象向左延伸对齐" label="左延伸" getImage="GetIcon" /&gt;
-     &lt;button id="Bt212" onAction="OnAction" screentip="将选中对象向右延伸对齐" label="右延伸" getImage="GetIcon" /&gt;
-     &lt;button id="Bt213" onAction="OnAction" screentip="将选中对象向上延伸对齐" label="上延伸" getImage="GetIcon" /&gt;
-     &lt;button id="Bt214" onAction="OnAction" screentip="将选中对象向下延伸对齐" label="下延伸" getImage="GetIcon" /&gt;
-    &lt;/group&gt;
-    &lt;group id="group3" label="参考线"&gt;
-     &lt;button id="Bt301" onAction="OnAction" screentip="将选中对象左对齐到参考线" label="左对齐" getImage="GetIcon" /&gt;
-     &lt;button id="Bt302" onAction="OnAction" screentip="将选中对象在参考线内水平居中" label="水平居中" getImage="GetIcon" /&gt;
-     &lt;button id="Bt303" onAction="OnAction" screentip="将选中对象右对齐到参考线" label="右对齐" getImage="GetIcon" /&gt;
-     &lt;button id="Bt311" onAction="OnAction" screentip="将选中对象顶对齐到参考线" label="顶对齐" getImage="GetIcon" /&gt;
-     &lt;button id="Bt312" onAction="OnAction" screentip="将选中对象在参考线内垂直居中" label="垂直居中" getImage="GetIcon" /&gt;
-     &lt;button id="Bt313" onAction="OnAction" screentip="将选中对象底对齐到参考线" label="底对齐" getImage="GetIcon" /&gt;
-     &lt;button id="Bt321" onAction="OnAction" screentip="将选中对象宽度扩展到两个参考线之间" label="宽扩展" getImage="GetIcon" /&gt;
-     &lt;button id="Bt322" onAction="OnAction" screentip="将选中对象高度扩展到两个参考线之间" label="高扩展" getImage="GetIcon" /&gt;
-     &lt;button id="Bt323" onAction="OnAction" screentip="将选中对象宽度高度扩展到参考线区域" label="宽高扩展" getImage="GetIcon" /&gt;
-    &lt;/group&gt;
-    &lt;group id="group4" label="选择"&gt;
-     &lt;button id="Bt401" onAction="OnAction" screentip="隐藏选中对象，无选中对象时显示所有" label="隐显对象"  getImage="GetIcon" /&gt;
-     &lt;button id="Bt402" onAction="OnAction" screentip="当设计元素超出 PPT 页面边缘时，点击可实现对边角料的快速裁除" label="裁剪出框" getImage="GetIcon" /&gt;
-     &lt;button id="Bt601" onAction="OnAction" label="插入形状" screentip="• 如果当前选中了形状，则在每个选中形状的相同位置和大小处新建一个无边框的矩形（矩形与原形状重叠），并选中新建的这些矩形。如果当前没有选中形状，而是选中了幻灯片，则在每个选中幻灯片上添加一个无边框的矩形" getImage="GetIcon" /&gt;
-    &lt;/group&gt;
-    &lt;group id="group5" label="格式"&gt;
-     &lt;button id="Bt501" onAction="OnAction" label="美化表格" screentip="格式化表格字体" imageMso="TableSelect" /&gt;
-     &lt;button id="Bt502" onAction="OnAction" label="美化文本" screentip="格式化文本框内字体" imageMso="TextBoxInsert" /&gt;
-     &lt;button id="Bt503" onAction="OnAction" label="美化图表" screentip="格式化图表字体" imageMso="ChartTrendline" /&gt;
-    &lt;/group&gt;
-    &lt;group id="group6" label="格式"&gt;
+    &lt;group id="group1" label="错误提示，请检查Ribbon.xml文件"&gt;
     &lt;/group&gt;
    &lt;/tab&gt;
   &lt;/tabs&gt;
  &lt;/ribbon&gt;
-&lt;/customUI&gt;
-
-&lt;!--
-getEnabled="GetButtonEnabled"
---&gt;</value>
+&lt;/customUI&gt;</value>
   </data>
   <data name="erro" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\icon\erro.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>

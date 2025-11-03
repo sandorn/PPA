@@ -275,10 +275,12 @@ namespace PPA.Properties {
         /// &lt;ribbon&gt;
         ///  &lt;tabs&gt;
         ///   &lt;tab id=&quot;CustomTabXml&quot; label=&quot;PPA菜单&quot; insertAfterMso=&quot;TabDeveloper&quot;&gt;
-        ///    &lt;group id=&quot;group1&quot; label=&quot;对齐&quot;&gt;
-        ///     &lt;toggleButton id=&quot;Tb101&quot; onAction=&quot;TbOnAction&quot; size=&quot;large&quot; screentip=&quot;对齐基准,默认形状为基准，按下或选中一个形状，则以页面为基准&quot; getPressed=&quot;GetTbState&quot; getLabel=&quot;GetTbLable&quot;  getImage=&quot;GetIcon&quot; /&gt;
-        ///     &lt;separator id=&quot;sep101&quot; /&gt;
-        ///     &lt;button id=&quot;Bt101&quot; onAction=&quot;OnAction&quot; screentip=&quot;将选中对象左对齐&quot; label=&quot;左对齐&quot; im [字符串的其余部分被截断]&quot;; 的本地化字符串。
+        ///    &lt;group id=&quot;group1&quot; label=&quot;错误提示，请检查Ribbon.xml文件&quot;&gt;
+        ///    &lt;/group&gt;
+        ///   &lt;/tab&gt;
+        ///  &lt;/tabs&gt;
+        /// &lt;/ribbon&gt;
+        ///&lt;/customUI&gt; 的本地化字符串。
         /// </summary>
         internal static string CustomRibbonXml {
             get {

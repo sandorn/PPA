@@ -41,14 +41,14 @@ namespace ToastAPI
 		{
 			lock(_lock)
 			{
-				Debug.WriteLine($"[Toast通知] 关闭当前通知被调用 | hasCurrent={_currentToast!=null} disposed={_currentToast?.IsDisposed}");
+				//Debug.WriteLine($"[Toast通知] 关闭当前通知 | hasCurrent={_currentToast!=null} disposed={_currentToast?.IsDisposed}");
 
 				// 修改：加强空引用检查
 				if(_currentToast!=null&&!_currentToast.IsDisposed)
 				{
 					try
 					{
-						Debug.WriteLine("[Toast] Forcing close current toast");
+						//Debug.WriteLine("[Toast] Forcing close current toast");
 						// 修改：同步关闭，避免异步导致的竞态条件
 						_currentToast.ForceClose();
 						_currentToast=null;
@@ -68,13 +68,13 @@ namespace ToastAPI
 		/// <param name="type">   通知类型</param>
 		public static void Show(string message,ToastType type = ToastType.Info,int duration = 99)
 		{
-			Debug.WriteLine($"[Toast] Show | type={type} durationArg={duration} msgLen={message?.Length}");
+			//Debug.WriteLine($"[Toast] Show | type={type} durationArg={duration} msgLen={message?.Length}");
 
 			// 修改：防止快速连续调用
 			var timeSinceLastShow = DateTime.Now - _lastShowTime;
 			if(timeSinceLastShow.TotalMilliseconds<200) // 增加到200ms
 			{
-				Debug.WriteLine("[Toast通知] 忽略快速重复调用");
+				//Debug.WriteLine("[Toast通知] 忽略快速重复调用");
 				return;
 			}
 			_lastShowTime=DateTime.Now;
@@ -102,7 +102,7 @@ namespace ToastAPI
 			}
 
 			// 确保在主线程执行
-			Debug.WriteLine($"[Toast] Dispatching to UI thread | openForms={Application.OpenForms?.Count}");
+			//Debug.WriteLine($"[Toast] Dispatching to UI thread | openForms={Application.OpenForms?.Count}");
 			if(Application.OpenForms.Count>0)
 			{
 				try
@@ -132,7 +132,7 @@ namespace ToastAPI
 		{
 			lock(_lock)
 			{
-				Debug.WriteLine("[Toast] CurrentToastClosed callback");
+				//Debug.WriteLine("[Toast] CurrentToastClosed callback");
 				_currentToast=null;
 			}
 		}
@@ -145,7 +145,7 @@ namespace ToastAPI
 		{
 			lock(_lock)
 			{
-				Debug.WriteLine($"[Toast] ShowInternal | type={type} duration={duration}");
+				//Debug.WriteLine($"[Toast] ShowInternal | type={type} duration={duration}");
 
 				// 修改：检查当前窗体状态
 				if(_currentToast!=null)
@@ -165,7 +165,7 @@ namespace ToastAPI
 				try
 				{
 					_currentToast=new ToastForm(message,type,duration);
-					Debug.WriteLine("[Toast通知] 已创建新的Toast窗体，正在调用Show()");
+					//Debug.WriteLine("[Toast通知] 已创建新的Toast窗体，正在调用Show()");
 					_currentToast.Show();
 				} catch(Exception ex)
 				{
@@ -204,7 +204,7 @@ namespace ToastAPI
 			var contentPanel = CreateContentPanel();
 			this.Controls.Add(contentPanel);
 
-			Debug.WriteLine($"[Toast通知] 类型: {_type}, 消息: {message ?? "(null)"}");
+			//Debug.WriteLine($"[Toast通知] 类型: {_type}, 消息: {message ?? "(null)"}");
 			AddContentToPanel(contentPanel,message);
 
 			_timer=new System.Windows.Forms.Timer { Interval=duration };
@@ -342,7 +342,7 @@ namespace ToastAPI
 		{
 			if(m.Msg==0x0002) // WM_DESTROY
 			{
-				Debug.WriteLine("[Toast通知] 收到WM_DESTROY消息");
+				//Debug.WriteLine("[Toast通知] 收到WM_DESTROY消息");
 			}
 			base.WndProc(ref m);
 		}

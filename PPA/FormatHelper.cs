@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
-using System.Linq;
+using ToastAPI;
 using VBAApi;
 
 using NETOP = NetOffice.PowerPointApi;
@@ -13,6 +13,8 @@ namespace PPA.Helpers
 {
 	public static class FormatHelper
 	{
+		private static readonly int NegativeTextColor = ColorTranslator.ToOle(Color.Red);
+
 		#region Internal Methods
 
 		internal static void ApplyTextFormatting(NETOP.Shape shp)
@@ -138,257 +140,179 @@ namespace PPA.Helpers
 			},"格式化图表字体");
 		}
 
+		/// <summary>
+		/// 对表格进行极限优化的格式化。
+		/// </summary>
+		/// <param name="tbl">要格式化的 PowerPoint 表格对象。</param>
+		/// <param name="autonum">是否自动格式化数字。</param>
+		/// <param name="decimalPlaces">保留的小数位数。</param>
 		internal static void FormatTables(NETOP.Table tbl,bool autonum = true,int decimalPlaces = 0)
 		{
-			const MsoThemeColorIndex txtcolor = MsoThemeColorIndex.msoThemeColorText1;
-			const MsoThemeColorIndex bdcolor1 = MsoThemeColorIndex.msoThemeColorAccent1;
-			const MsoThemeColorIndex bdcolor2 = MsoThemeColorIndex.msoThemeColorAccent2;
 			//const string styleId = "{5940675A-B579-460E-94D1-54222C63F5DA}"; //styleName="无样式，网格型">
 			//const string styleId = "{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}"; //styleName="中度样式 2 - 强调 1">
 			//const string styleId = "{72833802-FEF1-4C79-8D5D-14CF1EAF98D9}"; //styleName="浅色样式 2 - 强调 2">
 			//const string styleId = "{69012ECD-51FC-41F1-AA8D-1B2483CD663E}"; // styleName="浅色样式 2 - 强调 1">
-			const string styleId = "{3B4B98B0-60AC-42C2-AFA5-B58CD77FA1E5}"; //  styleName = "浅色样式 1 - 强调 1" >
-			tbl.FirstRow = true;    // 标题行（首行特殊格式）
-			tbl.FirstCol = false;   // 标题列（首列特殊格式）
-			tbl.LastRow = false;    // 汇总行（末行特殊格式）
-			tbl.LastCol = false;    // 汇总列（末列特殊格式）
-			tbl.HorizBanding = false;    //镶边行
-			tbl.VertBanding = false;    //镶边列
-			tbl.ApplyStyle(styleId,false);
+			// --- 1. 预定义所有常量 ---
+			const string styleId = "{3B4B98B0-60AC-42C2-AFA5-B58CD77FA1E5}";
+			const MsoThemeColorIndex txtColor = MsoThemeColorIndex.msoThemeColorText1;
+			const MsoThemeColorIndex bdColor1 = MsoThemeColorIndex.msoThemeColorAccent1;
+			const MsoThemeColorIndex bdColor2 = MsoThemeColorIndex.msoThemeColorAccent2;
 
 			const float thin = 1.0f, thick = 2.0f;
-			const float fontsize = 9.0f, bigfontsize = 10.0f;
-			int rows = tbl.Rows.Count, cols = tbl.Columns.Count;
+			const float fontSize = 9.0f, bigFontSize = 10.0f;
+			const string fontName = "+mn-lt";
+			const string fontNameFarEast = "+mn-ea";
 
-			ExHandler.Run(() =>
+			int rows = tbl.Rows.Count;
+			int cols = tbl.Columns.Count;
+
+			// --- 2. 一次性设置表格全局样式 ---
+			tbl.ApplyStyle(styleId,false);
+			tbl.FirstRow=true;
+			tbl.FirstCol=false;
+			tbl.LastRow=false;
+			tbl.LastCol=false;
+			tbl.HorizBanding=false;
+			tbl.VertBanding=false;
+
+			// --- 3. 核心循环：使用 NetOffice 的 Dispose 模式 ---
+			for(int r = 1;r<=rows;r++)
 			{
-				for(var r = 1;r <= rows;r++)
+				// 使用 using 语句，这是处理 IDisposable 对象的最佳实践
+				using(var row = tbl.Rows[r])
 				{
-					bool isFirstR = (r == 1);
-					bool isLastR = (r == rows);
+					bool isFirstRow = (r == 1);
+					bool isLastRow = (r == rows);
 
-					var row = tbl.Rows[r];
-					foreach(NETOP.Cell cell in row.Cells.Cast<NETOP.Cell>())
+					float topBorderWidth = isFirstRow ? thick : thin;
+					var topBorderColor_obj = (object)(isFirstRow ? bdColor1 : bdColor2);
+					float bottomBorderWidth = isLastRow ? thick : thin;
+					var bottomBorderColor_obj = (object)bdColor1;
+
+					for(int c = 1;c<=cols;c++)
 					{
-						//cell.Shape.Fill.ForeColor.ObjectThemeColor = frbgcolor; //填充颜色
-						// 清除填充
-						cell.Shape.Fill.Visible = MsoTriState.msoFalse;
-
-						var rng = cell.Shape.TextFrame.TextRange;
-						rng.Font.Name = "+mn-lt";
-						rng.Font.NameFarEast = "+mn-ea"; // 设置为中文“正文字体” ;
-
-						rng.Font.Size = isFirstR ? bigfontsize : fontsize;
-						rng.Font.Bold = isFirstR ? MsoTriState.msoTrue : MsoTriState.msoFalse;
-						rng.Font.Color.ObjectThemeColor = txtcolor;
-						if(isFirstR) rng.ParagraphFormat.Alignment = NETOP.Enums.PpParagraphAlignment.ppAlignCenter;
-						if(!isFirstR && autonum) SmartNumberFormat(rng,decimalPlaces); // 数值智能格式
-
-						if(isFirstR)
+						// 嵌套 using 语句，确保每个对象都被及时释放
+						using(var cell = row.Cells[c])
 						{
-							// 首行顶线底线
-							SetBorder(cell,NETOP.Enums.PpBorderType.ppBorderTop,thick,bdcolor1);
-							SetBorder(cell,NETOP.Enums.PpBorderType.ppBorderBottom,thick,bdcolor1);
-						} else if(isLastR)
-						{
-							// 尾行底线
-							SetBorder(cell,NETOP.Enums.PpBorderType.ppBorderTop,thin,bdcolor2);
-							SetBorder(cell,NETOP.Enums.PpBorderType.ppBorderBottom,thick,bdcolor1);
-						} else
-						{
-							SetBorder(cell,NETOP.Enums.PpBorderType.ppBorderTop,thin,bdcolor2);
-							SetBorder(cell,NETOP.Enums.PpBorderType.ppBorderBottom,thin,bdcolor2);
-						}
+							cell.Shape.Fill.Visible=MsoTriState.msoFalse;
+							using(var textRange = cell.Shape.TextFrame.TextRange)
+							{
+								if(isFirstRow)
+								{
+									SetFontProperties(textRange,fontName,fontNameFarEast,bigFontSize,MsoTriState.msoTrue,txtColor);
+									textRange.ParagraphFormat.Alignment=NETOP.Enums.PpParagraphAlignment.ppAlignCenter;
+								} else
+								{
+									SetFontProperties(textRange,fontName,fontNameFarEast,fontSize,MsoTriState.msoFalse,txtColor);
+									if(autonum)
+									{
+										SmartNumberFormat(textRange,decimalPlaces,NegativeTextColor);
+									}
+								}
+							} // textRange.Dispose() 在这里被自动调用
+
+							SetBorder(cell,NETOP.Enums.PpBorderType.ppBorderTop,topBorderWidth,topBorderColor_obj);
+							SetBorder(cell,NETOP.Enums.PpBorderType.ppBorderBottom,bottomBorderWidth,bottomBorderColor_obj);
+						} // cell.Dispose() 在这里被自动调用
 					}
-				}
-			},"格式化表格");
+				} // row.Dispose() 在这里被自动调用
+			}
+		}
+
+
+		/// <summary>
+		/// 批量设置字体属性，减少 COM 调用次数。
+		/// </summary>
+		private static void SetFontProperties(NETOP.TextRange textRange,string name,string nameFarEast,float size,MsoTriState bold,MsoThemeColorIndex color)
+		{
+			// 关键：通过 .Font 来访问字体属性
+			textRange.Font.Name=name;
+			textRange.Font.NameFarEast=nameFarEast;
+			textRange.Font.Size=size;
+			textRange.Font.Bold=bold;
+			textRange.Font.Color.ObjectThemeColor=color;
+		}
+
+		/// <summary>
+		/// 智能格式化数字，只在必要时修改文本和颜色。
+		/// </summary>
+		private static void SmartNumberFormat(NETOP.TextRange textRange,int decimalPlaces,int negativeTextColor)
+		{
+			var original = textRange.Text.Trim();
+			if(string.IsNullOrEmpty(original)) return;
+
+			var isPercentage = original.EndsWith("%");
+			var numStr = isPercentage ? original.Substring(0, original.Length - 1) : original;
+
+			// 使用 InvariantCulture 来确保小数点解析的正确性
+			if(!double.TryParse(numStr,NumberStyles.Any,CultureInfo.InvariantCulture,out var num))
+			{
+				return;
+			}
+
+			// 构造格式字符串，例如 "N0", "N2"
+			var format = $"N{decimalPlaces}";
+			var formatted = num.ToString(format);
+
+			if(isPercentage)
+				formatted+="%";
+
+			// 关键优化：只有当文本真的需要改变时才设置，避免触发不必要的重绘和缓存刷新
+			if(textRange.Text!=formatted)
+			{
+				textRange.Text=formatted;
+			}
+
+			// 负数颜色设置
+			if(num<0)
+			{
+				textRange.Font.Color.RGB=negativeTextColor;
+			}
 		}
 
 		internal static void FormatTablesbyVBA(NETOP.Application app,NETOP.Slide slide)
 		{
+			if(app==null||slide==null)
+			{
+				Toast.Show("无效的应用程序或幻灯片对象",Toast.ToastType.Error);
+				return;
+			}
+
 			const string styleId = "{3B4B98B0-60AC-42C2-AFA5-B58CD77FA1E5}";
+			int tableCount = 0;
+
+			// 先应用表格样式，并统计有多少个表格
 			foreach(NETOP.Shape shape in slide.Shapes)
 			{
-				if(shape.HasTable == MsoTriState.msoTrue)
+				if(shape.HasTable==MsoTriState.msoTrue)
 				{
 					NETOP.Table tbl = shape.Table;
-					tbl.FirstRow = true;    // 标题行（首行特殊格式）
-					tbl.FirstCol = false;   // 标题列（首列特殊格式）
-					tbl.LastRow = false;    // 汇总行（末行特殊格式）
-					tbl.LastCol = false;    // 汇总列（末列特殊格式）
-					tbl.HorizBanding = false;   //镶边行
-					tbl.VertBanding = false;    //镶边列
+					tbl.FirstRow=true;    // 标题行（首行特殊格式）
+					tbl.FirstCol=false;   // 标题列（首列特殊格式）
+					tbl.LastRow=false;    // 汇总行（末行特殊格式）
+					tbl.LastCol=false;    // 汇总列（末列特殊格式）
+					tbl.HorizBanding=false;   //镶边行
+					tbl.VertBanding=false;    //镶边列
 					tbl.ApplyStyle(styleId,false);
+					tableCount++;
 				}
 			}
 
-			const string vbaCode =
-				@"Sub FormatAllTables()
-					On Error Resume Next
-					Dim sld As Slide
-					Dim shp As Shape
+			if(tableCount==0)
+			{
+				Toast.Show("当前幻灯片上没有表格",Toast.ToastType.Info);
+				return;
+			}
 
-					' 获取当前页面
-					Set sld = ActiveWindow.View.Slide
+			// 显示等待光标
+			System.Windows.Forms.Cursor.Current=System.Windows.Forms.Cursors.WaitCursor;
 
-					' 遍历页面中的所有形状
-					For Each shp In sld.Shapes
-						If shp.HasTable Then
-							FormatSingleTable shp.Table
-						End If
-					Next shp
-				End Sub
+			// 调用新的管理器，它会自动处理模块初始化
+			VbaManager.RunMacro(app,"FormatAllTables");
+			Toast.Show($"成功格式化了 {tableCount} 个表格",Toast.ToastType.Success);
 
-				Private Sub FormatSingleTable(tbl As Table)
-					Const txtColor As Long = msoThemeColorText1
-					Const bdColor1 As Long = msoThemeColorAccent1
-					Const bdColor2 As Long = msoThemeColorAccent2
-
-					Const thin As Single = 1#
-					Const thick As Single = 2#
-					Const fontSize As Single = 9#
-					Const bigFontSize As Single = 10#
-
-					Dim rows As Long: rows = tbl.Rows.Count
-					Dim cols As Long: cols = tbl.Columns.Count
-					Dim r As Long, c As Long
-					Dim cell As Cell
-					Dim txtRng As TextRange
-
-					' ===== 主要优化点 =====
-					' 首行特殊处理（减少循环内判断）
-					For c = 1 To cols
-						Set cell = tbl.Cell(1, c)
-						' 清除填充色
-						cell.Shape.Fill.Visible = msoFalse
-						Set txtRng = cell.Shape.TextFrame.TextRange
-
-						With txtRng
-							.Font.Name = ""+mn-lt""
-							.Font.NameFarEast = ""+mn-ea""
-							.Font.Size = bigFontSize
-							.Font.Bold = msoTrue
-							.Font.Color.ObjectThemeColor = txtColor
-							.ParagraphFormat.Alignment = ppAlignCenter
-						End With
-
-						' 设置首行特殊边框
-						With cell.Borders(ppBorderTop)
-							.Weight = thick
-							.ForeColor.ObjectThemeColor = bdColor1
-						End With
-						With cell.Borders(ppBorderBottom)
-							.Weight = thick
-							.ForeColor.ObjectThemeColor = bdColor1
-						End With
-					Next c
-
-					' 其他行处理（优化循环）
-					For r = 2 To rows
-						For c = 1 To cols
-							Set cell = tbl.Cell(r, c)
-							cell.Shape.Fill.Visible = msoFalse
-							Set txtRng = cell.Shape.TextFrame.TextRange
-
-							' 设置通用格式
-							With txtRng
-								.Font.Name = ""+mn-lt""
-								.Font.NameFarEast = ""+mn-ea""
-								.Font.Size = fontSize
-								.Font.Bold = msoFalse
-								.Font.Color.ObjectThemeColor = txtColor
-							End With
-
-							' 数值格式化
-							SmartNumberFormat txtRng
-
-							' 设置底部边框
-							With cell.Borders(ppBorderBottom)
-								If r = rows Then
-									' 尾行特殊处理
-									.Weight = thick
-									.ForeColor.ObjectThemeColor = bdColor1
-								Else
-									' 普通行处理
-									.Weight = thin
-									.ForeColor.ObjectThemeColor = bdColor2
-								End If
-							End With
-						Next c
-					Next r
-				End Sub
-
-				Private Sub SmartNumberFormat(rng As TextRange)
-					Dim original As String
-					Dim isPercentage As Boolean
-					Dim numStr As String
-					Dim numValue As Double
-					Dim formatted As String
-					Dim negativeColor As Long
-					Dim pos As Integer
-
-					' 设置负数为红色
-					negativeColor = RGB(255, 0, 0)
-
-					' 获取并清理原始文本
-					original = Trim(rng.Text)
-					If Len(original) = 0 Then Exit Sub
-
-					' 检查百分比符号
-					isPercentage = (Right(original, 1) = ""%"")
-					If isPercentage Then
-						numStr = Trim(Left(original, Len(original) - 1))
-					Else
-						numStr = original
-					End If
-
-					' 跨区域安全的数字解析
-					If Not IsNumeric(numStr) Then Exit Sub
-
-					' 处理不同区域设置的小数点
-					If InStr(numStr, "","") > 0 And InStr(numStr, ""."") > 0 Then
-						' 如果同时有逗号和点号，保留最后一个作为小数点
-						If InStrRev(numStr, "","") > InStrRev(numStr, ""."") Then
-							numStr = Replace(numStr, ""."", """")
-							numStr = Replace(numStr, "","", ""."")
-						Else
-							numStr = Replace(numStr, "","", """")
-						End If
-					Else
-						' 替换逗号为点号（欧洲格式支持）
-						numStr = Replace(numStr, "","", ""."")
-					End If
-
-					' 转换数字
-					numValue = CDbl(numStr)
-
-					' 构建格式字符串
-					Dim formatStr As String
-					If decimalPlaces > 0 Then
-						formatStr = ""#,##0."" & String(decimalPlaces, ""0"")
-					Else
-						formatStr = ""#,##0""
-					End If
-
-					' 应用格式化
-					formatted = Format(numValue, formatStr)
-
-					' 添加百分比符号
-					If isPercentage Then
-						formatted = formatted & ""%""
-					End If
-
-					' 仅当格式变化时更新文本
-					If original <> formatted Then
-						rng.Text = formatted
-					End If
-
-					' 设置负数颜色
-					If numValue < 0 Then
-						rng.Font.Color.RGB = negativeColor
-					End If
-				End Sub";
-			ExHandler.Run(() => VbaExecutor.ExecuteVbaCode(app,vbaCode,"FormatAllTables"),"格式化表格");
+			// 恢复光标
+			System.Windows.Forms.Cursor.Current=System.Windows.Forms.Cursors.Default;
 		}
 
 		#endregion Internal Methods
@@ -447,39 +371,7 @@ namespace PPA.Helpers
 				else border.ForeColor.RGB = 0; // 默认黑色
 			}
 		}
-
-		private static void SmartNumberFormat(NETOP.TextRange textRange,int decimalPlaces)
-		{
-			var negativeText = ColorTranslator.ToOle(Color.Red);
-			var original = textRange.Text.Trim();
-			if(string.IsNullOrEmpty(original)) return;
-
-			var isPercentage = original.EndsWith("%");
-			var numStr = isPercentage ? original.Substring(0,original.Length - 1) : original;
-
-			if(!double.TryParse(
-					numStr,
-					NumberStyles.Any,
-					CultureInfo.InvariantCulture,
-					out var num
-				))
-			{
-				return;
-			}
-			// 构造格式字符串，例如 "N0", "N2", "N3"
-			var format = $"N{decimalPlaces}";
-			var formatted = num.ToString(format);
-
-			if(isPercentage)
-				formatted += "%";
-
-			if(textRange.Text == formatted) return;
-			textRange.Text = formatted;
-
-			if(num < 0)
-				textRange.Font.Color.RGB = negativeText;
-		}
-
+		
 		#endregion Private Methods
 	}
 }

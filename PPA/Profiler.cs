@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
+using ToastAPI;
 
 namespace Project.Utilities
 {
@@ -118,12 +119,15 @@ namespace Project.Utilities
 			}
 		}
 
+		// 在 Profiler.cs 中
 		private static void LogPerformance(string callerMethod,TimeSpan elapsed)
 		{
-			// 控制台日志功能
-			Debug.WriteLine($"[性能监控]\t{callerMethod}\t执行耗时: {elapsed.TotalMilliseconds:F3} ms");
+			string message = $" {callerMethod} 执行耗时: {elapsed.TotalMilliseconds:F3} ms";
 
-			// 文件日志使用缓冲写入，避免频繁IO操作
+			// 始终输出到调试控制台
+			Debug.WriteLine($"[性能监控]\t{message}");
+
+			// 文件日志
 			if(EnableFileLogging)
 			{
 				var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}]\t[性能监控]\t{callerMethod}\t执行耗时:{elapsed.TotalMilliseconds:F3} ms";
@@ -132,8 +136,7 @@ namespace Project.Utilities
 				{
 					_buffer.Enqueue(line);
 
-					// 缓冲区满或写入器未初始化时刷新
-					if(_buffer.Count >= BufferCapacity || _writer == null)
+					if(_buffer.Count>=BufferCapacity||_writer==null)
 					{
 						FlushBuffer();
 					}

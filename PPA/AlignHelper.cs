@@ -96,7 +96,7 @@ namespace PPA.Helpers
 			ExHandler.Run(() =>
 			{
 				var guides = app.ActivePresentation.Guides;
-				var horizontalGuides = new List<float>();
+				List < float > horizontalGuides =[];
 				foreach(NETOP.Guide guide in guides.Cast<NETOP.Guide>())
 				{
 					if(guide.Orientation == NETOP.Enums.PpGuideOrientation.ppHorizontalGuide)
@@ -140,7 +140,7 @@ namespace PPA.Helpers
 			ExHandler.Run(() =>
 			{
 				var guides = app.ActivePresentation.Guides;
-				var verticalGuides = new List<float>();
+				List < float > verticalGuides =[];
 				foreach(NETOP.Guide guide in guides.Cast<NETOP.Guide>())
 				{
 					if(guide.Orientation == NETOP.Enums.PpGuideOrientation.ppVerticalGuide)
@@ -185,7 +185,7 @@ namespace PPA.Helpers
 			ExHandler.Run(() =>
 			{
 				var guides = app.ActivePresentation.Guides;
-				var verticalGuides = new List<float>();
+				List < float > verticalGuides =[];
 				foreach(NETOP.Guide guide in guides.Cast<NETOP.Guide>())
 				{
 					if(guide.Orientation == NETOP.Enums.PpGuideOrientation.ppVerticalGuide)
@@ -229,7 +229,7 @@ namespace PPA.Helpers
 			ExHandler.Run(() =>
 			{
 				var guides = app.ActivePresentation.Guides;
-				var verticalGuides = new List<float>();
+				List<float> verticalGuides = [];
 				foreach(NETOP.Guide guide in guides.Cast<NETOP.Guide>())
 				{
 					if(guide.Orientation == NETOP.Enums.PpGuideOrientation.ppVerticalGuide)
@@ -273,7 +273,7 @@ namespace PPA.Helpers
 			ExHandler.Run(() =>
 			{
 				var guides = app.ActivePresentation.Guides;
-				var horizontalGuides = new List<float>();
+				List<float> horizontalGuides = [];
 				foreach(NETOP.Guide guide in guides.Cast<NETOP.Guide>())
 				{
 					if(guide.Orientation == NETOP.Enums.PpGuideOrientation.ppHorizontalGuide)
@@ -317,7 +317,7 @@ namespace PPA.Helpers
 			ExHandler.Run(() =>
 			{
 				var guides = app.ActivePresentation.Guides;
-				var horizontalGuides = new List<float>();
+				List<float> horizontalGuides = [];
 				foreach(NETOP.Guide guide in guides.Cast<NETOP.Guide>())
 				{
 					if(guide.Orientation == NETOP.Enums.PpGuideOrientation.ppHorizontalGuide)
@@ -362,8 +362,7 @@ namespace PPA.Helpers
 			ExHandler.Run(() =>
 			{
 				var guides = app.ActivePresentation.Guides;
-				var horizontalGuides = new List<float>();
-
+				List < float > horizontalGuides =[];
 				// 收集所有水平参考线
 				foreach(NETOP.Guide guide in guides.Cast<NETOP.Guide>())
 				{
@@ -421,8 +420,8 @@ namespace PPA.Helpers
 			ExHandler.Run(() =>
 			{
 				var guides = app.ActivePresentation.Guides;
-				var verticalGuides = new List<float>();
-				var horizontalGuides = new List<float>();
+				List < float > verticalGuides =[];
+				List < float > horizontalGuides =[];
 
 				// 一次性收集所有参考线
 				foreach(NETOP.Guide guide in guides.Cast<NETOP.Guide>())
@@ -502,7 +501,7 @@ namespace PPA.Helpers
 			ExHandler.Run(() =>
 			{
 				var guides = app.ActivePresentation.Guides;
-				var verticalGuides = new List<float>();
+				List<float> verticalGuides = [];
 				foreach(NETOP.Guide guide in guides.Cast<NETOP.Guide>())
 				{
 					if(guide.Orientation == NETOP.Enums.PpGuideOrientation.ppVerticalGuide)

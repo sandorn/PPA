@@ -1,4 +1,5 @@
-﻿using PPA.Helpers;
+﻿using PPA;
+using PPA.Helpers;
 using Project.Utilities;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -6,25 +7,21 @@ using System.Runtime.InteropServices;
 using MSOIP = Microsoft.Office.Interop.PowerPoint;
 using NETOP = NetOffice.PowerPointApi;
 using Office = Microsoft.Office.Core;
-
+//using nativeApp = PPA.ThisAddIn.nativeApp;
 namespace PPA.MSOAPI
 {
 	public static class MSOICrop
 	{
-		#region Private Fields
-
-		private static MSOIP.Application pptApp;
-
-		#endregion Private Fields
 
 		#region Public Methods
 
 		public static void CropShapesToSlide()
 		{
+			MSOIP.Application nativeApp = Globals.ThisAddIn.NativeApp;
 			ExHandler.Run(() =>
 			{
-				pptApp = new MSOIP.Application();
-				var window = pptApp.ActiveWindow;
+				nativeApp= new MSOIP.Application();
+				var window = nativeApp.ActiveWindow;
 				if(window == null)
 				{
 					Debug.WriteLine("没有活动的窗口");
@@ -32,14 +29,14 @@ namespace PPA.MSOAPI
 				}
 
 				var sel = window.Selection;
-				if(!(window.View.Slide is MSOIP.Slide slide))
+				if(window.View.Slide is not MSOIP.Slide slide)
 				{
 					Debug.WriteLine("当前视图不是幻灯片视图");
 					return;
 				}
 
-				float slideWidth = pptApp.ActivePresentation.PageSetup.SlideWidth;
-				float slideHeight = pptApp.ActivePresentation.PageSetup.SlideHeight;
+				float slideWidth = nativeApp.ActivePresentation.PageSetup.SlideWidth;
+				float slideHeight = nativeApp.ActivePresentation.PageSetup.SlideHeight;
 
 				// 获取要处理的形状列表
 				var shapesToCrop = new List<MSOIP.Shape>();
@@ -109,7 +106,7 @@ namespace PPA.MSOAPI
 			float slideWidth = pageSetup?.SlideWidth ?? 0;
 			float slideHeight = pageSetup?.SlideHeight ?? 0;
 
-			List<NETOP.Shape> shapesToProcess = new List<NETOP.Shape>();
+			List<NETOP.Shape> shapesToProcess = [];
 
 			// 判断是否有选中形状
 			if(sel != null && sel.Type == NETOP.Enums.PpSelectionType.ppSelectionShapes)
