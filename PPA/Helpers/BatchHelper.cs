@@ -69,22 +69,34 @@ namespace PPA.Helpers
 		{
 			app.StartNewUndoEntry();
 			var selection = app.ActiveWindow?.Selection;
-			var slide = TryGetCurrentSlide(app);
+			var (slide, elapsed) = Profiler.Time(() => TryGetCurrentSlide(app));
 
 			ExHandler.Run(() =>
 			{
 				if(selection != null && selection.Type == NETOP.Enums.PpSelectionType.ppSelectionShapes)
 				{
-					// 有选中对象，处理选中的对象
+					// 性能优化：批量收集并处理表格
+					int tableCount = 0;
+					// 一次性遍历所有选中形状，减少COM对象创建
 					foreach(NETOP.Shape shape in selection.ShapeRange)
-						if(shape.HasTable == MsoTriState.msoTrue) FormatHelper.FormatTables(shape.Table);
-					Toast.Show("格式表格完成",Toast.ToastType.Success);
+					{
+						if(shape.HasTable == MsoTriState.msoTrue)
+						{
+							// 使用优化后的FormatTables方法，添加参数控制数字格式化
+							FormatHelper.FormatTables(shape.Table, autonum: true, decimalPlaces: 0);
+							tableCount++;
+						}
+					}
+					if(tableCount > 0)
+						Toast.Show($"成功格式化 {tableCount} 个表格", Toast.ToastType.Success);
+					else
+						Toast.Show("未找到表格", Toast.ToastType.Info);
 				} else
 				{
-					FormatHelper.FormatTablesbyVBA(app,slide);//无选中则处理当前页面所有表格，使用VBA
-					Toast.Show("VBA格式表格",Toast.ToastType.Success);
+					// 未选中对象的情况，VBA调用
+					FormatHelper.FormatTablesbyVBA(app, slide);
 				}
-			},"格式化表格启动",enableTiming:true);
+			}, enableTiming: true);
 		}
 
 		public static void Bt502_Click(NETOP.Application app)
@@ -120,7 +132,7 @@ namespace PPA.Helpers
 						}
 					}
 				}
-			},"格式化文本框启动");
+			});
 		}
 
 		public static void Bt503_Click(NETOP.Application app)
@@ -146,7 +158,7 @@ namespace PPA.Helpers
 						if(shape.HasChart == MsoTriState.msoTrue) FormatHelper.FormatChartText(shape);
 					Toast.Show("格式化图表完成",Toast.ToastType.Success);
 				}
-			},"格式化图表启动");
+			});
 		}
 
 		/// <summary>
@@ -267,7 +279,7 @@ namespace PPA.Helpers
 				{
 					Toast.Show("未创建任何矩形",Toast.ToastType.Info);
 				}
-			},"创建矩形");
+			});
 		}
 
 		public static void ExecuteAlignment(NETOP.Application app,AlignmentType alignment,bool alignToSlideMode)
@@ -305,7 +317,7 @@ namespace PPA.Helpers
 				{
 					throw new ArgumentOutOfRangeException(nameof(alignment),$"未知的对齐类型: {alignment}");
 				}
-			},"对齐操作");
+			});
 		}
 
 		/// <summary>
@@ -333,7 +345,7 @@ namespace PPA.Helpers
 					// --- 场景2: 显示所有对象 ---
 					ShowAllHiddenShapes(app,slide.Shapes);
 				}
-			},"显示/隐藏对象",enableTiming: true);
+			});
 		}
 
 		/// <summary>

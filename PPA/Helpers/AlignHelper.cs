@@ -30,7 +30,7 @@ namespace PPA.Helpers
 				moveShape.Top = baseShape.Top - moveShape.Height;
 
 				Toast.Show("已将第二个对象下边与第一个对象上边对齐",Toast.ToastType.Success);
-			},"上边对齐");
+			});
 		}
 
 		// 左吸附：将第二个形状的左边与第一个形状的右边对齐，只移动第二个形状且只水平移动
@@ -48,7 +48,7 @@ namespace PPA.Helpers
 				moveShape.Left = baseShape.Left + baseShape.Width;
 
 				Toast.Show("已将第二个对象左边与第一个对象右边对齐",Toast.ToastType.Success);
-			},"右边对齐");
+			});
 		}
 
 		// 右吸附：将第二个形状的右边与第一个形状的左边对齐，只移动第二个形状且只水平移动
@@ -66,7 +66,7 @@ namespace PPA.Helpers
 				moveShape.Left = baseShape.Left - moveShape.Width;
 
 				Toast.Show("已将第二个对象右边与第一个对象左边对齐",Toast.ToastType.Success);
-			},"左边对齐");
+			});
 		}
 
 		// 上吸附：将第二个形状的上边与第一个形状的下边对齐，只移动第二个形状且只垂直移动
@@ -84,7 +84,7 @@ namespace PPA.Helpers
 				moveShape.Top = baseShape.Top + baseShape.Height;
 
 				Toast.Show("已将第二个对象上边与第一个对象下边对齐",Toast.ToastType.Success);
-			},"下边对齐");
+			});
 		}
 
 		// 底对齐到下方最近的水平参考线
@@ -128,7 +128,7 @@ namespace PPA.Helpers
 					shape.Top = nearest - shape.Height;
 				}
 				Toast.Show("已底对齐到参考线",Toast.ToastType.Success);
-			},"底对齐到参考线");
+			});
 		}
 
 		// 水平居中到最近的两条垂直参考线的中点
@@ -173,7 +173,7 @@ namespace PPA.Helpers
 					shape.Left = targetCenter - (shape.Width / 2f);
 				}
 				Toast.Show("已水平居中到参考线",Toast.ToastType.Success);
-			},"水平居中到参考线");
+			});
 		}
 
 		// 左对齐到左侧最近的垂直参考线
@@ -217,7 +217,7 @@ namespace PPA.Helpers
 					shape.Left = nearest;
 				}
 				Toast.Show("已左对齐到参考线",Toast.ToastType.Success);
-			},"左对齐到参考线");
+			});
 		}
 
 		// 右对齐到右侧最近的垂直参考线
@@ -261,7 +261,7 @@ namespace PPA.Helpers
 					shape.Left = nearest - shape.Width;
 				}
 				Toast.Show("已右对齐到参考线",Toast.ToastType.Success);
-			},"右对齐到参考线");
+			});
 		}
 
 		// 顶对齐到上方最近的水平参考线
@@ -305,7 +305,7 @@ namespace PPA.Helpers
 					shape.Top = nearest;
 				}
 				Toast.Show("已顶对齐到参考线",Toast.ToastType.Success);
-			},"顶对齐到参考线");
+			});
 		}
 
 		// 垂直居中到最近的两条水平参考线的中点
@@ -350,7 +350,7 @@ namespace PPA.Helpers
 					shape.Top = targetCenter - (shape.Height / 2f);
 				}
 				Toast.Show("已垂直居中到参考线",Toast.ToastType.Success);
-			},"垂直居中到参考线");
+			});
 		}
 
 		// 高拉伸：高度拉伸到最近两条水平参考线之间并居中
@@ -408,7 +408,7 @@ namespace PPA.Helpers
 				}
 
 				Toast.Show("已将高度拉伸到参考线",Toast.ToastType.Success);
-			},"高度拉伸到参考线");
+			});
 		}
 
 		// 宽高都拉伸：宽度和高度都拉伸到最近两条参考线之间并居中
@@ -489,7 +489,7 @@ namespace PPA.Helpers
 				}
 
 				Toast.Show("已将宽度和高度拉伸到参考线",Toast.ToastType.Success);
-			},"高效双向拉伸");
+			});
 		}
 
 		// 宽拉伸：宽度拉伸到最近两条垂直参考线之间并居中
@@ -532,7 +532,7 @@ namespace PPA.Helpers
 					shape.Width = (float) b - (float) a;
 				}
 				Toast.Show("已将宽度拉伸到参考线",Toast.ToastType.Success);
-			},"宽度拉伸到参考线");
+			});
 		}
 
 		// 设置选中对象等高
@@ -547,7 +547,7 @@ namespace PPA.Helpers
 				for(int i = 1;i <= shapes.Count;i++)
 					shapes[i].Height = sourceHeight;
 				Toast.Show("已设置等高",Toast.ToastType.Success);
-			},"设置等高");
+			});
 		}
 
 		// 设置选中对象等宽且等高
@@ -565,7 +565,7 @@ namespace PPA.Helpers
 					shapes[i].Height = sourceHeight;
 				}
 				Toast.Show("已设置等大小",Toast.ToastType.Success);
-			},"设置等大小");
+			});
 		}
 
 		// 设置选中对象等宽
@@ -580,7 +580,7 @@ namespace PPA.Helpers
 				for(int i = 1;i <= shapes.Count;i++)
 					shapes[i].Width = sourceWidth;
 				Toast.Show("已设置等宽",Toast.ToastType.Success);
-			},"设置等宽");
+			});
 		}
 
 		// 下延伸：下边对齐最下侧，上边位置保持不变（高度变大，上边不动）
@@ -603,7 +603,7 @@ namespace PPA.Helpers
 					shapes[i].Height = maxBottom - shapes[i].Top;
 				}
 				Toast.Show("已向下延伸对齐",Toast.ToastType.Success);
-			},"向下延伸对齐");
+			});
 		}
 
 		// 左延伸：左边对齐最左侧，右边位置保持不变（宽度变大，右边不动）
@@ -625,7 +625,7 @@ namespace PPA.Helpers
 					shapes[i].Left = minLeft;
 				}
 				Toast.Show("已向左延伸对齐",Toast.ToastType.Success);
-			},"向左延伸对齐");
+			});
 		}
 
 		// 右延伸：右边对齐最右侧，左边位置保持不变（宽度变大，左边不动）
@@ -649,7 +649,7 @@ namespace PPA.Helpers
 					// shapes[i].Left 不变
 				}
 				Toast.Show("已向右延伸对齐",Toast.ToastType.Success);
-			},"向右延伸对齐");
+			});
 		}
 
 		// 上延伸：上边对齐最上侧，下边位置保持不变（高度变大，下边不动）
@@ -671,7 +671,7 @@ namespace PPA.Helpers
 					shapes[i].Top = minTop;
 				}
 				Toast.Show("已向上延伸对齐",Toast.ToastType.Success);
-			},"向上延伸对齐");
+			});
 		}
 
 		// 交换两个选中对象的位置和大小
@@ -721,7 +721,7 @@ namespace PPA.Helpers
 					(textRange1.Font.Color.RGB, textRange2.Font.Color.RGB) = (textRange2.Font.Color.RGB, textRange1.Font.Color.RGB);
 				}
 				Toast.Show("已交换大小和位置",Toast.ToastType.Success);
-			},"交换大小和位置");
+			});
 		}
 
 		#endregion Public Methods

@@ -45,41 +45,45 @@ namespace Project.Utilities
 		/// </summary>
 		/// <param name="action">要执行的操作</param>
 		/// <param name="callerMethod">方法名称（默认为调用者方法名）</param>
+		/// <param name="filePath">调用者文件路径（默认为调用者文件路径）</param>
 		/// <returns>执行耗时</returns>
-		public static TimeSpan Time(Action action,[CallerMemberName] string callerMethod = "")
+		public static TimeSpan Time(Action action,[CallerMemberName] string callerMethod = "", [CallerFilePath] string filePath = "")
 		{
 			var sw = Stopwatch.StartNew();
-			try
-			{
-				action();
-				return sw.Elapsed;
-			} finally
-			{
-				sw.Stop();
-				LogPerformance(callerMethod,sw.Elapsed);
-			}
+			action();
+			sw.Stop();
+
+			// 构建方法标识符，包含文件名和方法名
+			string methodIdentifier = string.IsNullOrEmpty(filePath) 
+				? callerMethod 
+				: $"{Path.GetFileName(filePath)} | {callerMethod}";
+			
+			LogPerformance(methodIdentifier, sw.Elapsed);
+			return sw.Elapsed;
 		}
 
 		/// <summary>
-		/// 测量带返回值方法的执行时间
+		/// 测量有返回值方法的执行时间
 		/// 自动记录性能数据到调试输出和可选的文件日志
 		/// </summary>
 		/// <typeparam name="T">返回值类型</typeparam>
 		/// <param name="func">要执行的函数</param>
 		/// <param name="callerMethod">方法名称（默认为调用者方法名）</param>
-		/// <returns>包含结果和执行耗时的元组</returns>
-		public static (T Result, TimeSpan Elapsed) Time<T>(Func<T> func,[CallerMemberName] string callerMethod = "")
+		/// <param name="filePath">调用者文件路径（默认为调用者文件路径）</param>
+		/// <returns>元组：方法返回值和执行耗时</returns>
+		public static (T result, TimeSpan elapsed) Time<T>(Func<T> func,[CallerMemberName] string callerMethod = "", [CallerFilePath] string filePath = "")
 		{
 			var sw = Stopwatch.StartNew();
-			try
-			{
-				var result = func();
-				return (result, sw.Elapsed);
-			} finally
-			{
-				sw.Stop();
-				LogPerformance(callerMethod,sw.Elapsed);
-			}
+			var result = func();
+			sw.Stop();
+
+			// 构建方法标识符，包含文件名和方法名
+			string methodIdentifier = string.IsNullOrEmpty(filePath) 
+				? callerMethod 
+				: $"{Path.GetFileName(filePath)} | {callerMethod}";
+			
+			LogPerformance(methodIdentifier, sw.Elapsed);
+			return (result, sw.Elapsed);
 		}
 
 		#endregion Public Methods
@@ -164,7 +168,7 @@ namespace Project.Utilities.Extensions
 			[CallerMemberName] string callerMethod = "",
 			[CallerFilePath] string filePath = "")
 		{
-			return Profiler.Time(action,$"{Path.GetFileName(filePath)} | {callerMethod}");
+			return Profiler.Time(action,callerMethod,filePath);
 		}
 
 		/// <summary>
@@ -176,7 +180,7 @@ namespace Project.Utilities.Extensions
 			[CallerMemberName] string callerMethod = "",
 			[CallerFilePath] string filePath = "")
 		{
-			return Profiler.Time(func,$"{Path.GetFileName(filePath)} | {callerMethod}");
+			return Profiler.Time(func,callerMethod,filePath);
 		}
 
 		// 可选：添加常用参数类型的重载
@@ -186,7 +190,7 @@ namespace Project.Utilities.Extensions
 			[CallerMemberName] string callerMethod = "",
 			[CallerFilePath] string filePath = "")
 		{
-			return Time(() => action(arg),filePath,callerMethod);
+			return Time(() => action(arg),callerMethod,filePath);
 		}
 
 		public static (TResult Result, TimeSpan Elapsed) Time<Targs, TResult>(
@@ -195,7 +199,7 @@ namespace Project.Utilities.Extensions
 			[CallerMemberName] string callerMethod = "",
 			[CallerFilePath] string filePath = "")
 		{
-			return Time(() => func(arg),filePath,callerMethod);
+			return Time(() => func(arg),callerMethod,filePath);
 		}
 
 		#endregion Public Methods
@@ -203,29 +207,47 @@ namespace Project.Utilities.Extensions
 }
 
 /*
-// 自动获取文件和方法名
-ProfilerEx.Time(() => action(args));
-elapsed = action.Time(callerFile,callerMethod);
-elapsed = ProfilerEx.Time(action,callerFile,callerMethod);
-// 手动指定位置（调试复杂调用链）
-ProfilerEx.Time(() => action(args), "Service.cs | ProcessRequest");
-elapsed = ProfilerEx.Time(action,$"{callerFile} | {callerMethod}");
-(result, elapsed) = ProfilerEx.Time(func,$"{callerFile} | {callerMethod}");
-// 推荐 - 使用编译器特性
-ProfilerEx.Time(action);
-// 自动扩展函数方法
-(result, elapsed) = func.Time(callerFile,callerMethod);
+// =============================================
+// 超级简单使用示例（放在代码文件末尾即可）
+// =============================================
 
-实际使用建议
-场景1：简单调用（推荐）
-// 直接使用闭包 - 最简洁
-Profiler.Time(() => repository.Save(user));
-场景2：需要明确参数传递
-// 显式传递参数 - 更明确
-Profiler.Time((u) => repository.Save(u), user);
-场景3：多个参数
-// 多个参数使用闭包
-Profiler.Time(() => service.Process(order, user));
-// 或显式传递
-Profiler.Time((o, u) => service.Process(o, u), order, user);
+// 示例1：基本用法
+Profiler.Time(() => 
+{
+    // 你的代码放在这里
+    Thread.Sleep(100);
+});
+Profiler.Time(() => { ...... });
+
+// 示例2：带返回值的方法
+var (result, time) = Profiler.Time(() => 
+{
+    return "计算结果";
+});
+
+var (result, time) = Profiler.Time(() => 42);
+
+// 示例3：ProfilerEx 使用扩展方法（更简洁）
+Action myAction = () => { ...... };
+myAction.Time();
+
+Func<string> myFunc = () => "hello";
+var (data, elapsed) = myFunc.Time();
+
+// 示例4：实际使用场景
+// 在方法开始时测量性能
+public void MyMethod()
+{
+    Profiler.Time(() => 
+    {
+        // 方法的具体实现
+        DoWork();
+        ProcessData();
+    });
+}
+
+// 启用文件日志：
+Profiler.EnableFileLogging = true;
+
  */
+

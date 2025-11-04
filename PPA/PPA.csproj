@@ -159,25 +159,17 @@
       <HintPath>packages\NetOfficeFw.VBIDE.2.0.0-preview20\lib\net462\VBIDEApi.dll</HintPath>
       <EmbedInteropTypes>False</EmbedInteropTypes>
     </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="Microsoft.Office.Tools.v4.0.Framework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Tools.Applications.Runtime, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Microsoft.Office.Tools, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Microsoft.Office.Tools.Common, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <Private>False</Private>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="Microsoft.Office.Tools.Common.v4.0.Utilities, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+    <Reference Include="System.Resources.Extensions, Version=4.7.1.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <Private>True</Private>
     </Reference>
+  </ItemGroup>
+  <!-- 可选的VSTO引用，仅在Visual Studio环境中需要 -->
+  <ItemGroup Condition="Exists('$(VSToolsPath)\OfficeTools\')">
+    <Reference Include="Microsoft.Office.Tools.v4.0.Framework" />
+    <Reference Include="Microsoft.VisualStudio.Tools.Applications.Runtime" />
+    <Reference Include="Microsoft.Office.Tools" />
+    <Reference Include="Microsoft.Office.Tools.Common" />
+    <Reference Include="Microsoft.Office.Tools.Common.v4.0.Utilities" />
   </ItemGroup>
   <Choose>
     <When Condition="$([System.String]::Copy(&quot;;$(DefineConstants);&quot;).ToLower().Contains(';useofficeinterop;')) or $([System.String]::Copy(&quot;,$(DefineConstants),&quot;).ToLower().Contains(',useofficeinterop,'))">
@@ -226,21 +218,21 @@
     can be found.
   -->
   <ItemGroup>
-    <Compile Include="ComListExtensions.cs" />
-    <Compile Include="CustomRibbon.cs" />
-    <Compile Include="ExHandler.cs" />
-    <Compile Include="FileLocator.cs" />
-    <Compile Include="MSOICrop.cs" />
-    <Compile Include="Profiler.cs" />
+    <Compile Include="Helpers\ComListExtensions.cs" />
+    <Compile Include="UI\CustomRibbon.cs" />
+    <Compile Include="Core\ExHandler.cs" />
+    <Compile Include="Helpers\FileLocator.cs" />
+    <Compile Include="Helpers\MSOICrop.cs" />
+    <Compile Include="Helpers\Profiler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="AlignHelper.cs" />
-    <Compile Include="BatchHelper.cs" />
-    <Compile Include="FormatHelper.cs" />
-    <Compile Include="ShapeUtils.cs" />
-    <Compile Include="ToastN.cs" />
-    <Compile Include="VBA.cs" />
+    <Compile Include="Helpers\AlignHelper.cs" />
+    <Compile Include="Helpers\BatchHelper.cs" />
+    <Compile Include="Helpers\FormatHelper.cs" />
+    <Compile Include="Helpers\ShapeUtils.cs" />
+    <Compile Include="Helpers\ToastN.cs" />
+    <Compile Include="Core\VBA.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -261,28 +253,35 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="ThisAddIn.cs">
+    <Compile Include="AddIn\ThisAddIn.cs">
       <SubType>Code</SubType>
     </Compile>
-    <None Include="Properties\TableFormatter.vba">
+    <None Include="Resources\TableFormatter.vba">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="ThisAddIn.Designer.xml">
+    <None Include="AddIn\ThisAddIn.Designer.xml">
       <DependentUpon>ThisAddIn.cs</DependentUpon>
     </None>
-    <Compile Include="ThisAddIn.Designer.cs">
+    <Compile Include="AddIn\ThisAddIn.Designer.cs">
       <DependentUpon>ThisAddIn.Designer.xml</DependentUpon>
     </Compile>
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Properties\Ribbon.xml">
+    <Content Include="UI\Ribbon.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <!-- 图标资源文件 -->
+    <None Include="Resources\icon\*.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <PropertyGroup>
-    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">16.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+    <!-- 禁用预序列化资源以避免System.Resources.Extensions依赖 -->
+    <GenerateResourceUsePreserializedResources>false</GenerateResourceUsePreserializedResources>
+    <GenerateResourceMSBuildArchitecture>CurrentArchitecture</GenerateResourceMSBuildArchitecture>
   </PropertyGroup>
   <PropertyGroup>
     <SignManifests>true</SignManifests>
@@ -296,14 +295,14 @@
   <!-- Include the build rules for a C# project. -->
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- Include additional build rules for an Office application add-in. -->
-  <Import Project="$(VSToolsPath)\OfficeTools\Microsoft.VisualStudio.Tools.Office.targets" Condition="'$(VSToolsPath)' != ''" />
+  <Import Project="$(VSToolsPath)\OfficeTools\Microsoft.VisualStudio.Tools.Office.targets" Condition="'$(VSToolsPath)' != '' AND Exists('$(VSToolsPath)\OfficeTools\Microsoft.VisualStudio.Tools.Office.targets')" />
   <!-- This section defines VSTO properties that describe the host-changeable project properties. -->
   <ProjectExtensions>
     <VisualStudio>
       <FlavorProperties GUID="{BAA0C2D2-18E2-41B9-852F-F413020CAA33}">
         <ProjectProperties HostName="PowerPoint" HostPackage="{29A7B9D7-A7F1-4328-8EF0-6B2D1A56B2C1}" OfficeVersion="15.0" VstxVersion="4.0" ApplicationType="PowerPoint" Language="cs" TemplatesPath="" DebugInfoExeName="#Software\Microsoft\Office\16.0\PowerPoint\InstallRoot\Path#powerpnt.exe" AddItemTemplatesGuid="{51063C3A-E220-4D12-8922-BDA915ACD783}" />
         <Host Name="PowerPoint" GeneratedCodeNamespace="PPA" IconIndex="0">
-          <HostItem Name="ThisAddIn" Code="ThisAddIn.cs" CanonicalName="AddIn" CanActivate="false" IconIndex="1" Blueprint="ThisAddIn.Designer.xml" GeneratedCode="ThisAddIn.Designer.cs" />
+          <HostItem Name="ThisAddIn" Code="AddIn\ThisAddIn.cs" CanonicalName="AddIn" CanActivate="false" IconIndex="1" Blueprint="AddIn\ThisAddIn.Designer.xml" GeneratedCode="AddIn\ThisAddIn.Designer.cs" />
         </Host>
       </FlavorProperties>
     </VisualStudio>

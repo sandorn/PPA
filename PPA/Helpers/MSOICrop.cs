@@ -93,7 +93,7 @@ namespace PPA.MSOAPI
 					// 执行裁剪
 					BooleanCrop(slide,shape,rect);
 				}
-			},"批量裁剪形状");
+			});
 		}
 
 		// NetOffice PowerPoint API 裁剪形状到幻灯片范围，无效
@@ -156,7 +156,7 @@ namespace PPA.MSOAPI
 						slideRect?.Delete();
 						throw; // 重新抛出异常
 					}
-				},"裁剪形状到幻灯片范围");
+				});
 			}
 		}
 
@@ -231,10 +231,10 @@ namespace PPA.MSOAPI
 					for(int i = 1;i < originalZOrder;i++)
 						newShape.ZOrder(Office.MsoZOrderCmd.msoBringForward);
 				}
-			},"执行裁剪");
+			});
 
 			// 11. 安全删除辅助矩形
-			ExHandler.Run(() => slideRect?.Delete(),"删除辅助矩形");
+			ExHandler.Run(() => slideRect?.Delete());
 		}
 
 		#endregion Private Methods

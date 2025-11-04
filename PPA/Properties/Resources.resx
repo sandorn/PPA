@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -119,93 +119,109 @@
   </resheader>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="Bt121" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\Bt121.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\Bt121.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Bt122" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\Bt122.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\Bt122.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Bt123" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\Bt123.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\Bt123.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Bt124" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\Bt124.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\Bt124.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Bt204" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\Bt204.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\Bt204.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Bt211" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\Bt211.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\Bt211.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Bt212" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\Bt212.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\Bt212.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Bt213" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\Bt213.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\Bt213.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Bt214" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\Bt214.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\Bt214.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Bt301" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\Bt301.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\Bt301.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Bt302" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\Bt302.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\Bt302.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Bt303" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\Bt303.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\Bt303.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Bt311" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\Bt311.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\Bt311.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Bt312" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\Bt312.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\Bt312.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Bt313" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\Bt313.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\Bt313.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Bt321" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\Bt321.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\Bt321.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Bt322" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\Bt322.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\Bt322.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Bt323" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\Bt323.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\Bt323.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Bt401" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\Bt401.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\Bt401.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Bt402" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\Bt402.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\Bt402.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Bt601" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\Bt601.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\Bt601.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="CustomRibbonXml" xml:space="preserve">
     <value>&lt;customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui" onLoad="Ribbon_Load"&gt;
- &lt;ribbon&gt;
-  &lt;tabs&gt;
-   &lt;tab id="CustomTabXml" label="PPA菜单" insertAfterMso="TabDeveloper"&gt;
-    &lt;group id="group1" label="错误提示，请检查Ribbon.xml文件"&gt;
-    &lt;/group&gt;
-   &lt;/tab&gt;
-  &lt;/tabs&gt;
- &lt;/ribbon&gt;
+  &lt;ribbon&gt;
+    &lt;tabs&gt;
+      &lt;tab id="ErrorTab" label="PPA菜单" insertAfterMso="TabDeveloper"&gt;
+        
+        &lt;!-- 错误提示分组 --&gt;
+        &lt;group id="ErrorGroup" label="配置错误"&gt;
+          &lt;button id="btnConfigError" 
+                  label="配置文件加载失败" 
+                  size="large" 
+                  imageMso="FileCompatibilityChecker" 
+                  onAction="onAction" 
+                  screentip="点击查看详细错误信息"/&gt;
+          
+          &lt;button id="btnCheckFile" 
+                  label="检查 Ribbon.xml 文件" 
+                  size="normal" 
+                  imageMso="Info" 
+                  onAction="onAction" 
+                  screentip="检查配置文件是否存在且格式正确"/&gt;
+        &lt;/group&gt;
+
+      &lt;/tab&gt;
+    &lt;/tabs&gt;
+  &lt;/ribbon&gt;
 &lt;/customUI&gt;</value>
   </data>
   <data name="erro" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\erro.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\erro.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Infom" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\Infom.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\Infom.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="shap" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\shap.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\shap.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="slide" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\slide.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\slide.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="warn" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\icon\warn.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Resources\icon\warn.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

@@ -462,7 +462,7 @@ namespace PPA
 		/// <returns>加载的XML字符串，如未找到则返回null</returns>
 		private string LoadRibbonXmlFromFile()
 		{
-			string filePath = FileLocator.FindFile("Properties\\Ribbon.xml");
+			string filePath = FileLocator.FindFile("UI\\Ribbon.xml");
 			if(filePath!=null)
 			{
 				return File.ReadAllText(filePath);

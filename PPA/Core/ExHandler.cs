@@ -66,7 +66,7 @@ namespace Project.Utilities
 			{
 				if(shouldTime)
 				{
-					elapsed = Profiler.Time(action,$"{Path.GetFileName(callerFile)} | {callerMethod}");
+					elapsed = Profiler.Time(action, callerMethod, callerFile);
 				} else
 				{
 					action();
@@ -99,7 +99,7 @@ namespace Project.Utilities
 			{
 				if(shouldTime)
 				{
-					(result, elapsed) = Profiler.Time(func,$"{Path.GetFileName(callerFile)} | {callerMethod}");
+					(result, elapsed) = Profiler.Time(func, callerMethod, callerFile);
 				} else
 				{
 					result = func();
@@ -229,21 +229,169 @@ namespace Project.Utilities
 }
 
 /*
-// 在应用程序初始化时配置
-ExHandler.EnableFileLogging = true;
-ExHandler.EnableTiming = true; // 记录所有操作的耗时
-ExHandler.LogFilePath = true; // 在异常中记录耗时
+// ExHandler 使用示例
 
-// 使用示例
-ExceptionHandler.Run(() =>
+// 1. 基本使用 - 自动捕获异常和调用信息
+public void BasicUsage()
 {
-    // 可能抛出异常的代码
-    ProcessData();
-}, "数据处理操作");
+    // 无返回值方法
+    ExHandler.Run(() => {
+        // 可能抛出异常的代码
+        ProcessData();
+    }, "数据处理操作");
+    
+    // 有返回值方法
+    var result = ExHandler.Run(() => {
+        // 可能抛出异常的代码
+        return CalculateResult();
+    }, "计算结果");
+}
 
-// 带返回值的使用
-var result = ExceptionHandler.Run(() =>
+// 2. 配置全局设置
+public void ConfigureGlobalSettings()
 {
-    return CalculateResult();
-}, "计算结果");
+    // 在应用程序启动时配置
+    ExHandler.EnableFileLogging = true;
+    ExHandler.EnableTiming = true; // 记录所有操作的耗时
+    ExHandler.LogFilePath = "app_errors.log"; // 设置日志文件路径
+}
+
+// 3. 局部覆盖全局设置
+public void LocalOverride()
+{
+    // 全局设置为不记录耗时
+    ExHandler.EnableTiming = false;
+    
+    // 但对特定操作启用计时
+    ExHandler.Run(() => {
+        // 这个操作会被计时
+        PerformCriticalOperation();
+    }, "关键操作", enableTiming: true);
+    
+    // 这个操作不会被计时
+    ExHandler.Run(() => {
+        // 这个操作不会被计时
+        PerformNormalOperation();
+    }, "普通操作");
+}
+
+// 4. 处理不同类型的异常
+public void HandleDifferentExceptions()
+{
+    // 处理可能抛出的不同类型异常
+    var result = ExHandler.Run(() => {
+        if (someCondition) {
+            throw new InvalidOperationException("无效操作");
+        }
+        
+        if (anotherCondition) {
+            throw new ArgumentException("参数错误");
+        }
+        
+        return ProcessData();
+    }, "数据处理");
+}
+
+// 5. 嵌套调用
+public void NestedCalls()
+{
+    ExHandler.Run(() => {
+        // 外层操作
+        ExHandler.Run(() => {
+            // 内层操作
+            DoInnerWork();
+        }, "内层操作");
+        
+        DoOuterWork();
+    }, "外层操作");
+}
+
+// 6. 与Profiler结合使用
+public void WithProfiler()
+{
+    // ExHandler内部会调用Profiler进行计时
+    ExHandler.Run(() => {
+        // 也可以单独使用Profiler进行更细粒度的计时
+        Profiler.Time(() => {
+            // 特定部分的性能监控
+            PerformCriticalSection();
+        });
+        
+        DoOtherWork();
+    }, "完整操作");
+}
+
+// 7. 自定义默认返回值
+public void CustomDefaultValues()
+{
+    // 为不同类型指定默认返回值
+    var stringValue = ExHandler.Run(() => {
+        if (errorCondition) {
+            throw new Exception("处理失败");
+        }
+        return "成功结果";
+    }, "字符串处理", defaultValue: "默认值");
+    
+    var intValue = ExHandler.Run(() => {
+        if (errorCondition) {
+            throw new Exception("计算失败");
+        }
+        return 42;
+    }, "数值计算", defaultValue: -1);
+}
+
+// 8. 在异步方法中使用
+public async Task AsyncUsage()
+{
+    // 注意：当前ExHandler不支持异步，需要使用Task.Run包装
+    var result = await ExHandler.Run(() => Task.Run(async () => {
+        // 异步操作
+        return await ProcessDataAsync();
+    }, "异步数据处理")).Result;
+    
+    // 或者使用更直接的方式
+    var result2 = await Task.Run(() => ExHandler.Run(() => {
+        // 同步包装异步操作
+        return ProcessDataAsync().GetAwaiter().GetResult();
+    }, "同步包装异步操作"));
+}
+
+// 9. 批量处理
+public void BatchProcessing()
+{
+    var items = GetItemsToProcess();
+    var results = new List<Result>();
+    
+    foreach (var item in items)
+    {
+        // 每个项目的处理都被单独捕获异常
+        var result = ExHandler.Run(() => {
+            return ProcessItem(item);
+        }, $"处理项目 {item.Id}", defaultValue: new Result());
+        
+        if (result != null)
+        {
+            results.Add(result);
+        }
+    }
+    
+    Console.WriteLine($"成功处理 {results.Count}/{items.Count} 个项目");
+}
+
+// 10. 性能监控和异常分析
+public void PerformanceAndExceptionAnalysis()
+{
+    // 启用计时和文件日志
+    ExHandler.EnableTiming = true;
+    ExHandler.EnableFileLogging = true;
+    
+    // 执行操作
+    ExHandler.Run(() => {
+        // 复杂业务逻辑
+        ProcessComplexBusinessLogic();
+    }, "复杂业务逻辑处理");
+    
+    // 检查日志文件以分析性能和异常
+    Console.WriteLine("请查看日志文件以分析性能和异常信息");
+}
  */

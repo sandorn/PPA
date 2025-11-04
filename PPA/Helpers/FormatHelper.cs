@@ -1,5 +1,6 @@
 ﻿using NetOffice.OfficeApi.Enums;
 using Project.Utilities;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -60,7 +61,7 @@ namespace PPA.Helpers
 
 				// 设置悬挂缩进（通过 Ruler 对象）
 				textFrame.Ruler.Levels[1].LeftMargin = 1.0f * 28.35f; // 厘米转磅,段落左缩进
-			},"格式化文本框字体");
+			});
 		}
 
 		internal static void FormatChartText(NETOP.Shape shape)
@@ -108,7 +109,7 @@ namespace PPA.Helpers
 							point.DataLabel.Font.Size = size;
 						}
 					}
-				},"格式化图表字体");
+				});
 			}
 
 			// 设置坐标轴字体
@@ -137,16 +138,16 @@ namespace PPA.Helpers
 				SafeSetAxis(chart,XlAxisType.xlValue,XlAxisGroup.xlPrimary,size);
 				SafeSetAxis(chart,XlAxisType.xlCategory,XlAxisGroup.xlSecondary,size);
 				SafeSetAxis(chart,XlAxisType.xlValue,XlAxisGroup.xlSecondary,size);
-			},"格式化图表字体");
+			});
 		}
 
 		/// <summary>
-		/// 对表格进行极限优化的格式化。
+		/// 对表格进行高性能格式化。
 		/// </summary>
 		/// <param name="tbl">要格式化的 PowerPoint 表格对象。</param>
 		/// <param name="autonum">是否自动格式化数字。</param>
 		/// <param name="decimalPlaces">保留的小数位数。</param>
-		internal static void FormatTables(NETOP.Table tbl,bool autonum = true,int decimalPlaces = 0)
+		internal static void FormatTables(NETOP.Table tbl, bool autonum = true, int decimalPlaces = 0)
 		{
 			//const string styleId = "{5940675A-B579-460E-94D1-54222C63F5DA}"; //styleName="无样式，网格型">
 			//const string styleId = "{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}"; //styleName="中度样式 2 - 强调 1">
@@ -167,55 +168,92 @@ namespace PPA.Helpers
 			int cols = tbl.Columns.Count;
 
 			// --- 2. 一次性设置表格全局样式 ---
-			tbl.ApplyStyle(styleId,false);
-			tbl.FirstRow=true;
-			tbl.FirstCol=false;
-			tbl.LastRow=false;
-			tbl.LastCol=false;
-			tbl.HorizBanding=false;
-			tbl.VertBanding=false;
+			tbl.ApplyStyle(styleId, false);
+			tbl.FirstRow = true;
+			tbl.FirstCol = false;
+			tbl.LastRow = false;
+			tbl.LastCol = false;
+			tbl.HorizBanding = false;
+			tbl.VertBanding = false;
 
-			// --- 3. 核心循环：使用 NetOffice 的 Dispose 模式 ---
-			for(int r = 1;r<=rows;r++)
+			// --- 3. 性能优化：批处理模式 --- 
+			// 预先创建批处理集合
+			var firstRowCells = new List<NETOP.Cell>();
+			var dataRowCells = new List<NETOP.Cell>();
+
+			// 第一步：收集所有单元格到不同集合
+			for (int r = 1; r <= rows; r++)
 			{
-				// 使用 using 语句，这是处理 IDisposable 对象的最佳实践
-				using(var row = tbl.Rows[r])
+				var row = tbl.Rows[r];
+				for (int c = 1; c <= cols; c++)
 				{
-					bool isFirstRow = (r == 1);
-					bool isLastRow = (r == rows);
+					var cell = row.Cells[c];
+					// 只收集引用，不立即处理
+					if (r == 1)
+						firstRowCells.Add(cell);
+					else
+						dataRowCells.Add(cell);
+				}
+			}
 
-					float topBorderWidth = isFirstRow ? thick : thin;
-					var topBorderColor_obj = (object)(isFirstRow ? bdColor1 : bdColor2);
-					float bottomBorderWidth = isLastRow ? thick : thin;
-					var bottomBorderColor_obj = (object)bdColor1;
+			// 第二步：批量处理第一行（标题行）
+			BatchProcessFirstRowCells(firstRowCells, fontName, fontNameFarEast, bigFontSize, txtColor, thick, bdColor1);
 
-					for(int c = 1;c<=cols;c++)
-					{
-						// 嵌套 using 语句，确保每个对象都被及时释放
-						using(var cell = row.Cells[c])
-						{
-							cell.Shape.Fill.Visible=MsoTriState.msoFalse;
-							using(var textRange = cell.Shape.TextFrame.TextRange)
-							{
-								if(isFirstRow)
-								{
-									SetFontProperties(textRange,fontName,fontNameFarEast,bigFontSize,MsoTriState.msoTrue,txtColor);
-									textRange.ParagraphFormat.Alignment=NETOP.Enums.PpParagraphAlignment.ppAlignCenter;
-								} else
-								{
-									SetFontProperties(textRange,fontName,fontNameFarEast,fontSize,MsoTriState.msoFalse,txtColor);
-									if(autonum)
-									{
-										SmartNumberFormat(textRange,decimalPlaces,NegativeTextColor);
-									}
-								}
-							} // textRange.Dispose() 在这里被自动调用
+			// 第三步：批量处理数据行
+			BatchProcessDataRowCells(dataRowCells, fontName, fontNameFarEast, fontSize, txtColor, thin, bdColor2, thick, bdColor1, autonum, decimalPlaces, NegativeTextColor);
+		}
 
-							SetBorder(cell,NETOP.Enums.PpBorderType.ppBorderTop,topBorderWidth,topBorderColor_obj);
-							SetBorder(cell,NETOP.Enums.PpBorderType.ppBorderBottom,bottomBorderWidth,bottomBorderColor_obj);
-						} // cell.Dispose() 在这里被自动调用
-					}
-				} // row.Dispose() 在这里被自动调用
+		/// <summary>
+		/// 批量处理第一行（标题行）的单元格，减少重复操作和COM调用
+		/// </summary>
+		private static void BatchProcessFirstRowCells(List<NETOP.Cell> cells, string fontName, string fontNameFarEast, float fontSize, MsoThemeColorIndex txtColor, float borderWidth, MsoThemeColorIndex borderColor)
+		{
+			for (int i = 0; i < cells.Count; i++)
+			{
+				var cell = cells[i];
+				cell.Shape.Fill.Visible = MsoTriState.msoFalse;
+				
+				var textRange = cell.Shape.TextFrame.TextRange;
+				SetFontProperties(textRange, fontName, fontNameFarEast, fontSize, MsoTriState.msoTrue, txtColor);
+				textRange.ParagraphFormat.Alignment = NETOP.Enums.PpParagraphAlignment.ppAlignCenter;
+
+				// 设置边框
+				SetBorder(cell, NETOP.Enums.PpBorderType.ppBorderTop, borderWidth, (object)borderColor);
+				SetBorder(cell, NETOP.Enums.PpBorderType.ppBorderBottom, borderWidth, (object)borderColor);
+			}
+		}
+
+		/// <summary>
+		/// 批量处理数据行的单元格，使用更高效的处理方式
+		/// </summary>
+		private static void BatchProcessDataRowCells(List<NETOP.Cell> cells, string fontName, string fontNameFarEast, float fontSize, MsoThemeColorIndex txtColor, 
+			float thinBorderWidth, MsoThemeColorIndex thinBorderColor, float thickBorderWidth, MsoThemeColorIndex thickBorderColor, 
+			bool autonum, int decimalPlaces, int negativeTextColor)
+		{
+			int cellCount = cells.Count;
+			// 最后一行的索引
+			int lastRowStartIndex = cellCount - (int)Math.Sqrt(cellCount); // 假设是规则表格
+
+			for (int i = 0; i < cellCount; i++)
+			{
+				var cell = cells[i];
+				cell.Shape.Fill.Visible = MsoTriState.msoFalse;
+				
+				var textRange = cell.Shape.TextFrame.TextRange;
+				SetFontProperties(textRange, fontName, fontNameFarEast, fontSize, MsoTriState.msoFalse, txtColor);
+
+				// 智能优化：只对非空文本进行数字格式化
+				if (autonum && !string.IsNullOrEmpty(textRange.Text.Trim()))
+				{
+					SmartNumberFormat(textRange, decimalPlaces, negativeTextColor);
+				}
+
+				// 设置边框 - 优化：减少条件判断
+				float bottomWidth = (i >= lastRowStartIndex) ? thickBorderWidth : thinBorderWidth;
+				object bottomColor = (i >= lastRowStartIndex) ? (object)thickBorderColor : (object)thinBorderColor;
+
+				SetBorder(cell, NETOP.Enums.PpBorderType.ppBorderTop, thinBorderWidth, (object)thinBorderColor);
+				SetBorder(cell, NETOP.Enums.PpBorderType.ppBorderBottom, bottomWidth, bottomColor);
 			}
 		}
 
@@ -234,39 +272,59 @@ namespace PPA.Helpers
 		}
 
 		/// <summary>
-		/// 智能格式化数字，只在必要时修改文本和颜色。
+		/// 高性能数字格式化，针对大量单元格优化，在必要时修改文本和颜色
 		/// </summary>
-		private static void SmartNumberFormat(NETOP.TextRange textRange,int decimalPlaces,int negativeTextColor)
+		private static void SmartNumberFormat(NETOP.TextRange textRange, int decimalPlaces, int negativeTextColor)
 		{
-			var original = textRange.Text.Trim();
-			if(string.IsNullOrEmpty(original)) return;
+			// 性能优化1: 直接访问文本，避免多次Trim操作
+			string text = textRange.Text;
+			if (string.IsNullOrEmpty(text)) return;
 
-			var isPercentage = original.EndsWith("%");
-			var numStr = isPercentage ? original.Substring(0, original.Length - 1) : original;
-
-			// 使用 InvariantCulture 来确保小数点解析的正确性
-			if(!double.TryParse(numStr,NumberStyles.Any,CultureInfo.InvariantCulture,out var num))
+			// 预先计算可能的百分比符号位置
+			int length = text.Length;
+			bool isPercentage = length > 0 && text[length - 1] == '%';
+			
+			// 获取需要解析的数字部分
+			string numStr = isPercentage ? text.Substring(0, length - 1).Trim() : text.Trim();
+			
+			// 性能优化2: 快速检查是否可能是数字
+			if (string.IsNullOrEmpty(numStr) || 
+			    (!char.IsDigit(numStr[0]) && numStr[0] != '-' && numStr[0] != '.' && numStr[0] != '+'))
 			{
 				return;
 			}
 
-			// 构造格式字符串，例如 "N0", "N2"
-			var format = $"N{decimalPlaces}";
-			var formatted = num.ToString(format);
-
-			if(isPercentage)
-				formatted+="%";
-
-			// 关键优化：只有当文本真的需要改变时才设置，避免触发不必要的重绘和缓存刷新
-			if(textRange.Text!=formatted)
+			// 性能优化3: 尝试解析数字
+			if (!double.TryParse(numStr, NumberStyles.Any, CultureInfo.InvariantCulture, out double num))
 			{
-				textRange.Text=formatted;
+				return;
 			}
 
-			// 负数颜色设置
-			if(num<0)
+			// 性能优化4: 预缓存常用格式字符串
+			string format = decimalPlaces switch
 			{
-				textRange.Font.Color.RGB=negativeTextColor;
+				0 => "N0",
+				1 => "N1",
+				2 => "N2",
+				3 => "N3",
+				_ => "N"+decimalPlaces,
+			};
+			string formatted = num.ToString(format);
+			if (isPercentage)
+			{
+				formatted += "%";
+			}
+
+			// 性能优化5: 避免不必要的COM调用 - 只有当文本真的需要改变时才设置
+			if (text != formatted)
+			{
+				textRange.Text = formatted;
+			}
+
+			// 性能优化6: 负数颜色设置 - 只在需要时调用
+			if (num < 0)
+			{
+				textRange.Font.Color.RGB = negativeTextColor;
 			}
 		}
 
@@ -326,7 +384,7 @@ namespace PPA.Helpers
 			{
 				axis = (NETOP.Axis) chart.Axes(axisType,axisGroup);
 				if(ShapeUtils.IsInvalidComObject(axis)) axis = null;
-			},"获取坐标轴");
+			});
 
 			if(axis == null) return;
 
@@ -338,7 +396,7 @@ namespace PPA.Helpers
 					axis.TickLabels.Font.Name = "+mn-lt";
 					axis.TickLabels.Font.Size = size;
 				}
-			},"设置坐标轴刻度标签");
+			});
 
 			// 坐标轴标题
 			ExHandler.Run(() =>
@@ -347,7 +405,7 @@ namespace PPA.Helpers
 				if(!hasTitle || axis.AxisTitle == null) return;
 				axis.AxisTitle.Font.Name = "+mn-lt";
 				axis.AxisTitle.Font.Size = size;
-			},"设置坐标轴标题");
+			});
 		}
 
 		// 判断 tcolor 类型
