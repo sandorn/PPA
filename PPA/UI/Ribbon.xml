@@ -3,7 +3,7 @@
 		<tabs>
 			<tab id="CustomTabXml" label="PPA菜单" insertAfterMso="TabDeveloper">
 				<group id="group1" label="对齐">
-					<toggleButton id="Tb101" onAction="TbOnAction" size="large" screentip="对齐基准,默认形状为基准，按下或选中一个形状，则以页面为基准" getPressed="GetTbState" getLabel="GetTbLable"  getImage="GetIcon" />
+					<toggleButton id="Tb101" onAction="TbOnAction" size="large" screentip="对齐基准,默认形状为基准，按下或选中一个形状，则以页面为基准" getPressed="GetTbState" getLabel="GetTbLabel"  getImage="GetIcon" />
 					<separator id="sep101" />
 					<box id="box101">
 						<button id="Bt101" onAction="OnAction" screentip="将选中对象左对齐" label="左对齐" imageMso="ObjectsAlignLeftSmart" />

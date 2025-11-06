@@ -18,8 +18,8 @@ namespace PPA.Helpers
 		// 下吸附：将第二个形状的下边与第一个形状的上边对齐，只移动第二个形状且只垂直移动
 		public static void AttachBottom(NETOP.Application app)
 		{
-			if(ShapeUtils.ValidateSelection(app,true)) return;
-			var shapes = app.ActiveWindow.Selection.ShapeRange;
+			var shapes = ShapeUtils.ValidateSelection(app, true);
+			if(shapes == null) return;
 
 			ExHandler.Run(() =>
 			{
@@ -36,8 +36,9 @@ namespace PPA.Helpers
 		// 左吸附：将第二个形状的左边与第一个形状的右边对齐，只移动第二个形状且只水平移动
 		public static void AttachLeft(NETOP.Application app)
 		{
-			if(ShapeUtils.ValidateSelection(app,true)) return;
-			var shapes = app.ActiveWindow.Selection.ShapeRange;
+			var sel = ShapeUtils.ValidateSelection(app, true);
+			if(sel == null) return;
+			var shapes = sel;
 
 			ExHandler.Run(() =>
 			{
@@ -54,8 +55,9 @@ namespace PPA.Helpers
 		// 右吸附：将第二个形状的右边与第一个形状的左边对齐，只移动第二个形状且只水平移动
 		public static void AttachRight(NETOP.Application app)
 		{
-			if(ShapeUtils.ValidateSelection(app,true)) return;
-			var shapes = app.ActiveWindow.Selection.ShapeRange;
+			var sel = ShapeUtils.ValidateSelection(app, true);
+			if(sel == null) return;
+			var shapes = sel;
 
 			ExHandler.Run(() =>
 			{
@@ -72,8 +74,9 @@ namespace PPA.Helpers
 		// 上吸附：将第二个形状的上边与第一个形状的下边对齐，只移动第二个形状且只垂直移动
 		public static void AttachTop(NETOP.Application app)
 		{
-			if(ShapeUtils.ValidateSelection(app,true)) return;
-			var shapes = app.ActiveWindow.Selection.ShapeRange;
+			var sel = ShapeUtils.ValidateSelection(app, true);
+			if(sel == null) return;
+			var shapes = sel;
 
 			ExHandler.Run(() =>
 			{
@@ -90,8 +93,8 @@ namespace PPA.Helpers
 		// 底对齐到下方最近的水平参考线
 		public static void GuideAlignBottom(NETOP.Application app)
 		{
-			if(ShapeUtils.ValidateSelection(app)) return;
-			var sel = app.ActiveWindow.Selection;
+			var sel = ShapeUtils.ValidateSelection(app);
+			if(sel == null) return;
 
 			ExHandler.Run(() =>
 			{
@@ -108,7 +111,24 @@ namespace PPA.Helpers
 					return;
 				}
 
-				foreach(NETOP.Shape shape in sel.ShapeRange)
+				List<NETOP.Shape> shapesToProcess = [];
+				
+				// 处理不同类型的选择
+				if(sel is NETOP.ShapeRange shapeRange)
+				{
+					shapesToProcess = [.. shapeRange.Cast<NETOP.Shape>()];
+				}
+				else if(sel is NETOP.Shape singleShape)
+				{
+					shapesToProcess = [singleShape];
+				}
+				else
+				{
+					Toast.Show("无法识别选择的对象类型", Toast.ToastType.Warning);
+					return;
+				}
+				
+				foreach(NETOP.Shape shape in shapesToProcess)
 				{
 					float bottom = shape.Top + shape.Height;
 					// 只考虑在下方的参考线
@@ -134,8 +154,8 @@ namespace PPA.Helpers
 		// 水平居中到最近的两条垂直参考线的中点
 		public static void GuideAlignHCenter(NETOP.Application app)
 		{
-			if(ShapeUtils.ValidateSelection(app)) return;
-			var sel = app.ActiveWindow.Selection;
+			var sel = ShapeUtils.ValidateSelection(app);
+			if(sel == null) return;
 
 			ExHandler.Run(() =>
 			{
@@ -153,7 +173,23 @@ namespace PPA.Helpers
 				}
 				verticalGuides.Sort();
 
-				foreach(NETOP.Shape shape in sel.ShapeRange)
+				// 统一处理单个形状和形状范围
+				IEnumerable<NETOP.Shape> shapesToProcess;
+				if(sel is NETOP.Shape singleShape)
+				{
+					shapesToProcess = [singleShape];
+				}
+				else if(sel is NETOP.ShapeRange shapeRange)
+				{
+					shapesToProcess = shapeRange.Cast<NETOP.Shape>();
+				}
+				else
+				{
+					Toast.Show("无法识别选中的对象类型",Toast.ToastType.Warning);
+					return;
+				}
+
+				foreach(NETOP.Shape shape in shapesToProcess)
 				{
 					float center = shape.Left + (shape.Width / 2f);
 					// 找到左侧最近的参考线a和右侧最近的参考线b
@@ -179,8 +215,8 @@ namespace PPA.Helpers
 		// 左对齐到左侧最近的垂直参考线
 		public static void GuideAlignLeft(NETOP.Application app)
 		{
-			if(ShapeUtils.ValidateSelection(app)) return;
-			var sel = app.ActiveWindow.Selection;
+			var sel = ShapeUtils.ValidateSelection(app);
+			if(sel == null) return;
 
 			ExHandler.Run(() =>
 			{
@@ -197,7 +233,24 @@ namespace PPA.Helpers
 					return;
 				}
 
-				foreach(NETOP.Shape shape in sel.ShapeRange)
+				List<NETOP.Shape> shapesToProcess = [];
+				
+				// 处理不同类型的选择
+				if(sel is NETOP.ShapeRange shapeRange)
+				{
+					shapesToProcess = [.. shapeRange.Cast<NETOP.Shape>()];
+				}
+				else if(sel is NETOP.Shape singleShape)
+				{
+					shapesToProcess = [singleShape];
+				}
+				else
+				{
+					Toast.Show("无法识别选择的对象类型", Toast.ToastType.Warning);
+					return;
+				}
+				
+				foreach(NETOP.Shape shape in shapesToProcess)
 				{
 					float left = shape.Left;
 					// 只考虑在左侧的参考线
@@ -223,8 +276,8 @@ namespace PPA.Helpers
 		// 右对齐到右侧最近的垂直参考线
 		public static void GuideAlignRight(NETOP.Application app)
 		{
-			if(ShapeUtils.ValidateSelection(app)) return;
-			var sel = app.ActiveWindow.Selection;
+			var sel = ShapeUtils.ValidateSelection(app);
+			if(sel == null) return;
 
 			ExHandler.Run(() =>
 			{
@@ -241,7 +294,24 @@ namespace PPA.Helpers
 					return;
 				}
 
-				foreach(NETOP.Shape shape in sel.ShapeRange)
+				List<NETOP.Shape> shapesToProcess = [];
+				
+				// 处理不同类型的选择
+				if(sel is NETOP.ShapeRange shapeRange)
+				{
+					shapesToProcess = [.. shapeRange.Cast<NETOP.Shape>()];
+				}
+				else if(sel is NETOP.Shape singleShape)
+				{
+					shapesToProcess = [singleShape];
+				}
+				else
+				{
+					Toast.Show("无法识别选择的对象类型", Toast.ToastType.Warning);
+					return;
+				}
+				
+				foreach(NETOP.Shape shape in shapesToProcess)
 				{
 					float right = shape.Left + shape.Width;
 					// 只考虑在右侧的参考线
@@ -267,8 +337,8 @@ namespace PPA.Helpers
 		// 顶对齐到上方最近的水平参考线
 		public static void GuideAlignTop(NETOP.Application app)
 		{
-			if(ShapeUtils.ValidateSelection(app)) return;
-			var sel = app.ActiveWindow.Selection;
+			var sel = ShapeUtils.ValidateSelection(app);
+			if(sel == null) return;
 
 			ExHandler.Run(() =>
 			{
@@ -285,7 +355,24 @@ namespace PPA.Helpers
 					return;
 				}
 
-				foreach(NETOP.Shape shape in sel.ShapeRange)
+				List<NETOP.Shape> shapesToProcess = [];
+				
+				// 处理不同类型的选择
+				if(sel is NETOP.ShapeRange shapeRange)
+				{
+					shapesToProcess = [.. shapeRange.Cast<NETOP.Shape>()];
+				}
+				else if(sel is NETOP.Shape singleShape)
+				{
+					shapesToProcess = [singleShape];
+				}
+				else
+				{
+					Toast.Show("无法识别选择的对象类型", Toast.ToastType.Warning);
+					return;
+				}
+				
+				foreach(NETOP.Shape shape in shapesToProcess)
 				{
 					float top = shape.Top;
 					// 只考虑在上方的参考线
@@ -311,8 +398,8 @@ namespace PPA.Helpers
 		// 垂直居中到最近的两条水平参考线的中点
 		public static void GuideAlignVCenter(NETOP.Application app)
 		{
-			if(ShapeUtils.ValidateSelection(app)) return;
-			var sel = app.ActiveWindow.Selection;
+			var sel = ShapeUtils.ValidateSelection(app);
+			if(sel == null) return;
 
 			ExHandler.Run(() =>
 			{
@@ -330,7 +417,23 @@ namespace PPA.Helpers
 				}
 				horizontalGuides.Sort();
 
-				foreach(NETOP.Shape shape in sel.ShapeRange)
+				// 统一处理单个形状和形状范围
+				IEnumerable<NETOP.Shape> shapesToProcess;
+				if(sel is NETOP.Shape singleShape)
+				{
+					shapesToProcess = [singleShape];
+				}
+				else if(sel is NETOP.ShapeRange shapeRange)
+				{
+					shapesToProcess = shapeRange.Cast<NETOP.Shape>();
+				}
+				else
+				{
+					Toast.Show("无法识别选中的对象类型",Toast.ToastType.Warning);
+					return;
+				}
+
+				foreach(NETOP.Shape shape in shapesToProcess)
 				{
 					float center = shape.Top + (shape.Height / 2f);
 					// 找到上方最近的参考线a和下方最近的参考线b
@@ -356,8 +459,8 @@ namespace PPA.Helpers
 		// 高拉伸：高度拉伸到最近两条水平参考线之间并居中
 		public static void GuidesStretchHeight(NETOP.Application app)
 		{
-			if(ShapeUtils.ValidateSelection(app)) return;
-			var sel = app.ActiveWindow.Selection;
+			var sel = ShapeUtils.ValidateSelection(app);
+			if(sel == null) return;
 
 			ExHandler.Run(() =>
 			{
@@ -380,8 +483,25 @@ namespace PPA.Helpers
 				// 排序参考线位置（从上到下）
 				horizontalGuides.Sort();
 
+				List<NETOP.Shape> shapesToProcess = [];
+				
+				// 处理不同类型的选择
+				if(sel is NETOP.ShapeRange shapeRange)
+				{
+					shapesToProcess = [.. shapeRange.Cast<NETOP.Shape>()];
+				}
+				else if(sel is NETOP.Shape singleShape)
+				{
+					shapesToProcess = [singleShape];
+				}
+				else
+				{
+					Toast.Show("无法识别选择的对象类型", Toast.ToastType.Warning);
+					return;
+				}
+				
 				// 处理每个选中形状
-				foreach(NETOP.Shape shape in sel.ShapeRange)
+				foreach(NETOP.Shape shape in shapesToProcess)
 				{
 					// 计算形状垂直中心
 					float centerY = shape.Top + (shape.Height / 2f);
@@ -414,8 +534,8 @@ namespace PPA.Helpers
 		// 宽高都拉伸：宽度和高度都拉伸到最近两条参考线之间并居中
 		public static void GuidesStretchSize(NETOP.Application app)
 		{
-			if(ShapeUtils.ValidateSelection(app)) return;
-			var sel = app.ActiveWindow.Selection;
+			var sel = ShapeUtils.ValidateSelection(app);
+			if(sel == null) return;
 
 			ExHandler.Run(() =>
 			{
@@ -448,8 +568,25 @@ namespace PPA.Helpers
 				verticalGuides.Sort();
 				horizontalGuides.Sort();
 
+				List<NETOP.Shape> shapesToProcess = [];
+				
+				// 处理不同类型的选择
+				if(sel is NETOP.ShapeRange shapeRange)
+				{
+					shapesToProcess = [.. shapeRange.Cast<NETOP.Shape>()];
+				}
+				else if(sel is NETOP.Shape singleShape)
+				{
+					shapesToProcess = [singleShape];
+				}
+				else
+				{
+					Toast.Show("无法识别选择的对象类型", Toast.ToastType.Warning);
+					return;
+				}
+				
 				// 处理每个选中形状
-				foreach(NETOP.Shape shape in sel.ShapeRange)
+				foreach(NETOP.Shape shape in shapesToProcess)
 				{
 					// 处理高度
 					float centerY = shape.Top + (shape.Height / 2f);
@@ -495,8 +632,8 @@ namespace PPA.Helpers
 		// 宽拉伸：宽度拉伸到最近两条垂直参考线之间并居中
 		public static void GuidesStretchWidth(NETOP.Application app)
 		{
-			if(ShapeUtils.ValidateSelection(app)) return;
-			var sel = app.ActiveWindow.Selection;
+			var sel = ShapeUtils.ValidateSelection(app);
+			if(sel == null) return;
 
 			ExHandler.Run(() =>
 			{
@@ -514,7 +651,24 @@ namespace PPA.Helpers
 				}
 				verticalGuides.Sort();
 
-				foreach(NETOP.Shape shape in sel.ShapeRange)
+				List<NETOP.Shape> shapesToProcess = [];
+				
+				// 处理不同类型的选择
+				if(sel is NETOP.ShapeRange shapeRange)
+				{
+					shapesToProcess = [.. shapeRange.Cast<NETOP.Shape>()];
+				}
+				else if(sel is NETOP.Shape singleShape)
+				{
+					shapesToProcess = [singleShape];
+				}
+				else
+				{
+					Toast.Show("无法识别选择的对象类型", Toast.ToastType.Warning);
+					return;
+				}
+				
+				foreach(NETOP.Shape shape in shapesToProcess)
 				{
 					float center = shape.Left + (shape.Width / 2f);
 					float? a = null, b = null;
@@ -538,8 +692,9 @@ namespace PPA.Helpers
 		// 设置选中对象等高
 		public static void SetEqualHeight(NETOP.Application app)
 		{
-			if(ShapeUtils.ValidateSelection(app,true)) return;
-			var shapes = app.ActiveWindow.Selection.ShapeRange;
+			var sel = ShapeUtils.ValidateSelection(app, true);
+			if(sel == null) return;
+			var shapes = sel;
 
 			ExHandler.Run(() =>
 			{
@@ -553,8 +708,9 @@ namespace PPA.Helpers
 		// 设置选中对象等宽且等高
 		public static void SetEqualSize(NETOP.Application app)
 		{
-			if(ShapeUtils.ValidateSelection(app,true)) return;
-			var shapes = app.ActiveWindow.Selection.ShapeRange;
+			var sel = ShapeUtils.ValidateSelection(app, true);
+			if(sel == null) return;
+			var shapes = sel;
 
 			ExHandler.Run(() =>
 			{
@@ -571,8 +727,9 @@ namespace PPA.Helpers
 		// 设置选中对象等宽
 		public static void SetEqualWidth(NETOP.Application app)
 		{
-			if(ShapeUtils.ValidateSelection(app,true)) return;
-			var shapes = app.ActiveWindow.Selection.ShapeRange;
+			var sel = ShapeUtils.ValidateSelection(app, true);
+			if(sel == null) return;
+			var shapes = sel;
 
 			ExHandler.Run(() =>
 			{
@@ -586,8 +743,9 @@ namespace PPA.Helpers
 		// 下延伸：下边对齐最下侧，上边位置保持不变（高度变大，上边不动）
 		public static void StretchBottom(NETOP.Application app)
 		{
-			if(ShapeUtils.ValidateSelection(app,true)) return;
-			var shapes = app.ActiveWindow.Selection.ShapeRange;
+			var sel = ShapeUtils.ValidateSelection(app, true);
+			if(sel == null) return;
+			var shapes = sel;
 
 			ExHandler.Run(() =>
 			{
@@ -609,8 +767,9 @@ namespace PPA.Helpers
 		// 左延伸：左边对齐最左侧，右边位置保持不变（宽度变大，右边不动）
 		public static void StretchLeft(NETOP.Application app)
 		{
-			if(ShapeUtils.ValidateSelection(app,true)) return;
-			var shapes = app.ActiveWindow.Selection.ShapeRange;
+			var sel = ShapeUtils.ValidateSelection(app, true);
+			if(sel == null) return;
+			var shapes = sel;
 
 			ExHandler.Run(() =>
 			{
@@ -631,8 +790,9 @@ namespace PPA.Helpers
 		// 右延伸：右边对齐最右侧，左边位置保持不变（宽度变大，左边不动）
 		public static void StretchRight(NETOP.Application app)
 		{
-			if(ShapeUtils.ValidateSelection(app,true)) return;
-			var shapes = app.ActiveWindow.Selection.ShapeRange;
+			var sel = ShapeUtils.ValidateSelection(app, true);
+			if(sel == null) return;
+			var shapes = sel;
 
 			ExHandler.Run(() =>
 			{
@@ -655,8 +815,9 @@ namespace PPA.Helpers
 		// 上延伸：上边对齐最上侧，下边位置保持不变（高度变大，下边不动）
 		public static void StretchTop(NETOP.Application app)
 		{
-			if(ShapeUtils.ValidateSelection(app,true)) return;
-			var shapes = app.ActiveWindow.Selection.ShapeRange;
+			var sel = ShapeUtils.ValidateSelection(app, true);
+			if(sel == null) return;
+			var shapes = sel;
 
 			ExHandler.Run(() =>
 			{
@@ -677,8 +838,9 @@ namespace PPA.Helpers
 		// 交换两个选中对象的位置和大小
 		public static void SwapSize(NETOP.Application app)
 		{
-			if(ShapeUtils.ValidateSelection(app,true)) return;
-			var shapes = app.ActiveWindow.Selection.ShapeRange;
+			var sel = ShapeUtils.ValidateSelection(app, true);
+			if(sel == null) return;
+			var shapes = sel;
 
 			ExHandler.Run(() =>
 			{

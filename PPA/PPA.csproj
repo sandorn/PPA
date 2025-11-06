@@ -1,4 +1,4 @@
-﻿<Project ToolsVersion="17.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="17.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="packages\Microsoft.Windows.SDK.BuildTools.10.0.22621.3233\build\Microsoft.Windows.SDK.BuildTools.props" Condition="Exists('packages\Microsoft.Windows.SDK.BuildTools.10.0.22621.3233\build\Microsoft.Windows.SDK.BuildTools.props')" />
   <Import Project="packages\Microsoft.Trusted.Signing.Client.1.0.60\build\Microsoft.Trusted.Signing.Client.props" Condition="Exists('packages\Microsoft.Trusted.Signing.Client.1.0.60\build\Microsoft.Trusted.Signing.Client.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
@@ -159,9 +159,7 @@
       <HintPath>packages\NetOfficeFw.VBIDE.2.0.0-preview20\lib\net462\VBIDEApi.dll</HintPath>
       <EmbedInteropTypes>False</EmbedInteropTypes>
     </Reference>
-    <Reference Include="System.Resources.Extensions, Version=4.7.1.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <Private>True</Private>
-    </Reference>
+
   </ItemGroup>
   <!-- 可选的VSTO引用，仅在Visual Studio环境中需要 -->
   <ItemGroup Condition="Exists('$(VSToolsPath)\OfficeTools\')">

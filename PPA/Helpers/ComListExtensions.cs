@@ -1,20 +1,19 @@
-using System;
+ï»¿using System;
 using System.Collections.Generic;
 
 
 namespace ComListExtensions
 {
-	public static class ComListExtensions
-	{
-		// ÒÆ³ıÁË new() Ô¼Êø
-		public static void DisposeAll<T>(this IEnumerable<T> list) where T : IDisposable
-		{
-			if(list==null) return;
-			foreach(var item in list)
-			{
-				// Èç¹û item ²»Îª null£¬¾Íµ÷ÓÃÆä Dispose ·½·¨
-				item?.Dispose();
-			}
-		}
-	}
+    public static class ComListExtensions
+    {
+        // ç§»é™¤äº† new() çº¦æŸ
+        public static void DisposeAll<T>(this IEnumerable<T> list) where T : IDisposable
+        {
+            if (list == null) return;
+            foreach (var item in list)
+            {
+                item?.Dispose();
+            }
+        }
+    }
 }

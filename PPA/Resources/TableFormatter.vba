@@ -19,7 +19,7 @@ End Sub
 
 Private Sub FormatSingleTable(tbl As Table, ByVal decimalPlaces As Long)
     Const thin As Single = 1#
-    Const thick As Single = 2#
+    Const thick As Single = 1.5#
     Const fontSize As Single = 9#
     Const bigFontSize As Single = 10#
 
@@ -29,11 +29,11 @@ Private Sub FormatSingleTable(tbl As Table, ByVal decimalPlaces As Long)
     Dim cell As Cell
     Dim txtRng As TextRange
     
-    Dim txtColor As MsoRGBType: txtColor = msoThemeColorText1
-    Dim bdColor1 As MsoRGBType: bdColor1 = msoThemeColorAccent1
-    Dim bdColor2 As MsoRGBType: bdColor2 = msoThemeColorAccent2
+    Dim dk1 As MsoRGBType: dk1 = msoThemeColorDark1
+    Dim a1 As MsoRGBType: a1 = msoThemeColorAccent1
+    Dim a2 As MsoRGBType: a2 = msoThemeColorAccent2
 
-    ' ===== ���д��� =====
+    ' ===== 标题行格式 =====
     For c = 1 To cols
         Set cell = tbl.Cell(1, c)
         cell.Shape.Fill.Visible = msoFalse
@@ -44,21 +44,21 @@ Private Sub FormatSingleTable(tbl As Table, ByVal decimalPlaces As Long)
             .NameFarEast = "+mn-ea"
             .Size = bigFontSize
             .Bold = msoTrue
-            .Color.ObjectThemeColor = txtColor
+            .Color.ObjectThemeColor = dk1
         End With
         txtRng.ParagraphFormat.Alignment = ppAlignCenter
 
         With cell.Borders(ppBorderTop)
             .Weight = thick
-            .ForeColor.ObjectThemeColor = bdColor1
+            .ForeColor.ObjectThemeColor = a1
         End With
         With cell.Borders(ppBorderBottom)
             .Weight = thick
-            .ForeColor.ObjectThemeColor = bdColor1
+            .ForeColor.ObjectThemeColor = a1
         End With
     Next c
 
-    ' ===== �����д��� =====
+    ' ===== 数据行格式 =====
     For r = 2 To rows
         For c = 1 To cols
             Set cell = tbl.Cell(r, c)
@@ -70,18 +70,21 @@ Private Sub FormatSingleTable(tbl As Table, ByVal decimalPlaces As Long)
                 .NameFarEast = "+mn-ea"
                 .Size = fontSize
                 .Bold = msoFalse
-                .Color.ObjectThemeColor = txtColor
+                .Color.ObjectThemeColor = dk1
             End With
 
             SmartNumberFormat txtRng, decimalPlaces
 
             With cell.Borders(ppBorderBottom)
+                .Visible = msoTrue
                 If r = rows Then
                     .Weight = thick
-                    .ForeColor.ObjectThemeColor = bdColor1
+                    .ForeColor.ObjectThemeColor = a1
                 Else
                     .Weight = thin
-                    .ForeColor.ObjectThemeColor = bdColor2
+                    .ForeColor.ObjectThemeColor = a2
+                    ' --- 设置边框颜色为更亮的变体，模拟透明效果 ---
+                    .ForeColor.TintAndShade = 0.5 
                 End If
             End With
         Next c
@@ -96,7 +99,7 @@ Private Sub SmartNumberFormat(rng As TextRange, ByVal decimalPlaces As Long)
     Dim formatted As String
     Dim negativeColor As Long
 
-    negativeColor = RGB(255, 0, 0)
+    negativeColor = msoThemeColorDark2
 
     original = Trim(rng.Text)
     If Len(original) = 0 Then Exit Sub

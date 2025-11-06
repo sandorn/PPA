@@ -1,57 +1,59 @@
-using System;
+ï»¿using System;
 using System.IO;
 using System.Reflection;
 using System.Diagnostics;
+using Project.Utilities;
 
-namespace Project.Utilities // »òÕßÄã×Ô¼ºµÄ¹¤¾ßÃüÃû¿Õ¼ä
+namespace Project.Utilities // è¿™æ˜¯ä¸€ä¸ªé€šç”¨çš„æ–‡ä»¶å®šä½å·¥å…·
 {
-	public static class FileLocator
-	{
-		/// <summary>
-		/// ²éÕÒÓë²å¼şÊä³öÄ¿Â¼Ïà¹ØµÄÎÄ¼ş¡£
-		/// °´ÓÅÏÈ¼¶Ë³ĞòÔÚ¶à¸ö¿ÉÄÜµÄÎ»ÖÃ½øĞĞËÑË÷¡£
-		/// </summary>
-		/// <param name="relativePath">Ïà¶ÔÓÚÊä³öÄ¿Â¼µÄÏà¶ÔÂ·¾¶£¬ÀıÈç "Properties\Ribbon.xml" »ò "TableFormatter.vba"</param>
-		/// <returns>ÕÒµ½µÄÎÄ¼şµÄÍêÕûÂ·¾¶£¬Èç¹ûÎ´ÕÒµ½Ôò·µ»Ø null¡£</returns>
-		public static string FindFile(string relativePath)
-		{
-			if(string.IsNullOrEmpty(relativePath))
-			{
-				return null;
-			}
+    public static class FileLocator
+    {
+        /// <summary>
+        /// åœ¨å¤šä¸ªå¯èƒ½çš„ä½ç½®æœç´¢æ–‡ä»¶
+        /// æœç´¢ä¼˜å…ˆçº§ä¸ºå¸¸è§çš„å¯æ‰§è¡Œæ–‡ä»¶ä½ç½®
+        /// </summary>
+        /// <param name="relativePath">ç›¸å¯¹äºå¸¸è§ä½ç½®çš„ç›¸å¯¹è·¯å¾„ï¼Œå¦‚ "Properties\Ribbon.xml" æˆ– "TableFormatter.vba"</param>
+        /// <returns>æ‰¾åˆ°çš„æ–‡ä»¶çš„å®Œæ•´è·¯å¾„ï¼Œå¦‚æœæœªæ‰¾åˆ°åˆ™è¿”å› nullã€‚</returns>
+        public static string FindFile(string relativePath)
+        {
+            if (string.IsNullOrEmpty(relativePath))
+            {
+                return null;
+            }
 
-			string baseDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
-					 ?? AppDomain.CurrentDomain.BaseDirectory;
+            string baseDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
+                     ?? AppDomain.CurrentDomain.BaseDirectory;
 
-			//Debug.WriteLine($"[FileLocator] »ù×¼Ä¿Â¼: {baseDir}");
-			//Debug.WriteLine($"[FileLocator] Ó¦ÓÃ»ù´¡Ä¿Â¼: {AppDomain.CurrentDomain.BaseDirectory}");
+            //Profiler.LogMessage($"åŸºç¡€ç›®å½•: {baseDir}");
+            //Profiler.LogMessage($"åº”ç”¨ç¨‹åºç›®å½•: {AppDomain.CurrentDomain.BaseDirectory}");
 
-			string[] candidates =
-	{
-		Path.Combine(baseDir, relativePath),
-		Path.Combine(AppDomain.CurrentDomain.BaseDirectory, relativePath),
-		Path.Combine(baseDir, "..", relativePath),
-		Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", relativePath)
-	};
+            string[] candidates =
+    {
+        Path.Combine(baseDir, relativePath),
+        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, relativePath),
+        Path.Combine(baseDir, "..", relativePath),
+        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", relativePath)
+    };
 
-			for(int i = 0;i<candidates.Length;i++)
-			{
-				string candidate = candidates[i];
-				string fullPath = Path.GetFullPath(candidate);
-				//Debug.WriteLine($"[FileLocator] ºòÑ¡Â·¾¶ {i+1}: {fullPath}");
+            for (int i = 0; i < candidates.Length; i++)
+            {
+                string candidate = candidates[i];
+                string fullPath = Path.GetFullPath(candidate);
+                //Profiler.LogMessage($"å€™é€‰è·¯å¾„ {i+1}: {fullPath}");
 
-				if(File.Exists(fullPath))
-				{
-					Debug.WriteLine($"[FileLocator] ÕÒµ½ÎÄ¼ş: {fullPath}");
-					return fullPath;
-				} else
-				{
-					//Debug.WriteLine($"[FileLocator] ºòÑ¡Â·¾¶ {i+1} ²»´æÔÚ¡£");
-				}
-			}
+                if (File.Exists(fullPath))
+                {
+                    Profiler.LogMessage($"æ‰¾åˆ°æ–‡ä»¶: {fullPath}");
+                    return fullPath;
+                }
+                else
+                {
+                    //Profiler.LogMessage($"å€™é€‰è·¯å¾„ {i+1} ä¸å­˜åœ¨ã€‚");
+                }
+            }
 
-			Debug.WriteLine($"[FileLocator] ËùÓĞºòÑ¡Â·¾¶¾ùÎ´ÕÒµ½ÎÄ¼ş: {relativePath}");
-			return null;
-		}
-	}
+            Profiler.LogMessage($"æœªæ‰¾åˆ°æ–‡ä»¶: {relativePath}");
+            return null;
+        }
+    }
 }

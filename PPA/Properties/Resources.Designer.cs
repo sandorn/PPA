@@ -271,27 +271,6 @@ namespace PPA.Properties {
         }
         
         /// <summary>
-        ///   查找类似 &lt;customUI xmlns=&quot;http://schemas.microsoft.com/office/2009/07/customui&quot; onLoad=&quot;Ribbon_Load&quot;&gt;
-        ///  &lt;ribbon&gt;
-        ///    &lt;tabs&gt;
-        ///      &lt;tab id=&quot;ErrorTab&quot; label=&quot;PPA菜单&quot; insertAfterMso=&quot;TabDeveloper&quot;&gt;
-        ///        
-        ///        &lt;!-- 错误提示分组 --&gt;
-        ///        &lt;group id=&quot;ErrorGroup&quot; label=&quot;配置错误&quot;&gt;
-        ///          &lt;button id=&quot;btnConfigError&quot; 
-        ///                  label=&quot;配置文件加载失败&quot; 
-        ///                  size=&quot;large&quot; 
-        ///                  imageMso=&quot;FileCompatibilityChecker&quot; 
-        ///                  onAction=&quot;onAction&quot; 
-        ///                  screentip=&quot;点击查看详细错 [字符串的其余部分被截断]&quot;; 的本地化字符串。
-        /// </summary>
-        internal static string CustomRibbonXml {
-            get {
-                return ResourceManager.GetString("CustomRibbonXml", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   查找 System.Drawing.Bitmap 类型的本地化资源。
         /// </summary>
         internal static System.Drawing.Bitmap erro {
@@ -308,6 +287,27 @@ namespace PPA.Properties {
             get {
                 object obj = ResourceManager.GetObject("Infom", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 &lt;customUI xmlns=&quot;http://schemas.microsoft.com/office/2009/07/customui&quot; onLoad=&quot;Ribbon_Load&quot;&gt;
+        ///  &lt;ribbon&gt;
+        ///    &lt;tabs&gt;
+        ///      &lt;tab id=&quot;ErrorTab&quot; label=&quot;PPA菜单&quot; insertAfterMso=&quot;TabDeveloper&quot;&gt;
+        ///        
+        ///        &lt;!-- 错误提示分组 --&gt;
+        ///        &lt;group id=&quot;ErrorGroup&quot; label=&quot;配置错误&quot;&gt;
+        ///          &lt;button id=&quot;btnConfigError&quot; 
+        ///                  label=&quot;配置文件加载失败&quot; 
+        ///                  size=&quot;large&quot; 
+        ///                  imageMso=&quot;FileCompatibilityChecker&quot; 
+        ///                  onAction=&quot;onAction&quot; 
+        ///                  screentip=&quot;点击查看详细错 [字符串的其余部分被截断]&quot;; 的本地化字符串。
+        /// </summary>
+        internal static string RibbonXml {
+            get {
+                return ResourceManager.GetString("RibbonXml", resourceCulture);
             }
         }
         
