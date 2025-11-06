@@ -254,10 +254,6 @@ namespace PPA.Helpers
         /// <param name="decimalPlaces">保留的小数位数。</param>
         internal static void FormatTables(NETOP.Table tbl, bool autonum = true, int decimalPlaces = 2)
         {
-            //const string styleId = "{5940675A-B579-460E-94D1-54222C63F5DA}"; //styleName="无样式，网格型">
-            //const string styleId = "{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}"; //styleName="中度样式 2 - 强调 1">
-            //const string styleId = "{72833802-FEF1-4C79-8D5D-14CF1EAF98D9}"; //styleName="浅色样式 2 - 强调 2">
-            //const string styleId = "{69012ECD-51FC-41F1-AA8D-1B2483CD663E}"; // styleName="浅色样式 2 - 强调 1">
             // --- 1. 预定义所有常量 ---
             const string styleId = "{3B4B98B0-60AC-42C2-AFA5-B58CD77FA1E5}";
             const MsoThemeColorIndex dk1 = MsoThemeColorIndex.msoThemeColorDark1;
@@ -313,25 +309,27 @@ namespace PPA.Helpers
         }
 
         /// <summary>
-        /// 批量处理第一行（标题行）的单元格，减少重复操作和COM调用
+        /// 批量处理首末行的单元格，减少重复操作和COM调用
         /// </summary>
         private static void FormatOutsideRowCells(List<NETOP.Cell> firstRowCells, List<NETOP.Cell> lastRowCells, string fontName, string fontNameFarEast, float fontSize, MsoThemeColorIndex txtColor, float borderWidth, MsoThemeColorIndex borderColor)
         {
-            for (int i = 0; i < firstRowCells.Count; i++)
+			// 设置首行上下边框
+			for(int i = 0; i < firstRowCells.Count; i++)
             {
                 var cell = firstRowCells[i];
                 cell.Shape.Fill.Visible = MsoTriState.msoFalse;
-
                 var textRange = cell.Shape.TextFrame.TextRange;
                 SetFontProperties(textRange, fontName, fontNameFarEast, fontSize, MsoTriState.msoTrue, txtColor);
+
                 textRange.ParagraphFormat.Alignment = NETOP.Enums.PpParagraphAlignment.ppAlignCenter;
 
-                // 设置边框
+                // 边框
                 SetBorder(cell, NETOP.Enums.PpBorderType.ppBorderTop, borderWidth, (object)borderColor);
                 SetBorder(cell, NETOP.Enums.PpBorderType.ppBorderBottom, borderWidth, (object)borderColor);
             }
 
-            for (int i = 0; i < lastRowCells.Count; i++)
+			// 设置末行下边框
+			for(int i = 0; i < lastRowCells.Count; i++)
             {
                 var cell = lastRowCells[i];
                 SetBorder(cell, NETOP.Enums.PpBorderType.ppBorderBottom, borderWidth, (object)borderColor);
