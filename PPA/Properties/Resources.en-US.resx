@@ -1,0 +1,519 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  
+  <!-- Toast Messages -->
+  <data name="Toast_FormatTables_Success" xml:space="preserve">
+    <value>Successfully formatted {0} table(s)</value>
+  </data>
+  <data name="Toast_FormatTables_NoSelection" xml:space="preserve">
+    <value>No tables in selected objects</value>
+  </data>
+  <data name="Toast_FormatTables_NoTables" xml:space="preserve">
+    <value>No tables on current slide</value>
+  </data>
+  <data name="Toast_FormatText_Success" xml:space="preserve">
+    <value>Text formatting completed</value>
+  </data>
+  <data name="Toast_FormatText_NoText" xml:space="preserve">
+    <value>No text boxes in selected shapes</value>
+  </data>
+  <data name="Toast_FormatText_NoSelection" xml:space="preserve">
+    <value>Please select shapes to format</value>
+  </data>
+  <data name="Toast_FormatCharts_Success" xml:space="preserve">
+    <value>Successfully formatted {0} chart(s)</value>
+  </data>
+  <data name="Toast_FormatCharts_NoSelection" xml:space="preserve">
+    <value>No charts in selected objects</value>
+  </data>
+  <data name="Toast_FormatCharts_NoCharts" xml:space="preserve">
+    <value>No charts on current slide</value>
+  </data>
+  <data name="Toast_NoSlide" xml:space="preserve">
+    <value>Current slide not found</value>
+  </data>
+  <data name="Toast_NoSlideSize" xml:space="preserve">
+    <value>Unable to get slide size</value>
+  </data>
+  <data name="Toast_NoSelection" xml:space="preserve">
+    <value>No shapes selected</value>
+  </data>
+  <data name="Toast_InvalidSelection" xml:space="preserve">
+    <value>Invalid selection</value>
+  </data>
+  <data name="Toast_AlignSuccess" xml:space="preserve">
+    <value>Alignment successful.</value>
+  </data>
+  <data name="Toast_AlignMinShapes" xml:space="preserve">
+    <value>At least {1} shape(s) required for {0} basis.</value>
+  </data>
+  <data name="Toast_UnknownAlignment" xml:space="preserve">
+    <value>Unknown alignment type: {0}</value>
+  </data>
+  <data name="Toast_Basis_Page" xml:space="preserve">
+    <value>Page</value>
+  </data>
+  <data name="Toast_Basis_Shape" xml:space="preserve">
+    <value>Shape</value>
+  </data>
+  
+  <!-- Undo Operation Names -->
+  <data name="Undo_FormatTables" xml:space="preserve">
+    <value>Format Tables</value>
+  </data>
+  <data name="Undo_FormatText" xml:space="preserve">
+    <value>Format Text</value>
+  </data>
+  <data name="Undo_FormatCharts" xml:space="preserve">
+    <value>Format Charts</value>
+  </data>
+  <data name="Undo_AlignShapes" xml:space="preserve">
+    <value>Align Shapes</value>
+  </data>
+  <data name="Undo_CreateBoundingBox" xml:space="preserve">
+    <value>Create Bounding Box</value>
+  </data>
+  <data name="Undo_HideShapes" xml:space="preserve">
+    <value>Hide Objects</value>
+  </data>
+  <data name="Undo_ShowShapes" xml:space="preserve">
+    <value>Show Objects</value>
+  </data>
+  
+  <!-- Settings Related -->
+  <data name="Settings_LanguageChanged" xml:space="preserve">
+    <value>Language switched to English</value>
+  </data>
+  <data name="Settings_ConfigSaved" xml:space="preserve">
+    <value>Configuration saved</value>
+  </data>
+  <data name="Settings_ConfigReloaded" xml:space="preserve">
+    <value>Configuration reloaded</value>
+  </data>
+  
+  <!-- Ribbon UI Text -->
+  <data name="Ribbon_CustomTabXml" xml:space="preserve">
+    <value>PPA Menu</value>
+  </data>
+  <data name="Ribbon_group1" xml:space="preserve">
+    <value>Alignment</value>
+  </data>
+  <data name="Ribbon_group11" xml:space="preserve">
+    <value>Snap</value>
+  </data>
+  <data name="Ribbon_group2" xml:space="preserve">
+    <value>Size</value>
+  </data>
+  <data name="Ribbon_group3" xml:space="preserve">
+    <value>Guides</value>
+  </data>
+  <data name="Ribbon_group4" xml:space="preserve">
+    <value>Selection</value>
+  </data>
+  <data name="Ribbon_group5" xml:space="preserve">
+    <value>Format</value>
+  </data>
+  <data name="Ribbon_group6" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Ribbon_Tb101_Page" xml:space="preserve">
+    <value>Page</value>
+  </data>
+  <data name="Ribbon_Tb101_Shape" xml:space="preserve">
+    <value>Shape</value>
+  </data>
+  <data name="Ribbon_Bt101" xml:space="preserve">
+    <value>Align Left</value>
+  </data>
+  <data name="Ribbon_Bt102" xml:space="preserve">
+    <value>Align Center</value>
+  </data>
+  <data name="Ribbon_Bt103" xml:space="preserve">
+    <value>Align Right</value>
+  </data>
+  <data name="Ribbon_Bt104" xml:space="preserve">
+    <value>Distribute Horizontally</value>
+  </data>
+  <data name="Ribbon_Bt111" xml:space="preserve">
+    <value>Align Top</value>
+  </data>
+  <data name="Ribbon_Bt112" xml:space="preserve">
+    <value>Align Middle</value>
+  </data>
+  <data name="Ribbon_Bt113" xml:space="preserve">
+    <value>Align Bottom</value>
+  </data>
+  <data name="Ribbon_Bt114" xml:space="preserve">
+    <value>Distribute Vertically</value>
+  </data>
+  <data name="Ribbon_Bt121" xml:space="preserve">
+    <value>Snap Left</value>
+  </data>
+  <data name="Ribbon_Bt122" xml:space="preserve">
+    <value>Snap Right</value>
+  </data>
+  <data name="Ribbon_Bt123" xml:space="preserve">
+    <value>Snap Top</value>
+  </data>
+  <data name="Ribbon_Bt124" xml:space="preserve">
+    <value>Snap Bottom</value>
+  </data>
+  <data name="Ribbon_Bt201" xml:space="preserve">
+    <value>Equal Width</value>
+  </data>
+  <data name="Ribbon_Bt202" xml:space="preserve">
+    <value>Equal Height</value>
+  </data>
+  <data name="Ribbon_Bt203" xml:space="preserve">
+    <value>Equal Size</value>
+  </data>
+  <data name="Ribbon_Bt204" xml:space="preserve">
+    <value>Swap</value>
+  </data>
+  <data name="Ribbon_Bt211" xml:space="preserve">
+    <value>Stretch Left</value>
+  </data>
+  <data name="Ribbon_Bt212" xml:space="preserve">
+    <value>Stretch Right</value>
+  </data>
+  <data name="Ribbon_Bt213" xml:space="preserve">
+    <value>Stretch Top</value>
+  </data>
+  <data name="Ribbon_Bt214" xml:space="preserve">
+    <value>Stretch Bottom</value>
+  </data>
+  <data name="Ribbon_Bt301" xml:space="preserve">
+    <value>Align Left</value>
+  </data>
+  <data name="Ribbon_Bt302" xml:space="preserve">
+    <value>Align Center</value>
+  </data>
+  <data name="Ribbon_Bt303" xml:space="preserve">
+    <value>Align Right</value>
+  </data>
+  <data name="Ribbon_Bt311" xml:space="preserve">
+    <value>Align Top</value>
+  </data>
+  <data name="Ribbon_Bt312" xml:space="preserve">
+    <value>Align Middle</value>
+  </data>
+  <data name="Ribbon_Bt313" xml:space="preserve">
+    <value>Align Bottom</value>
+  </data>
+  <data name="Ribbon_Bt321" xml:space="preserve">
+    <value>Stretch Width</value>
+  </data>
+  <data name="Ribbon_Bt322" xml:space="preserve">
+    <value>Stretch Height</value>
+  </data>
+  <data name="Ribbon_Bt323" xml:space="preserve">
+    <value>Stretch Both</value>
+  </data>
+  <data name="Ribbon_Bt401" xml:space="preserve">
+    <value>Toggle Visibility</value>
+  </data>
+  <data name="Ribbon_Bt402" xml:space="preserve">
+    <value>Crop to Slide</value>
+  </data>
+  <data name="Ribbon_Bt501" xml:space="preserve">
+    <value>Format Tables</value>
+  </data>
+  <data name="Ribbon_Bt502" xml:space="preserve">
+    <value>Format Text</value>
+  </data>
+  <data name="Ribbon_Bt503" xml:space="preserve">
+    <value>Format Charts</value>
+  </data>
+  <data name="Ribbon_Bt601" xml:space="preserve">
+    <value>Insert Shape</value>
+  </data>
+  <data name="Ribbon_MenuSettings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Ribbon_MenuLang_zhCN" xml:space="preserve">
+    <value>中文 (简体)</value>
+  </data>
+  <data name="Ribbon_MenuLang_enUS" xml:space="preserve">
+    <value>English (US)</value>
+  </data>
+  <data name="Ribbon_MenuSettings_Config" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Ribbon_MenuSettings_About" xml:space="preserve">
+    <value>About</value>
+  </data>
+  
+  <!-- AlignHelper Alignment Operation Messages -->
+  <data name="Align_AttachBottom_Success" xml:space="preserve">
+    <value>Aligned second object bottom to first object top</value>
+  </data>
+  <data name="Align_AttachLeft_Success" xml:space="preserve">
+    <value>Aligned second object left to first object right</value>
+  </data>
+  <data name="Align_AttachRight_Success" xml:space="preserve">
+    <value>Aligned second object right to first object left</value>
+  </data>
+  <data name="Align_AttachTop_Success" xml:space="preserve">
+    <value>Aligned second object top to first object bottom</value>
+  </data>
+  <data name="Align_NoHorizontalGuides" xml:space="preserve">
+    <value>No horizontal guides in current document</value>
+  </data>
+  <data name="Align_NoVerticalGuides" xml:space="preserve">
+    <value>No vertical guides in current document</value>
+  </data>
+  <data name="Align_InvalidSelection" xml:space="preserve">
+    <value>Unable to identify selected object type</value>
+  </data>
+  <data name="Align_GuideBottom_Success" xml:space="preserve">
+    <value>Aligned bottom to guide</value>
+  </data>
+  <data name="Align_GuideTop_Success" xml:space="preserve">
+    <value>Aligned top to guide</value>
+  </data>
+  <data name="Align_GuideLeft_Success" xml:space="preserve">
+    <value>Aligned left to guide</value>
+  </data>
+  <data name="Align_GuideRight_Success" xml:space="preserve">
+    <value>Aligned right to guide</value>
+  </data>
+  <data name="Align_GuideHCenter_Success" xml:space="preserve">
+    <value>Horizontally centered to guides</value>
+  </data>
+  <data name="Align_GuideVCenter_Success" xml:space="preserve">
+    <value>Vertically centered to guides</value>
+  </data>
+  <data name="Align_NeedTwoVerticalGuides" xml:space="preserve">
+    <value>At least two vertical guides required</value>
+  </data>
+  <data name="Align_NeedTwoHorizontalGuides" xml:space="preserve">
+    <value>At least two horizontal guides required</value>
+  </data>
+  <data name="Align_And" xml:space="preserve">
+    <value>and</value>
+  </data>
+  <data name="Align_StretchHeight_Success" xml:space="preserve">
+    <value>Stretched height to guides</value>
+  </data>
+  <data name="Align_StretchWidth_Success" xml:space="preserve">
+    <value>Stretched width to guides</value>
+  </data>
+  <data name="Align_StretchBoth_Success" xml:space="preserve">
+    <value>Stretched width and height to guides</value>
+  </data>
+  <data name="Align_SetEqualHeight_Success" xml:space="preserve">
+    <value>Set equal height</value>
+  </data>
+  <data name="Align_SetEqualSize_Success" xml:space="preserve">
+    <value>Set equal size</value>
+  </data>
+  <data name="Align_SetEqualWidth_Success" xml:space="preserve">
+    <value>Set equal width</value>
+  </data>
+  <data name="Align_StretchBottom_Success" xml:space="preserve">
+    <value>Stretched downward</value>
+  </data>
+  <data name="Align_StretchLeft_Success" xml:space="preserve">
+    <value>Stretched leftward</value>
+  </data>
+  <data name="Align_StretchRight_Success" xml:space="preserve">
+    <value>Stretched rightward</value>
+  </data>
+  <data name="Align_StretchTop_Success" xml:space="preserve">
+    <value>Stretched upward</value>
+  </data>
+  <data name="Align_SwapSize_Success" xml:space="preserve">
+    <value>Swapped size and position</value>
+  </data>
+  
+  <!-- BatchHelper Batch Operation Messages -->
+  <data name="Toast_CreateBoundingBox_Shapes" xml:space="preserve">
+    <value>Created bounding boxes for {0} shape(s)</value>
+  </data>
+  <data name="Toast_CreateBoundingBox_Slides" xml:space="preserve">
+    <value>Created rectangles on {0} slide(s)</value>
+  </data>
+  <data name="Toast_CreateBoundingBox_PageSize" xml:space="preserve">
+    <value>Created page-sized rectangle</value>
+  </data>
+  <data name="Toast_CreateBoundingBox_None" xml:space="preserve">
+    <value>No rectangles created</value>
+  </data>
+  <data name="Toast_HideShapes_Single" xml:space="preserve">
+    <value>Hidden 1 object</value>
+  </data>
+  <data name="Toast_HideShapes_Multiple" xml:space="preserve">
+    <value>Hidden {0} objects</value>
+  </data>
+  <data name="Toast_ShowShapes_Multiple" xml:space="preserve">
+    <value>Shown {0} objects</value>
+  </data>
+  <data name="Toast_ShowShapes_None" xml:space="preserve">
+    <value>No objects to show</value>
+  </data>
+  <data name="Progress_TableFound" xml:space="preserve">
+    <value>Table found</value>
+  </data>
+  <data name="Progress_TableFound_Count" xml:space="preserve">
+    <value>Table {0} found</value>
+  </data>
+  <data name="Progress_TablesFound" xml:space="preserve">
+    <value>Found {0} table(s)</value>
+  </data>
+  <data name="Progress_FormatTables_Start" xml:space="preserve">
+    <value>Formatting {0} table(s)</value>
+  </data>
+  <data name="Progress_FormatTable_Progress" xml:space="preserve">
+    <value>Formatting table {0}/{1}</value>
+  </data>
+  <data name="Progress_FormatTables_Complete" xml:space="preserve">
+    <value>Successfully formatted {0} table(s)</value>
+  </data>
+  
+  <!-- ShapeUtils Shape Utility Messages -->
+  <data name="Toast_NoValidSelection" xml:space="preserve">
+    <value>No valid selection or active window</value>
+  </data>
+  <data name="Toast_NeedTwoShapes" xml:space="preserve">
+    <value>Please select at least two objects</value>
+  </data>
+  
+  <!-- MSOICrop Crop Operation Messages -->
+  <data name="Toast_CropShapes_None" xml:space="preserve">
+    <value>No shapes need to be cropped</value>
+  </data>
+  
+  <!-- SettingsForm Settings Window -->
+  <data name="SettingsForm_Title" xml:space="preserve">
+    <value>Formatting Settings</value>
+  </data>
+  <data name="SettingsForm_Reload" xml:space="preserve">
+    <value>Reload</value>
+  </data>
+  <data name="SettingsForm_Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="SettingsForm_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="SettingsForm_ConfigPath" xml:space="preserve">
+    <value>Config file path: {0}</value>
+  </data>
+  <data name="SettingsForm_LoadError" xml:space="preserve">
+    <value>Failed to load config file: {0}</value>
+  </data>
+  <data name="SettingsForm_SaveError" xml:space="preserve">
+    <value>Failed to save config file: {0}</value>
+  </data>
+  <data name="SettingsForm_XMLError" xml:space="preserve">
+    <value>XML format error: {0}
+
+Please check if the XML syntax is correct.</value>
+  </data>
+  <data name="SettingsForm_ReloadConfirm" xml:space="preserve">
+    <value>Reloading will discard unsaved changes. Continue?</value>
+  </data>
+  <data name="SettingsForm_DiscardConfirm" xml:space="preserve">
+    <value>Discard current changes?</value>
+  </data>
+  <data name="SettingsForm_Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="SettingsForm_Confirm" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
+  <data name="SettingsForm_SaveFailed" xml:space="preserve">
+    <value>Save Failed</value>
+  </data>
+  
+  <!-- AboutForm About Window -->
+  <data name="AboutForm_Title" xml:space="preserve">
+    <value>About PPA</value>
+  </data>
+  <data name="AboutForm_TitleText" xml:space="preserve">
+    <value>PPA - PowerPoint Assistant</value>
+  </data>
+  <data name="AboutForm_Description" xml:space="preserve">
+    <value>PowerPoint add-in providing table, text, and chart formatting features,
+as well as shape alignment and snapping tools.
+
+Supports multi-language interface and customizable formatting parameters.</value>
+  </data>
+  <data name="AboutForm_ViewDocs" xml:space="preserve">
+    <value>View Project Documentation</value>
+  </data>
+  <data name="AboutForm_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="AboutForm_Version" xml:space="preserve">
+    <value>Version: {0}</value>
+  </data>
+  <data name="AboutForm_Unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="AboutForm_LinkError" xml:space="preserve">
+    <value>Failed to open link: {0}</value>
+  </data>
+  <data name="AboutForm_Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+</root>
+

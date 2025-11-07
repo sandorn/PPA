@@ -1,4 +1,5 @@
-﻿using Project.Utilities;
+﻿using PPA.Core;
+using PPA.UI;
 using System;
 using MSOP = Microsoft.Office.Interop.PowerPoint;
 using NETOP = NetOffice.PowerPointApi;
@@ -48,6 +49,10 @@ namespace PPA
         private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
         {
             Profiler.LogMessage("插件正在关闭");
+            
+            // 注销快捷键系统
+            KeyboardShortcutHelper.Uninitialize();
+            
             CleanupResources();
         }
 
@@ -96,10 +101,17 @@ namespace PPA
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
             Profiler.LogMessage("插件正在启动");
+            
+            // 初始化多语言资源管理器
+            ResourceManager.Initialize("PPA.Properties.Resources", System.Reflection.Assembly.GetExecutingAssembly());
+            
             InitializeNetOfficeApplication();
 
             // Startup 完成后，将 App 设置到 CustomRibbon
             _customRibbon?.SetApplication(NetApp);
+
+            // 初始化快捷键系统
+            KeyboardShortcutHelper.Initialize(NetApp);
         }
 
         /// <summary>

@@ -1,16 +1,14 @@
-﻿using PPA.Helpers;
-using Project.Utilities;
+﻿using PPA.Core;
+using PPA.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
-using ToastAPI;
 using MSOP = Microsoft.Office.Interop.PowerPoint;
 using NETOP = NetOffice.PowerPointApi;
 using Office = Microsoft.Office.Core;
 
 
-namespace PPA.MSOAPI
+namespace PPA.Shape
 {
     public static class MSOICrop
     {
@@ -64,7 +62,7 @@ namespace PPA.MSOAPI
 
                 if (shapesToCrop.Count == 0)
                 {
-                    Toast.Show("没有需要裁剪的形状", Toast.ToastType.Warning);
+                    Toast.Show(ResourceManager.GetString("Toast_CropShapes_None"), Toast.ToastType.Warning);
                     return;
                 }
 
@@ -129,28 +127,30 @@ namespace PPA.MSOAPI
 
                 Profiler.LogMessage($"Processing: Id={shape.Id}, Name={shape.Name}, Type={shape.Type}");
 
+                // 创建裁剪矩形
+                NETOP.Shape slideRect = ShapeUtils.AddOneShape(slide, 0, 0, slideWidth, slideHeight);
+                
+                // 执行相交操作（ExHandler 会处理异常）
                 ExHandler.Run(() =>
                 {
-                    // 创建裁剪矩形
-                    NETOP.Shape slideRect = ShapeUtils.AddOneShape(slide, 0, 0, slideWidth, slideHeight);
-                    try
+                    var shapeRange = slide.Shapes.Range(new object[] { shape.Name, slideRect.Name });
+                    Profiler.LogMessage($"shapeRange.Count={shapeRange.Count}");
+                    for (int i = 1; i <= shapeRange.Count; i++)
                     {
-                        // 执行相交操作
-                        var shapeRange = slide.Shapes.Range(new object[] { shape.Name, slideRect.Name });
-                        Profiler.LogMessage($"shapeRange.Count={shapeRange.Count}");
-                        for (int i = 1; i <= shapeRange.Count; i++)
-                        {
-                            Profiler.LogMessage($"shapeRange[{i}].Name={shapeRange[i].Name}, Type={shapeRange[i].Type}");
-                        }
-                        shapeRange.MergeShapes(NetOffice.OfficeApi.Enums.MsoMergeCmd.msoMergeIntersect);
+                        Profiler.LogMessage($"shapeRange[{i}].Name={shapeRange[i].Name}, Type={shapeRange[i].Type}");
                     }
-                    catch
-                    {
-                        // 如果出现异常，确保删除矩形
-                        slideRect?.Delete();
-                        throw; // 重新抛出异常
-                    }
+                    shapeRange.MergeShapes(NetOffice.OfficeApi.Enums.MsoMergeCmd.msoMergeIntersect);
+                    
+                    // 如果操作成功，slideRect 会被 MergeShapes 操作处理，不需要手动删除
                 });
+                
+                // 清理资源：如果操作失败，矩形可能仍然存在，尝试删除
+                // 注意：即使操作成功，尝试删除已不存在的对象也不会造成问题
+                if (slideRect != null)
+                {
+                    try { slideRect.Delete(); }
+                    catch { /* 忽略：对象可能已被 MergeShapes 删除 */ }
+                }
             }
         }
 

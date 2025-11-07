@@ -1,12 +1,11 @@
-﻿using PPA.Properties;
+using PPA.Core;
+using PPA.Properties;
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
-using System.Diagnostics;
-using Project.Utilities;
 
-namespace ToastAPI
+namespace PPA.Utilities
 {
     /// <summary>
     /// Toast 通知管理器 - 单消息框模式
@@ -508,3 +507,4 @@ namespace ToastAPI
         }
     }
 }
+

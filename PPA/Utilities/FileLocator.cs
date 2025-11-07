@@ -1,10 +1,9 @@
-﻿using System;
+﻿using PPA.Core;
+using System;
 using System.IO;
 using System.Reflection;
-using System.Diagnostics;
-using Project.Utilities;
 
-namespace Project.Utilities // 这是一个通用的文件定位工具
+namespace PPA.Utilities
 {
     public static class FileLocator
     {
@@ -24,31 +23,23 @@ namespace Project.Utilities // 这是一个通用的文件定位工具
             string baseDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
                      ?? AppDomain.CurrentDomain.BaseDirectory;
 
-            //Profiler.LogMessage($"基础目录: {baseDir}");
-            //Profiler.LogMessage($"应用程序目录: {AppDomain.CurrentDomain.BaseDirectory}");
-
             string[] candidates =
-    {
+    [
         Path.Combine(baseDir, relativePath),
         Path.Combine(AppDomain.CurrentDomain.BaseDirectory, relativePath),
         Path.Combine(baseDir, "..", relativePath),
         Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", relativePath)
-    };
+    ];
 
             for (int i = 0; i < candidates.Length; i++)
             {
                 string candidate = candidates[i];
                 string fullPath = Path.GetFullPath(candidate);
-                //Profiler.LogMessage($"候选路径 {i+1}: {fullPath}");
 
                 if (File.Exists(fullPath))
                 {
                     Profiler.LogMessage($"找到文件: {fullPath}");
                     return fullPath;
-                }
-                else
-                {
-                    //Profiler.LogMessage($"候选路径 {i+1} 不存在。");
                 }
             }
 

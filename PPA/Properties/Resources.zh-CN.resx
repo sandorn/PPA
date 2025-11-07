@@ -1,0 +1,518 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  
+  <!-- Toast 消息 -->
+  <data name="Toast_FormatTables_Success" xml:space="preserve">
+    <value>成功美化 {0} 个表格</value>
+  </data>
+  <data name="Toast_FormatTables_NoSelection" xml:space="preserve">
+    <value>选中的对象中没有表格</value>
+  </data>
+  <data name="Toast_FormatTables_NoTables" xml:space="preserve">
+    <value>当前幻灯片上没有表格</value>
+  </data>
+  <data name="Toast_FormatText_Success" xml:space="preserve">
+    <value>美化文本完成</value>
+  </data>
+  <data name="Toast_FormatText_NoText" xml:space="preserve">
+    <value>选中的形状中没有文本框</value>
+  </data>
+  <data name="Toast_FormatText_NoSelection" xml:space="preserve">
+    <value>请先选择要美化的形状</value>
+  </data>
+  <data name="Toast_FormatCharts_Success" xml:space="preserve">
+    <value>成功美化 {0} 个图表</value>
+  </data>
+  <data name="Toast_FormatCharts_NoSelection" xml:space="preserve">
+    <value>选中的对象中没有图表</value>
+  </data>
+  <data name="Toast_FormatCharts_NoCharts" xml:space="preserve">
+    <value>当前幻灯片上没有图表</value>
+  </data>
+  <data name="Toast_NoSlide" xml:space="preserve">
+    <value>未找到当前幻灯片</value>
+  </data>
+  <data name="Toast_NoSlideSize" xml:space="preserve">
+    <value>无法获取幻灯片尺寸</value>
+  </data>
+  <data name="Toast_NoSelection" xml:space="preserve">
+    <value>未选择形状</value>
+  </data>
+  <data name="Toast_InvalidSelection" xml:space="preserve">
+    <value>选择无效</value>
+  </data>
+  <data name="Toast_AlignSuccess" xml:space="preserve">
+    <value>对齐成功.</value>
+  </data>
+  <data name="Toast_AlignMinShapes" xml:space="preserve">
+    <value>{0}基准至少选{1}个。</value>
+  </data>
+  <data name="Toast_UnknownAlignment" xml:space="preserve">
+    <value>未知对齐方式: {0}</value>
+  </data>
+  <data name="Toast_Basis_Page" xml:space="preserve">
+    <value>页面</value>
+  </data>
+  <data name="Toast_Basis_Shape" xml:space="preserve">
+    <value>形状</value>
+  </data>
+  
+  <!-- Undo 操作名称 -->
+  <data name="Undo_FormatTables" xml:space="preserve">
+    <value>美化表格</value>
+  </data>
+  <data name="Undo_FormatText" xml:space="preserve">
+    <value>美化文本</value>
+  </data>
+  <data name="Undo_FormatCharts" xml:space="preserve">
+    <value>美化图表</value>
+  </data>
+  <data name="Undo_AlignShapes" xml:space="preserve">
+    <value>对齐形状</value>
+  </data>
+  <data name="Undo_CreateBoundingBox" xml:space="preserve">
+    <value>创建外框</value>
+  </data>
+  <data name="Undo_HideShapes" xml:space="preserve">
+    <value>隐藏对象</value>
+  </data>
+  <data name="Undo_ShowShapes" xml:space="preserve">
+    <value>显示对象</value>
+  </data>
+  
+  <!-- 设置相关 -->
+  <data name="Settings_LanguageChanged" xml:space="preserve">
+    <value>语言已切换为中文</value>
+  </data>
+  <data name="Settings_ConfigSaved" xml:space="preserve">
+    <value>配置已保存</value>
+  </data>
+  <data name="Settings_ConfigReloaded" xml:space="preserve">
+    <value>配置已重新加载</value>
+  </data>
+  
+  <!-- Ribbon 界面文本 -->
+  <data name="Ribbon_CustomTabXml" xml:space="preserve">
+    <value>PPA菜单</value>
+  </data>
+  <data name="Ribbon_group1" xml:space="preserve">
+    <value>对齐</value>
+  </data>
+  <data name="Ribbon_group11" xml:space="preserve">
+    <value>吸附</value>
+  </data>
+  <data name="Ribbon_group2" xml:space="preserve">
+    <value>大小</value>
+  </data>
+  <data name="Ribbon_group3" xml:space="preserve">
+    <value>参考线</value>
+  </data>
+  <data name="Ribbon_group4" xml:space="preserve">
+    <value>选择</value>
+  </data>
+  <data name="Ribbon_group5" xml:space="preserve">
+    <value>格式</value>
+  </data>
+  <data name="Ribbon_group6" xml:space="preserve">
+    <value>设置</value>
+  </data>
+  <data name="Ribbon_Tb101_Page" xml:space="preserve">
+    <value>页面</value>
+  </data>
+  <data name="Ribbon_Tb101_Shape" xml:space="preserve">
+    <value>形状</value>
+  </data>
+  <data name="Ribbon_Bt101" xml:space="preserve">
+    <value>左对齐</value>
+  </data>
+  <data name="Ribbon_Bt102" xml:space="preserve">
+    <value>水平居中</value>
+  </data>
+  <data name="Ribbon_Bt103" xml:space="preserve">
+    <value>右对齐</value>
+  </data>
+  <data name="Ribbon_Bt104" xml:space="preserve">
+    <value>横向分布</value>
+  </data>
+  <data name="Ribbon_Bt111" xml:space="preserve">
+    <value>顶对齐</value>
+  </data>
+  <data name="Ribbon_Bt112" xml:space="preserve">
+    <value>垂直居中</value>
+  </data>
+  <data name="Ribbon_Bt113" xml:space="preserve">
+    <value>底对齐</value>
+  </data>
+  <data name="Ribbon_Bt114" xml:space="preserve">
+    <value>纵向分布</value>
+  </data>
+  <data name="Ribbon_Bt121" xml:space="preserve">
+    <value>左吸附</value>
+  </data>
+  <data name="Ribbon_Bt122" xml:space="preserve">
+    <value>右吸附</value>
+  </data>
+  <data name="Ribbon_Bt123" xml:space="preserve">
+    <value>上吸附</value>
+  </data>
+  <data name="Ribbon_Bt124" xml:space="preserve">
+    <value>下吸附</value>
+  </data>
+  <data name="Ribbon_Bt201" xml:space="preserve">
+    <value>等宽度</value>
+  </data>
+  <data name="Ribbon_Bt202" xml:space="preserve">
+    <value>等高度</value>
+  </data>
+  <data name="Ribbon_Bt203" xml:space="preserve">
+    <value>等大小</value>
+  </data>
+  <data name="Ribbon_Bt204" xml:space="preserve">
+    <value>互　换</value>
+  </data>
+  <data name="Ribbon_Bt211" xml:space="preserve">
+    <value>左延伸</value>
+  </data>
+  <data name="Ribbon_Bt212" xml:space="preserve">
+    <value>右延伸</value>
+  </data>
+  <data name="Ribbon_Bt213" xml:space="preserve">
+    <value>上延伸</value>
+  </data>
+  <data name="Ribbon_Bt214" xml:space="preserve">
+    <value>下延伸</value>
+  </data>
+  <data name="Ribbon_Bt301" xml:space="preserve">
+    <value>左对齐</value>
+  </data>
+  <data name="Ribbon_Bt302" xml:space="preserve">
+    <value>水平居中</value>
+  </data>
+  <data name="Ribbon_Bt303" xml:space="preserve">
+    <value>右对齐</value>
+  </data>
+  <data name="Ribbon_Bt311" xml:space="preserve">
+    <value>顶对齐</value>
+  </data>
+  <data name="Ribbon_Bt312" xml:space="preserve">
+    <value>垂直居中</value>
+  </data>
+  <data name="Ribbon_Bt313" xml:space="preserve">
+    <value>底对齐</value>
+  </data>
+  <data name="Ribbon_Bt321" xml:space="preserve">
+    <value>宽扩展</value>
+  </data>
+  <data name="Ribbon_Bt322" xml:space="preserve">
+    <value>高扩展</value>
+  </data>
+  <data name="Ribbon_Bt323" xml:space="preserve">
+    <value>宽高扩展</value>
+  </data>
+  <data name="Ribbon_Bt401" xml:space="preserve">
+    <value>隐显对象</value>
+  </data>
+  <data name="Ribbon_Bt402" xml:space="preserve">
+    <value>裁剪出框</value>
+  </data>
+  <data name="Ribbon_Bt501" xml:space="preserve">
+    <value>美化表格</value>
+  </data>
+  <data name="Ribbon_Bt502" xml:space="preserve">
+    <value>美化文本</value>
+  </data>
+  <data name="Ribbon_Bt503" xml:space="preserve">
+    <value>美化图表</value>
+  </data>
+  <data name="Ribbon_Bt601" xml:space="preserve">
+    <value>插入形状</value>
+  </data>
+  <data name="Ribbon_MenuSettings" xml:space="preserve">
+    <value>设置</value>
+  </data>
+  <data name="Ribbon_MenuLang_zhCN" xml:space="preserve">
+    <value>中文 (简体)</value>
+  </data>
+  <data name="Ribbon_MenuLang_enUS" xml:space="preserve">
+    <value>English (US)</value>
+  </data>
+  <data name="Ribbon_MenuSettings_Config" xml:space="preserve">
+    <value>设置参数</value>
+  </data>
+  <data name="Ribbon_MenuSettings_About" xml:space="preserve">
+    <value>关于</value>
+  </data>
+  
+  <!-- AlignHelper 对齐操作消息 -->
+  <data name="Align_AttachBottom_Success" xml:space="preserve">
+    <value>已将第二个对象下边与第一个对象上边对齐</value>
+  </data>
+  <data name="Align_AttachLeft_Success" xml:space="preserve">
+    <value>已将第二个对象左边与第一个对象右边对齐</value>
+  </data>
+  <data name="Align_AttachRight_Success" xml:space="preserve">
+    <value>已将第二个对象右边与第一个对象左边对齐</value>
+  </data>
+  <data name="Align_AttachTop_Success" xml:space="preserve">
+    <value>已将第二个对象上边与第一个对象下边对齐</value>
+  </data>
+  <data name="Align_NoHorizontalGuides" xml:space="preserve">
+    <value>当前文档没有水平参考线</value>
+  </data>
+  <data name="Align_NoVerticalGuides" xml:space="preserve">
+    <value>当前文档没有垂直参考线</value>
+  </data>
+  <data name="Align_InvalidSelection" xml:space="preserve">
+    <value>无法识别选择的对象类型</value>
+  </data>
+  <data name="Align_GuideBottom_Success" xml:space="preserve">
+    <value>已底对齐到参考线</value>
+  </data>
+  <data name="Align_GuideTop_Success" xml:space="preserve">
+    <value>已顶对齐到参考线</value>
+  </data>
+  <data name="Align_GuideLeft_Success" xml:space="preserve">
+    <value>已左对齐到参考线</value>
+  </data>
+  <data name="Align_GuideRight_Success" xml:space="preserve">
+    <value>已右对齐到参考线</value>
+  </data>
+  <data name="Align_GuideHCenter_Success" xml:space="preserve">
+    <value>已水平居中到参考线</value>
+  </data>
+  <data name="Align_GuideVCenter_Success" xml:space="preserve">
+    <value>已垂直居中到参考线</value>
+  </data>
+  <data name="Align_NeedTwoVerticalGuides" xml:space="preserve">
+    <value>至少需要两条垂直参考线</value>
+  </data>
+  <data name="Align_NeedTwoHorizontalGuides" xml:space="preserve">
+    <value>至少需要两条水平参考线</value>
+  </data>
+  <data name="Align_And" xml:space="preserve">
+    <value>和</value>
+  </data>
+  <data name="Align_StretchHeight_Success" xml:space="preserve">
+    <value>已将高度拉伸到参考线</value>
+  </data>
+  <data name="Align_StretchWidth_Success" xml:space="preserve">
+    <value>已将宽度拉伸到参考线</value>
+  </data>
+  <data name="Align_StretchBoth_Success" xml:space="preserve">
+    <value>已将宽度和高度拉伸到参考线</value>
+  </data>
+  <data name="Align_SetEqualHeight_Success" xml:space="preserve">
+    <value>已设置等高</value>
+  </data>
+  <data name="Align_SetEqualSize_Success" xml:space="preserve">
+    <value>已设置等大小</value>
+  </data>
+  <data name="Align_SetEqualWidth_Success" xml:space="preserve">
+    <value>已设置等宽</value>
+  </data>
+  <data name="Align_StretchBottom_Success" xml:space="preserve">
+    <value>已向下延伸对齐</value>
+  </data>
+  <data name="Align_StretchLeft_Success" xml:space="preserve">
+    <value>已向左延伸对齐</value>
+  </data>
+  <data name="Align_StretchRight_Success" xml:space="preserve">
+    <value>已向右延伸对齐</value>
+  </data>
+  <data name="Align_StretchTop_Success" xml:space="preserve">
+    <value>已向上延伸对齐</value>
+  </data>
+  <data name="Align_SwapSize_Success" xml:space="preserve">
+    <value>已交换大小和位置</value>
+  </data>
+  
+  <!-- BatchHelper 批量操作消息 -->
+  <data name="Toast_CreateBoundingBox_Shapes" xml:space="preserve">
+    <value>已为 {0} 个形状创建外框</value>
+  </data>
+  <data name="Toast_CreateBoundingBox_Slides" xml:space="preserve">
+    <value>已在 {0} 张幻灯片上创建矩形</value>
+  </data>
+  <data name="Toast_CreateBoundingBox_PageSize" xml:space="preserve">
+    <value>已创建页面大小的矩形</value>
+  </data>
+  <data name="Toast_CreateBoundingBox_None" xml:space="preserve">
+    <value>未创建任何矩形</value>
+  </data>
+  <data name="Toast_HideShapes_Single" xml:space="preserve">
+    <value>已隐藏 1 个对象</value>
+  </data>
+  <data name="Toast_HideShapes_Multiple" xml:space="preserve">
+    <value>已隐藏 {0} 个对象</value>
+  </data>
+  <data name="Toast_ShowShapes_Multiple" xml:space="preserve">
+    <value>已显示 {0} 个对象</value>
+  </data>
+  <data name="Toast_ShowShapes_None" xml:space="preserve">
+    <value>没有需要显示的对象</value>
+  </data>
+  <data name="Progress_TableFound" xml:space="preserve">
+    <value>发现表格</value>
+  </data>
+  <data name="Progress_TableFound_Count" xml:space="preserve">
+    <value>发现表格 {0}</value>
+  </data>
+  <data name="Progress_TablesFound" xml:space="preserve">
+    <value>发现 {0} 个表格</value>
+  </data>
+  <data name="Progress_FormatTables_Start" xml:space="preserve">
+    <value>开始美化 {0} 个表格</value>
+  </data>
+  <data name="Progress_FormatTable_Progress" xml:space="preserve">
+    <value>美化表格 {0}/{1}</value>
+  </data>
+  <data name="Progress_FormatTables_Complete" xml:space="preserve">
+    <value>成功美化 {0} 个表格</value>
+  </data>
+  
+  <!-- ShapeUtils 形状工具消息 -->
+  <data name="Toast_NoValidSelection" xml:space="preserve">
+    <value>没有有效的选择或活动窗口</value>
+  </data>
+  <data name="Toast_NeedTwoShapes" xml:space="preserve">
+    <value>请至少选择两个对象</value>
+  </data>
+  
+  <!-- MSOICrop 裁剪操作消息 -->
+  <data name="Toast_CropShapes_None" xml:space="preserve">
+    <value>没有需要裁剪的形状</value>
+  </data>
+  
+  <!-- SettingsForm 设置窗口 -->
+  <data name="SettingsForm_Title" xml:space="preserve">
+    <value>格式化参数设置</value>
+  </data>
+  <data name="SettingsForm_Reload" xml:space="preserve">
+    <value>重新加载</value>
+  </data>
+  <data name="SettingsForm_Save" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="SettingsForm_Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="SettingsForm_ConfigPath" xml:space="preserve">
+    <value>配置文件路径: {0}</value>
+  </data>
+  <data name="SettingsForm_LoadError" xml:space="preserve">
+    <value>加载配置文件失败: {0}</value>
+  </data>
+  <data name="SettingsForm_SaveError" xml:space="preserve">
+    <value>保存配置文件失败: {0}</value>
+  </data>
+  <data name="SettingsForm_XMLError" xml:space="preserve">
+    <value>XML 格式错误: {0}
+
+请检查 XML 语法是否正确。</value>
+  </data>
+  <data name="SettingsForm_ReloadConfirm" xml:space="preserve">
+    <value>重新加载将丢失当前未保存的修改，是否继续？</value>
+  </data>
+  <data name="SettingsForm_DiscardConfirm" xml:space="preserve">
+    <value>是否放弃当前修改？</value>
+  </data>
+  <data name="SettingsForm_Error" xml:space="preserve">
+    <value>错误</value>
+  </data>
+  <data name="SettingsForm_Confirm" xml:space="preserve">
+    <value>确认</value>
+  </data>
+  <data name="SettingsForm_SaveFailed" xml:space="preserve">
+    <value>保存失败</value>
+  </data>
+  
+  <!-- AboutForm 关于窗口 -->
+  <data name="AboutForm_Title" xml:space="preserve">
+    <value>关于 PPA</value>
+  </data>
+  <data name="AboutForm_TitleText" xml:space="preserve">
+    <value>PPA - PowerPoint Assistant</value>
+  </data>
+  <data name="AboutForm_Description" xml:space="preserve">
+    <value>PowerPoint 插件，提供表格、文本、图表格式化功能，以及形状对齐、吸附等辅助工具。
+
+支持多语言界面，可自定义格式化参数。</value>
+  </data>
+  <data name="AboutForm_ViewDocs" xml:space="preserve">
+    <value>查看项目文档</value>
+  </data>
+  <data name="AboutForm_Close" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="AboutForm_Version" xml:space="preserve">
+    <value>版本: {0}</value>
+  </data>
+  <data name="AboutForm_Unknown" xml:space="preserve">
+    <value>未知</value>
+  </data>
+  <data name="AboutForm_LinkError" xml:space="preserve">
+    <value>无法打开链接: {0}</value>
+  </data>
+  <data name="AboutForm_Error" xml:space="preserve">
+    <value>错误</value>
+  </data>
+</root>
+

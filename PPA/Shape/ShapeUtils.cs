@@ -1,11 +1,10 @@
 ﻿using NetOffice.OfficeApi.Enums;
-using Project.Utilities;
+using PPA.Core;
+using PPA.Utilities;
 using System;
-using System.Diagnostics;
-using ToastAPI;
 using NETOP = NetOffice.PowerPointApi;
 
-namespace PPA.Helpers
+namespace PPA.Shape
 {
     public static class ShapeUtils
     {
@@ -146,7 +145,7 @@ namespace PPA.Helpers
             // --- 安全检查 ---
             if (app?.ActiveWindow?.Selection == null)
             {
-                Toast.Show("没有有效的选择或活动窗口", Toast.ToastType.Warning);
+                Toast.Show(ResourceManager.GetString("Toast_NoValidSelection"), Toast.ToastType.Warning);
                 return null;
             }
 
@@ -159,7 +158,7 @@ namespace PPA.Helpers
                     // 检查是否需要多个形状
                     if (requireMultipleShapes && (selection.ShapeRange?.Count ?? 0) < 2)
                     {
-                        Toast.Show("请至少选择两个对象", Toast.ToastType.Warning);
+                        Toast.Show(ResourceManager.GetString("Toast_NeedTwoShapes"), Toast.ToastType.Warning);
                         return null;
                     }
                     return selection.ShapeRange;

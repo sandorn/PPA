@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 
 
-namespace ComListExtensions
+namespace PPA.Utilities
 {
     public static class ComListExtensions
     {

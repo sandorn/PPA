@@ -1,14 +1,16 @@
-﻿using PPA.Helpers;
-using PPA.MSOAPI;
+﻿using PPA.Core;
+using PPA.Formatting;
 using PPA.Properties;
-using Project.Utilities;
+using PPA.Shape;
+using PPA.UI.Forms;
+using PPA.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
-using ALT = PPA.Helpers.BatchHelper.AlignmentType;
+using System.Threading;
+using ALT = PPA.Formatting.BatchHelper.AlignmentType;
 using NETOP = NetOffice.PowerPointApi;
 using Office = Microsoft.Office.Core;
 
@@ -25,6 +27,7 @@ namespace PPA
         private bool _tb101Press;
         private bool _disposed = false;
         private bool _appInitialized = false;
+        private CancellationTokenSource _bt501Cancellation;
 
         #endregion Private Fields
 
@@ -35,7 +38,7 @@ namespace PPA
         /// </summary>
         public CustomRibbon()
         {
-            Profiler.LogMessage("[Ribbon] 构造...");
+            Profiler.LogMessage("构造...");
             _iconCache = [];
             _tb101Press = false;
             // 注意：此时不初始化 _app，等待 SetApplication 调用
@@ -49,13 +52,13 @@ namespace PPA
         {
             if (application == null)
             {
-                Profiler.LogMessage("[Ribbon] SetApplication 传入空 Application 对象");
+                Profiler.LogMessage("SetApplication 传入空 Application 对象");
                 return;
             }
 
             _app = application;
             _appInitialized = true;
-            Profiler.LogMessage("[Ribbon] Application 设置成功");
+            Profiler.LogMessage("Application 设置成功");
         }
 
         /// <summary>
@@ -200,7 +203,81 @@ namespace PPA
 
             return control.Id switch
             {
-                "Tb101" => _tb101Press ? "页面" : "形状",
+                "Tb101" => _tb101Press 
+                    ? ResourceManager.GetString("Ribbon_Tb101_Page", "页面") 
+                    : ResourceManager.GetString("Ribbon_Tb101_Shape", "形状"),
+                _ => string.Empty,
+            };
+        }
+
+        /// <summary>
+        /// 获取 Ribbon 控件的标签文本（用于动态本地化）
+        /// </summary>
+        /// <param name="control">功能区控件对象</param>
+        /// <returns>本地化的标签文本</returns>
+        public string GetLabel(Office.IRibbonControl control)
+        {
+            // 根据控件 ID 返回本地化字符串
+            string resourceKey = $"Ribbon_{control.Id}";
+            string defaultText = GetDefaultLabel(control.Id);
+            return ResourceManager.GetString(resourceKey, defaultText);
+        }
+
+        /// <summary>
+        /// 获取默认标签文本（当资源文件中找不到时使用）
+        /// </summary>
+        private string GetDefaultLabel(string controlId)
+        {
+            return controlId switch
+            {
+                "CustomTabXml" => "PPA菜单",
+                "group1" => "对齐",
+                "group11" => "吸附",
+                "group2" => "大小",
+                "group3" => "参考线",
+                "group4" => "选择",
+                "group5" => "格式",
+                "group6" => "设置",
+                "Bt101" => "左对齐",
+                "Bt102" => "水平居中",
+                "Bt103" => "右对齐",
+                "Bt104" => "横向分布",
+                "Bt111" => "顶对齐",
+                "Bt112" => "垂直居中",
+                "Bt113" => "底对齐",
+                "Bt114" => "纵向分布",
+                "Bt121" => "左吸附",
+                "Bt122" => "右吸附",
+                "Bt123" => "上吸附",
+                "Bt124" => "下吸附",
+                "Bt201" => "等宽度",
+                "Bt202" => "等高度",
+                "Bt203" => "等大小",
+                "Bt204" => "互　换",
+                "Bt211" => "左延伸",
+                "Bt212" => "右延伸",
+                "Bt213" => "上延伸",
+                "Bt214" => "下延伸",
+                "Bt301" => "左对齐",
+                "Bt302" => "水平居中",
+                "Bt303" => "右对齐",
+                "Bt311" => "顶对齐",
+                "Bt312" => "垂直居中",
+                "Bt313" => "底对齐",
+                "Bt321" => "宽扩展",
+                "Bt322" => "高扩展",
+                "Bt323" => "宽高扩展",
+                "Bt401" => "隐显对象",
+                "Bt402" => "裁剪出框",
+                "Bt501" => "美化表格",
+                "Bt502" => "美化文本",
+                "Bt503" => "美化图表",
+                "Bt601" => "插入形状",
+                "MenuSettings" => "设置",
+                "MenuLang_zhCN" => "中文 (简体)",
+                "MenuLang_enUS" => "English (US)",
+                "MenuSettings_Config" => "设置参数",
+                "MenuSettings_About" => "关于",
                 _ => string.Empty,
             };
         }
@@ -268,6 +345,126 @@ namespace PPA
             catch (Exception ex)
             {
                 Profiler.LogMessage($"切换按钮点击事件错误 | {control.Id}: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 处理菜单项的点击事件
+        /// </summary>
+        /// <param name="control">功能区控件对象</param>
+        public void OnMenuAction(Office.IRibbonControl control)
+        {
+            Profiler.LogMessage($"菜单项点击事件: {control.Id}");
+
+            try
+            {
+                switch (control.Id)
+                {
+                    case "MenuLang_zhCN":
+                        ResourceManager.SetLanguage("zh-CN");
+                        Toast.Show(ResourceManager.GetString("Settings_LanguageChanged", "语言已切换为中文"), Toast.ToastType.Success);
+                        // 刷新整个 Ribbon 以更新所有文本
+                        _ribbonUI?.Invalidate();
+                        break;
+
+                    case "MenuLang_enUS":
+                        ResourceManager.SetLanguage("en-US");
+                        Toast.Show(ResourceManager.GetString("Settings_LanguageChanged", "Language switched to English"), Toast.ToastType.Success);
+                        // 刷新整个 Ribbon 以更新所有文本
+                        _ribbonUI?.Invalidate();
+                        break;
+
+                    case "MenuSettings_Config":
+                        ShowSettingsDialog();
+                        break;
+
+                    case "MenuSettings_About":
+                        ShowAboutDialog();
+                        break;
+
+                    default:
+                        Profiler.LogMessage($"未知菜单项ID: {control.Id}");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Profiler.LogMessage($"菜单项操作错误 {control.Id}: {ex.Message}");
+                Toast.Show($"操作失败: {ex.Message}", Toast.ToastType.Error);
+            }
+        }
+
+        /// <summary>
+        /// 获取菜单项图标（用于语言选择标记）
+        /// </summary>
+        public Bitmap GetMenuIcon(Office.IRibbonControl control)
+        {
+            // 为当前选中的语言显示标记
+            if (control.Id == "MenuLang_zhCN" && ResourceManager.CurrentCulture.Name == "zh-CN")
+            {
+                return CreateCheckIcon();
+            }
+            if (control.Id == "MenuLang_enUS" && ResourceManager.CurrentCulture.Name == "en-US")
+            {
+                return CreateCheckIcon();
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 创建选中标记图标
+        /// </summary>
+        private Bitmap CreateCheckIcon()
+        {
+            var bmp = new Bitmap(16, 16);
+            using (var g = Graphics.FromImage(bmp))
+            {
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                using (var pen = new Pen(Color.Green, 2))
+                {
+                    // 绘制对勾
+                    g.DrawLine(pen, 3, 8, 7, 12);
+                    g.DrawLine(pen, 7, 12, 13, 4);
+                }
+            }
+            return bmp;
+        }
+
+        /// <summary>
+        /// 显示设置对话框
+        /// </summary>
+        private void ShowSettingsDialog()
+        {
+            try
+            {
+                using (var settingsForm = new SettingsForm())
+                {
+                    settingsForm.ShowDialog();
+                }
+            }
+            catch (Exception ex)
+            {
+                Profiler.LogMessage($"显示设置对话框失败: {ex.Message}");
+                Toast.Show($"打开设置窗口失败: {ex.Message}", Toast.ToastType.Error);
+            }
+        }
+
+        /// <summary>
+        /// 显示关于对话框
+        /// </summary>
+        private void ShowAboutDialog()
+        {
+            try
+            {
+                using (var aboutForm = new AboutForm())
+                {
+                    aboutForm.ShowDialog();
+                }
+            }
+            catch (Exception ex)
+            {
+                Profiler.LogMessage($"显示关于对话框失败: {ex.Message}");
+                Toast.Show($"打开关于窗口失败: {ex.Message}", Toast.ToastType.Error);
             }
         }
 
@@ -384,7 +581,20 @@ namespace PPA
                     MSOICrop.CropShapesToSlide(_app);
                     break;
                 case "Bt501":
-                    BatchHelper.Bt501_Click(_app);
+                    // 取消之前的操作（如果存在）
+                    _bt501Cancellation?.Cancel();
+                    _bt501Cancellation?.Dispose();
+                    _bt501Cancellation = new CancellationTokenSource();
+
+                    // 异步执行美化表格
+                    AsyncOperationHelper.ExecuteAsyncOperation(async () =>
+                    {
+                        var progress = new ProgressIndicator(ResourceManager.GetString("Ribbon_Bt501", "美化表格"));
+                        await BatchHelper.Bt501_ClickAsync(
+                            _app,
+                            progress,
+                            _bt501Cancellation.Token);
+                    }, ResourceManager.GetString("Ribbon_Bt501", "美化表格"));
                     break;
                 case "Bt502":
                     BatchHelper.Bt502_Click(_app);
@@ -403,6 +613,11 @@ namespace PPA
 
         #endregion Core Business Logic
 
+        #region Async Operation Helpers
+
+        // ExecuteAsyncOperation 已移动到 AsyncOperationHelper 类中
+
+        #endregion Async Operation Helpers
 
         #region Lifecycle Management (IDisposable)
 
@@ -425,6 +640,11 @@ namespace PPA
             if (disposing)
             {
                 Profiler.LogMessage($"释放资源...");
+
+                // 取消并清理异步操作
+                _bt501Cancellation?.Cancel();
+                _bt501Cancellation?.Dispose();
+                _bt501Cancellation = null;
 
                 foreach (var kvp in _iconCache)
                 {

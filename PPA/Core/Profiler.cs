@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
-using ToastAPI;
 
-namespace Project.Utilities
+namespace PPA.Core
 {
     /// <summary>
     /// 性能监控类
@@ -163,7 +162,7 @@ namespace Project.Utilities
     }
 }
 
-namespace Project.Utilities.Extensions
+namespace PPA.Core.Extensions
 {
     // 在Profiler类中添加扩展方法
     public static class ProfilerEx
@@ -217,12 +216,12 @@ namespace Project.Utilities.Extensions
         /// [扩展方法] 记录自定义日志信息
         /// 开发状态下输出到Debug控制台，非开发状态下写入日志文件
         /// </summary>
-        /// <param name="obj">任意对象（仅用于扩展方法语法）</param>
+        /// <param name="_">任意对象（仅用于扩展方法语法，实际未使用）</param>
         /// <param name="message">日志消息内容</param>
         /// <param name="logLevel">日志级别（如：INFO, WARN, ERROR等）</param>
         /// <param name="callerMethod">调用者方法名（自动获取）</param>
         /// <param name="filePath">调用者文件路径（自动获取）</param>
-        public static void Log(this object obj, string message, string logLevel = "INFO", [CallerMemberName] string callerMethod = "", [CallerFilePath] string filePath = "")
+        public static void Log(this object _, string message, string logLevel = "INFO", [CallerMemberName] string callerMethod = "", [CallerFilePath] string filePath = "")
         {
             Profiler.LogMessage(message, logLevel, callerMethod, filePath);
         }

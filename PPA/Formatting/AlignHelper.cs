@@ -1,12 +1,13 @@
 ﻿using NetOffice.OfficeApi.Enums;
-using Project.Utilities;
+using PPA.Core;
+using PPA.Shape;
+using PPA.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ToastAPI;
 using NETOP = NetOffice.PowerPointApi;
 
-namespace PPA.Helpers
+namespace PPA.Formatting
 {
 	/// <summary>
 	/// 提供PowerPoint形状对齐、拉伸、吸附等相关操作的辅助方法。
@@ -29,7 +30,7 @@ namespace PPA.Helpers
 				// 只移动第二个形状的Top属性，使其下边与第一个形状的上边对齐
 				moveShape.Top = baseShape.Top - moveShape.Height;
 
-				Toast.Show("已将第二个对象下边与第一个对象上边对齐",Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_AttachBottom_Success", "已将第二个对象下边与第一个对象上边对齐"), Toast.ToastType.Success);
 			});
 		}
 
@@ -48,7 +49,7 @@ namespace PPA.Helpers
 				// 只移动第二个形状的Left属性，使其左边与第一个形状的右边对齐
 				moveShape.Left = baseShape.Left + baseShape.Width;
 
-				Toast.Show("已将第二个对象左边与第一个对象右边对齐",Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_AttachLeft_Success", "已将第二个对象左边与第一个对象右边对齐"), Toast.ToastType.Success);
 			});
 		}
 
@@ -67,7 +68,7 @@ namespace PPA.Helpers
 				// 只移动第二个形状的Left属性，使其右边与第一个形状的左边对齐
 				moveShape.Left = baseShape.Left - moveShape.Width;
 
-				Toast.Show("已将第二个对象右边与第一个对象左边对齐",Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_AttachRight_Success", "已将第二个对象右边与第一个对象左边对齐"), Toast.ToastType.Success);
 			});
 		}
 
@@ -86,7 +87,7 @@ namespace PPA.Helpers
 				// 只移动第二个形状的Top属性，使其上边与第一个形状的下边对齐
 				moveShape.Top = baseShape.Top + baseShape.Height;
 
-				Toast.Show("已将第二个对象上边与第一个对象下边对齐",Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_AttachTop_Success", "已将第二个对象上边与第一个对象下边对齐"), Toast.ToastType.Success);
 			});
 		}
 
@@ -107,7 +108,7 @@ namespace PPA.Helpers
 				}
 				if(horizontalGuides.Count == 0)
 				{
-					Toast.Show("当前文档没有水平参考线",Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_NoHorizontalGuides", "当前文档没有水平参考线"), Toast.ToastType.Warning);
 					return;
 				}
 
@@ -124,7 +125,7 @@ namespace PPA.Helpers
 				}
 				else
 				{
-					Toast.Show("无法识别选择的对象类型", Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_InvalidSelection", "无法识别选择的对象类型"), Toast.ToastType.Warning);
 					return;
 				}
 				
@@ -147,7 +148,7 @@ namespace PPA.Helpers
 					}
 					shape.Top = nearest - shape.Height;
 				}
-				Toast.Show("已底对齐到参考线",Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_GuideBottom_Success", "已底对齐到参考线"), Toast.ToastType.Success);
 			});
 		}
 
@@ -168,7 +169,7 @@ namespace PPA.Helpers
 				}
 				if(verticalGuides.Count < 2)
 				{
-					Toast.Show("至少需要两条垂直参考线",Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_NeedTwoVerticalGuides", "至少需要两条垂直参考线"), Toast.ToastType.Warning);
 					return;
 				}
 				verticalGuides.Sort();
@@ -185,7 +186,7 @@ namespace PPA.Helpers
 				}
 				else
 				{
-					Toast.Show("无法识别选中的对象类型",Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_InvalidSelection", "无法识别选中的对象类型"), Toast.ToastType.Warning);
 					return;
 				}
 
@@ -208,7 +209,7 @@ namespace PPA.Helpers
 					float targetCenter = ((float) a + (float) b) / 2f;
 					shape.Left = targetCenter - (shape.Width / 2f);
 				}
-				Toast.Show("已水平居中到参考线",Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_GuideHCenter_Success", "已水平居中到参考线"), Toast.ToastType.Success);
 			});
 		}
 
@@ -229,7 +230,7 @@ namespace PPA.Helpers
 				}
 				if(verticalGuides.Count == 0)
 				{
-					Toast.Show("当前文档没有垂直参考线",Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_NoVerticalGuides", "当前文档没有垂直参考线"), Toast.ToastType.Warning);
 					return;
 				}
 
@@ -246,7 +247,7 @@ namespace PPA.Helpers
 				}
 				else
 				{
-					Toast.Show("无法识别选择的对象类型", Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_InvalidSelection", "无法识别选择的对象类型"), Toast.ToastType.Warning);
 					return;
 				}
 				
@@ -269,7 +270,7 @@ namespace PPA.Helpers
 					}
 					shape.Left = nearest;
 				}
-				Toast.Show("已左对齐到参考线",Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_GuideLeft_Success", "已左对齐到参考线"), Toast.ToastType.Success);
 			});
 		}
 
@@ -290,7 +291,7 @@ namespace PPA.Helpers
 				}
 				if(verticalGuides.Count == 0)
 				{
-					Toast.Show("当前文档没有垂直参考线",Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_NoVerticalGuides", "当前文档没有垂直参考线"), Toast.ToastType.Warning);
 					return;
 				}
 
@@ -307,7 +308,7 @@ namespace PPA.Helpers
 				}
 				else
 				{
-					Toast.Show("无法识别选择的对象类型", Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_InvalidSelection", "无法识别选择的对象类型"), Toast.ToastType.Warning);
 					return;
 				}
 				
@@ -330,7 +331,7 @@ namespace PPA.Helpers
 					}
 					shape.Left = nearest - shape.Width;
 				}
-				Toast.Show("已右对齐到参考线",Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_GuideRight_Success", "已右对齐到参考线"), Toast.ToastType.Success);
 			});
 		}
 
@@ -351,7 +352,7 @@ namespace PPA.Helpers
 				}
 				if(horizontalGuides.Count == 0)
 				{
-					Toast.Show("当前文档没有水平参考线",Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_NoHorizontalGuides", "当前文档没有水平参考线"), Toast.ToastType.Warning);
 					return;
 				}
 
@@ -368,7 +369,7 @@ namespace PPA.Helpers
 				}
 				else
 				{
-					Toast.Show("无法识别选择的对象类型", Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_InvalidSelection", "无法识别选择的对象类型"), Toast.ToastType.Warning);
 					return;
 				}
 				
@@ -391,7 +392,7 @@ namespace PPA.Helpers
 					}
 					shape.Top = nearest;
 				}
-				Toast.Show("已顶对齐到参考线",Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_GuideTop_Success", "已顶对齐到参考线"), Toast.ToastType.Success);
 			});
 		}
 
@@ -412,7 +413,7 @@ namespace PPA.Helpers
 				}
 				if(horizontalGuides.Count < 2)
 				{
-					Toast.Show("至少需要两条水平参考线",Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_NeedTwoHorizontalGuides", "至少需要两条水平参考线"), Toast.ToastType.Warning);
 					return;
 				}
 				horizontalGuides.Sort();
@@ -429,7 +430,7 @@ namespace PPA.Helpers
 				}
 				else
 				{
-					Toast.Show("无法识别选中的对象类型",Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_InvalidSelection", "无法识别选中的对象类型"), Toast.ToastType.Warning);
 					return;
 				}
 
@@ -452,7 +453,7 @@ namespace PPA.Helpers
 					float targetCenter = ((float) a + (float) b) / 2f;
 					shape.Top = targetCenter - (shape.Height / 2f);
 				}
-				Toast.Show("已垂直居中到参考线",Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_GuideVCenter_Success", "已垂直居中到参考线"), Toast.ToastType.Success);
 			});
 		}
 
@@ -476,7 +477,7 @@ namespace PPA.Helpers
 				// 检查参考线数量
 				if(horizontalGuides.Count < 2)
 				{
-					Toast.Show("至少需要两条水平参考线",Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_NeedTwoHorizontalGuides", "至少需要两条水平参考线"), Toast.ToastType.Warning);
 					return;
 				}
 
@@ -496,7 +497,7 @@ namespace PPA.Helpers
 				}
 				else
 				{
-					Toast.Show("无法识别选择的对象类型", Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_InvalidSelection", "无法识别选择的对象类型"), Toast.ToastType.Warning);
 					return;
 				}
 				
@@ -527,7 +528,7 @@ namespace PPA.Helpers
 					}
 				}
 
-				Toast.Show("已将高度拉伸到参考线",Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_StretchHeight_Success", "已将高度拉伸到参考线"), Toast.ToastType.Success);
 			});
 		}
 
@@ -556,11 +557,15 @@ namespace PPA.Helpers
 				if(verticalGuides.Count < 2 || horizontalGuides.Count < 2)
 				{
 					string message = "";
-					if(verticalGuides.Count < 2) message += "至少需要两条垂直参考线";
+					if(verticalGuides.Count < 2) 
+						message += ResourceManager.GetString("Align_NeedTwoVerticalGuides", "至少需要两条垂直参考线");
 					if(horizontalGuides.Count < 2)
-						message += (message != "" ? "和" : "") + "至少需要两条水平参考线";
+					{
+						if(message != "") message += ResourceManager.GetString("Align_And", "和");
+						message += ResourceManager.GetString("Align_NeedTwoHorizontalGuides", "至少需要两条水平参考线");
+					}
 
-					Toast.Show(message,Toast.ToastType.Warning);
+					Toast.Show(message, Toast.ToastType.Warning);
 					return;
 				}
 
@@ -581,7 +586,7 @@ namespace PPA.Helpers
 				}
 				else
 				{
-					Toast.Show("无法识别选择的对象类型", Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_InvalidSelection", "无法识别选择的对象类型"), Toast.ToastType.Warning);
 					return;
 				}
 				
@@ -625,7 +630,7 @@ namespace PPA.Helpers
 					}
 				}
 
-				Toast.Show("已将宽度和高度拉伸到参考线",Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_StretchBoth_Success", "已将宽度和高度拉伸到参考线"), Toast.ToastType.Success);
 			});
 		}
 
@@ -646,7 +651,7 @@ namespace PPA.Helpers
 				}
 				if(verticalGuides.Count < 2)
 				{
-					Toast.Show("至少需要两条垂直参考线",Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_NeedTwoVerticalGuides", "至少需要两条垂直参考线"), Toast.ToastType.Warning);
 					return;
 				}
 				verticalGuides.Sort();
@@ -664,7 +669,7 @@ namespace PPA.Helpers
 				}
 				else
 				{
-					Toast.Show("无法识别选择的对象类型", Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_InvalidSelection", "无法识别选择的对象类型"), Toast.ToastType.Warning);
 					return;
 				}
 				
@@ -685,7 +690,7 @@ namespace PPA.Helpers
 					shape.Left = (float) a;
 					shape.Width = (float) b - (float) a;
 				}
-				Toast.Show("已将宽度拉伸到参考线",Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_StretchWidth_Success", "已将宽度拉伸到参考线"), Toast.ToastType.Success);
 			});
 		}
 
@@ -701,7 +706,7 @@ namespace PPA.Helpers
 				float sourceHeight = shapes[1].Height;
 				for(int i = 1;i <= shapes.Count;i++)
 					shapes[i].Height = sourceHeight;
-				Toast.Show("已设置等高",Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_SetEqualHeight_Success", "已设置等高"), Toast.ToastType.Success);
 			});
 		}
 
@@ -720,7 +725,7 @@ namespace PPA.Helpers
 					shapes[i].Width = sourceWidth;
 					shapes[i].Height = sourceHeight;
 				}
-				Toast.Show("已设置等大小",Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_SetEqualSize_Success", "已设置等大小"), Toast.ToastType.Success);
 			});
 		}
 
@@ -736,7 +741,7 @@ namespace PPA.Helpers
 				float sourceWidth = shapes[1].Width;
 				for(int i = 1;i <= shapes.Count;i++)
 					shapes[i].Width = sourceWidth;
-				Toast.Show("已设置等宽",Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_SetEqualWidth_Success", "已设置等宽"), Toast.ToastType.Success);
 			});
 		}
 
@@ -760,7 +765,7 @@ namespace PPA.Helpers
 				{
 					shapes[i].Height = maxBottom - shapes[i].Top;
 				}
-				Toast.Show("已向下延伸对齐",Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_StretchBottom_Success", "已向下延伸对齐"), Toast.ToastType.Success);
 			});
 		}
 
@@ -783,7 +788,7 @@ namespace PPA.Helpers
 					shapes[i].Width = right - minLeft;
 					shapes[i].Left = minLeft;
 				}
-				Toast.Show("已向左延伸对齐",Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_StretchLeft_Success", "已向左延伸对齐"), Toast.ToastType.Success);
 			});
 		}
 
@@ -808,7 +813,7 @@ namespace PPA.Helpers
 					shapes[i].Width = maxRight - shapes[i].Left;
 					// shapes[i].Left 不变
 				}
-				Toast.Show("已向右延伸对齐",Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_StretchRight_Success", "已向右延伸对齐"), Toast.ToastType.Success);
 			});
 		}
 
@@ -831,7 +836,7 @@ namespace PPA.Helpers
 					shapes[i].Height = bottom - minTop;
 					shapes[i].Top = minTop;
 				}
-				Toast.Show("已向上延伸对齐",Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_StretchTop_Success", "已向上延伸对齐"), Toast.ToastType.Success);
 			});
 		}
 
@@ -855,34 +860,81 @@ namespace PPA.Helpers
 				(shape1.Top, shape2.Top) = (shape2.Top, shape1.Top);
 
 				// 交换填充颜色
-				(shape1.Fill.ForeColor.RGB, shape2.Fill.ForeColor.RGB) = (shape2.Fill.ForeColor.RGB, shape1.Fill.ForeColor.RGB);
+				try
+				{
+					(shape1.Fill.ForeColor.RGB, shape2.Fill.ForeColor.RGB) = (shape2.Fill.ForeColor.RGB, shape1.Fill.ForeColor.RGB);
+				}
+				catch { /* 某些形状可能不支持填充颜色 */ }
 
-				// 交换线条样式
-				(shape1.Line.DashStyle, shape2.Line.DashStyle) = (shape2.Line.DashStyle, shape1.Line.DashStyle);
-				(shape1.Line.Style, shape2.Line.Style) = (shape2.Line.Style, shape1.Line.Style);
+				// 交换线条样式（安全处理，某些形状可能不支持这些属性）
+				try
+				{
+					if (shape1.Line.Visible == MsoTriState.msoTrue && shape2.Line.Visible == MsoTriState.msoTrue)
+					{
+						var dashStyle1 = shape1.Line.DashStyle;
+						var dashStyle2 = shape2.Line.DashStyle;
+						shape1.Line.DashStyle = dashStyle2;
+						shape2.Line.DashStyle = dashStyle1;
+					}
+				}
+				catch { /* 某些形状可能不支持 DashStyle */ }
+
+				try
+				{
+					if (shape1.Line.Visible == MsoTriState.msoTrue && shape2.Line.Visible == MsoTriState.msoTrue)
+					{
+						var style1 = shape1.Line.Style;
+						var style2 = shape2.Line.Style;
+						shape1.Line.Style = style2;
+						shape2.Line.Style = style1;
+					}
+				}
+				catch { /* 某些形状可能不支持 Style */ }
 
 				// 交换线条颜色
-				(shape1.Line.ForeColor.RGB, shape2.Line.ForeColor.RGB) = (shape2.Line.ForeColor.RGB, shape1.Line.ForeColor.RGB);
+				try
+				{
+					if (shape1.Line.Visible == MsoTriState.msoTrue && shape2.Line.Visible == MsoTriState.msoTrue)
+					{
+						(shape1.Line.ForeColor.RGB, shape2.Line.ForeColor.RGB) = (shape2.Line.ForeColor.RGB, shape1.Line.ForeColor.RGB);
+					}
+				}
+				catch { /* 某些形状可能不支持线条颜色 */ }
 
 				// 交换线条宽度
-				(shape1.Line.Weight, shape2.Line.Weight) = (shape2.Line.Weight, shape1.Line.Weight);
+				try
+				{
+					if (shape1.Line.Visible == MsoTriState.msoTrue && shape2.Line.Visible == MsoTriState.msoTrue)
+					{
+						(shape1.Line.Weight, shape2.Line.Weight) = (shape2.Line.Weight, shape1.Line.Weight);
+					}
+				}
+				catch { /* 某些形状可能不支持线条宽度 */ }
 
 				// 交换透明度
-				(shape1.Fill.Transparency, shape2.Fill.Transparency) = (shape2.Fill.Transparency, shape1.Fill.Transparency);
+				try
+				{
+					(shape1.Fill.Transparency, shape2.Fill.Transparency) = (shape2.Fill.Transparency, shape1.Fill.Transparency);
+				}
+				catch { /* 某些形状可能不支持透明度 */ }
 
 				// 交换字体字号和颜色
 				if(shape1.TextFrame.HasText == MsoTriState.msoTrue && shape2.TextFrame.HasText == MsoTriState.msoTrue)
 				{
-					var textRange1 = shape1.TextFrame.TextRange;
-					var textRange2 = shape2.TextFrame.TextRange;
+					try
+					{
+						var textRange1 = shape1.TextFrame.TextRange;
+						var textRange2 = shape2.TextFrame.TextRange;
 
-					// 交换字体字号
-					(textRange1.Font.Size, textRange2.Font.Size) = (textRange2.Font.Size, textRange1.Font.Size);
+						// 交换字体字号
+						(textRange1.Font.Size, textRange2.Font.Size) = (textRange2.Font.Size, textRange1.Font.Size);
 
-					// 交换字体颜色
-					(textRange1.Font.Color.RGB, textRange2.Font.Color.RGB) = (textRange2.Font.Color.RGB, textRange1.Font.Color.RGB);
+						// 交换字体颜色
+						(textRange1.Font.Color.RGB, textRange2.Font.Color.RGB) = (textRange2.Font.Color.RGB, textRange1.Font.Color.RGB);
+					}
+					catch { /* 某些形状可能不支持字体属性 */ }
 				}
-				Toast.Show("已交换大小和位置",Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_SwapSize_Success", "已交换大小和位置"), Toast.ToastType.Success);
 			});
 		}
 

@@ -4,7 +4,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace Project.Utilities
+namespace PPA.Core
 {
     /// <summary>
     /// 统一异常处理类
@@ -33,10 +33,9 @@ namespace Project.Utilities
         /// <summary>
         /// 初始化 ExHandler 的全局配置
         /// </summary>
-        /// <param name="enableFileLogging">是否启用文件日志</param>
         /// <param name="enableTiming">是否启用性能监控</param>
         /// <param name="logFilePath">日志文件路径</param>
-        public static void Initialize(bool enableFileLogging = false, bool enableTiming = false)
+        public static void Initialize(bool enableTiming = false)
         {
             EnableTiming = enableTiming;
         }
@@ -150,16 +149,13 @@ namespace Project.Utilities
         /// 记录异常信息、调用位置、耗时等详细信息
         /// </summary>
         /// <param name="ex">捕获的异常</param>
-        /// <param name="effectiveContext">操作上下文</param>
+        /// <param name="effectiveContext">操作上下文（保留用于未来扩展）</param>
         /// <param name="callerMethod">调用方法名</param>
         /// <param name="callerFile">调用文件路径</param>
         private static void HandleException(Exception ex, string effectiveContext, string callerMethod, string callerFile)
         {
-            // 获取调用者类名
-            var callerClass = Path.GetFileNameWithoutExtension(callerFile);
-
-            // 获取当前方法名（实际抛出异常的方法）
-            var actualMethod = GetActualMethodName(ex) ?? "未知方法";
+            // effectiveContext 保留用于未来扩展，当前未使用
+            _ = effectiveContext;
 
             try
             {
