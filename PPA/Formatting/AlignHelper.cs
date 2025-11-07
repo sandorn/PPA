@@ -1,4 +1,4 @@
-﻿using NetOffice.OfficeApi.Enums;
+using NetOffice.OfficeApi.Enums;
 using PPA.Core;
 using PPA.Shape;
 using PPA.Utilities;
@@ -14,13 +14,25 @@ namespace PPA.Formatting
 	/// </summary>
 	public static class AlignHelper
 	{
+		#region Public Enums
+
+		/// <summary>
+		/// 对齐类型枚举
+		/// </summary>
+		public enum AlignmentType
+		{
+			Left, Right, Top, Bottom, Centers, Middles, Horizontally, Vertically
+		}
+
+		#endregion Public Enums
+
 		#region Public Methods
 
 		// 下吸附：将第二个形状的下边与第一个形状的上边对齐，只移动第二个形状且只垂直移动
 		public static void AttachBottom(NETOP.Application app)
 		{
 			var shapes = ShapeUtils.ValidateSelection(app, true);
-			if(shapes == null) return;
+			if(shapes==null) return;
 
 			ExHandler.Run(() =>
 			{
@@ -28,9 +40,9 @@ namespace PPA.Formatting
 				var moveShape = shapes[2];   // 第二个选中的形状为要移动的对象
 
 				// 只移动第二个形状的Top属性，使其下边与第一个形状的上边对齐
-				moveShape.Top = baseShape.Top - moveShape.Height;
+				moveShape.Top=baseShape.Top-moveShape.Height;
 
-				Toast.Show(ResourceManager.GetString("Align_AttachBottom_Success", "已将第二个对象下边与第一个对象上边对齐"), Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_AttachBottom_Success","已将第二个对象下边与第一个对象上边对齐"),Toast.ToastType.Success);
 			});
 		}
 
@@ -38,7 +50,7 @@ namespace PPA.Formatting
 		public static void AttachLeft(NETOP.Application app)
 		{
 			var sel = ShapeUtils.ValidateSelection(app, true);
-			if(sel == null) return;
+			if(sel==null) return;
 			var shapes = sel;
 
 			ExHandler.Run(() =>
@@ -47,9 +59,9 @@ namespace PPA.Formatting
 				var moveShape = shapes[2];   // 第二个选中的形状为要移动的对象
 
 				// 只移动第二个形状的Left属性，使其左边与第一个形状的右边对齐
-				moveShape.Left = baseShape.Left + baseShape.Width;
+				moveShape.Left=baseShape.Left+baseShape.Width;
 
-				Toast.Show(ResourceManager.GetString("Align_AttachLeft_Success", "已将第二个对象左边与第一个对象右边对齐"), Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_AttachLeft_Success","已将第二个对象左边与第一个对象右边对齐"),Toast.ToastType.Success);
 			});
 		}
 
@@ -57,7 +69,7 @@ namespace PPA.Formatting
 		public static void AttachRight(NETOP.Application app)
 		{
 			var sel = ShapeUtils.ValidateSelection(app, true);
-			if(sel == null) return;
+			if(sel==null) return;
 			var shapes = sel;
 
 			ExHandler.Run(() =>
@@ -66,9 +78,9 @@ namespace PPA.Formatting
 				var moveShape = shapes[2];   // 第二个选中的形状为要移动的对象
 
 				// 只移动第二个形状的Left属性，使其右边与第一个形状的左边对齐
-				moveShape.Left = baseShape.Left - moveShape.Width;
+				moveShape.Left=baseShape.Left-moveShape.Width;
 
-				Toast.Show(ResourceManager.GetString("Align_AttachRight_Success", "已将第二个对象右边与第一个对象左边对齐"), Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_AttachRight_Success","已将第二个对象右边与第一个对象左边对齐"),Toast.ToastType.Success);
 			});
 		}
 
@@ -76,7 +88,7 @@ namespace PPA.Formatting
 		public static void AttachTop(NETOP.Application app)
 		{
 			var sel = ShapeUtils.ValidateSelection(app, true);
-			if(sel == null) return;
+			if(sel==null) return;
 			var shapes = sel;
 
 			ExHandler.Run(() =>
@@ -85,9 +97,9 @@ namespace PPA.Formatting
 				var moveShape = shapes[2];   // 第二个选中的形状为要移动的对象
 
 				// 只移动第二个形状的Top属性，使其上边与第一个形状的下边对齐
-				moveShape.Top = baseShape.Top + baseShape.Height;
+				moveShape.Top=baseShape.Top+baseShape.Height;
 
-				Toast.Show(ResourceManager.GetString("Align_AttachTop_Success", "已将第二个对象上边与第一个对象下边对齐"), Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_AttachTop_Success","已将第二个对象上边与第一个对象下边对齐"),Toast.ToastType.Success);
 			});
 		}
 
@@ -95,7 +107,7 @@ namespace PPA.Formatting
 		public static void GuideAlignBottom(NETOP.Application app)
 		{
 			var sel = ShapeUtils.ValidateSelection(app);
-			if(sel == null) return;
+			if(sel==null) return;
 
 			ExHandler.Run(() =>
 			{
@@ -103,52 +115,50 @@ namespace PPA.Formatting
 				List < float > horizontalGuides =[];
 				foreach(NETOP.Guide guide in guides.Cast<NETOP.Guide>())
 				{
-					if(guide.Orientation == NETOP.Enums.PpGuideOrientation.ppHorizontalGuide)
+					if(guide.Orientation==NETOP.Enums.PpGuideOrientation.ppHorizontalGuide)
 						horizontalGuides.Add(guide.Position);
 				}
-				if(horizontalGuides.Count == 0)
+				if(horizontalGuides.Count==0)
 				{
-					Toast.Show(ResourceManager.GetString("Align_NoHorizontalGuides", "当前文档没有水平参考线"), Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_NoHorizontalGuides","当前文档没有水平参考线"),Toast.ToastType.Warning);
 					return;
 				}
 
 				List<NETOP.Shape> shapesToProcess = [];
-				
+
 				// 处理不同类型的选择
 				if(sel is NETOP.ShapeRange shapeRange)
 				{
-					shapesToProcess = [.. shapeRange.Cast<NETOP.Shape>()];
-				}
-				else if(sel is NETOP.Shape singleShape)
+					shapesToProcess= [.. shapeRange.Cast<NETOP.Shape>()];
+				} else if(sel is NETOP.Shape singleShape)
 				{
-					shapesToProcess = [singleShape];
-				}
-				else
+					shapesToProcess= [singleShape];
+				} else
 				{
-					Toast.Show(ResourceManager.GetString("Align_InvalidSelection", "无法识别选择的对象类型"), Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_InvalidSelection","无法识别选择的对象类型"),Toast.ToastType.Warning);
 					return;
 				}
-				
+
 				foreach(NETOP.Shape shape in shapesToProcess)
 				{
 					float bottom = shape.Top + shape.Height;
 					// 只考虑在下方的参考线
 					var bottomGuides = horizontalGuides.Where(g => g >= bottom).ToList();
-					if(bottomGuides.Count == 0) continue; // 没有下方参考线则跳过
+					if(bottomGuides.Count==0) continue; // 没有下方参考线则跳过
 					float nearest = bottomGuides[0];
 					float minDist = Math.Abs(bottom - nearest);
 					foreach(var guideY in bottomGuides)
 					{
 						float dist = Math.Abs(bottom - guideY);
-						if(dist < minDist)
+						if(dist<minDist)
 						{
-							minDist = dist;
-							nearest = guideY;
+							minDist=dist;
+							nearest=guideY;
 						}
 					}
-					shape.Top = nearest - shape.Height;
+					shape.Top=nearest-shape.Height;
 				}
-				Toast.Show(ResourceManager.GetString("Align_GuideBottom_Success", "已底对齐到参考线"), Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_GuideBottom_Success","已底对齐到参考线"),Toast.ToastType.Success);
 			});
 		}
 
@@ -156,7 +166,7 @@ namespace PPA.Formatting
 		public static void GuideAlignHCenter(NETOP.Application app)
 		{
 			var sel = ShapeUtils.ValidateSelection(app);
-			if(sel == null) return;
+			if(sel==null) return;
 
 			ExHandler.Run(() =>
 			{
@@ -164,12 +174,12 @@ namespace PPA.Formatting
 				List < float > verticalGuides =[];
 				foreach(NETOP.Guide guide in guides.Cast<NETOP.Guide>())
 				{
-					if(guide.Orientation == NETOP.Enums.PpGuideOrientation.ppVerticalGuide)
+					if(guide.Orientation==NETOP.Enums.PpGuideOrientation.ppVerticalGuide)
 						verticalGuides.Add(guide.Position);
 				}
-				if(verticalGuides.Count < 2)
+				if(verticalGuides.Count<2)
 				{
-					Toast.Show(ResourceManager.GetString("Align_NeedTwoVerticalGuides", "至少需要两条垂直参考线"), Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_NeedTwoVerticalGuides","至少需要两条垂直参考线"),Toast.ToastType.Warning);
 					return;
 				}
 				verticalGuides.Sort();
@@ -178,15 +188,13 @@ namespace PPA.Formatting
 				IEnumerable<NETOP.Shape> shapesToProcess;
 				if(sel is NETOP.Shape singleShape)
 				{
-					shapesToProcess = [singleShape];
-				}
-				else if(sel is NETOP.ShapeRange shapeRange)
+					shapesToProcess= [singleShape];
+				} else if(sel is NETOP.ShapeRange shapeRange)
 				{
-					shapesToProcess = shapeRange.Cast<NETOP.Shape>();
-				}
-				else
+					shapesToProcess=shapeRange.Cast<NETOP.Shape>();
+				} else
 				{
-					Toast.Show(ResourceManager.GetString("Align_InvalidSelection", "无法识别选中的对象类型"), Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_InvalidSelection","无法识别选中的对象类型"),Toast.ToastType.Warning);
 					return;
 				}
 
@@ -197,19 +205,19 @@ namespace PPA.Formatting
 					float? a = null, b = null;
 					foreach(var g in verticalGuides)
 					{
-						if(g <= center) a = g;
-						if(g > center)
+						if(g<=center) a=g;
+						if(g>center)
 						{
-							b = g;
+							b=g;
 							break;
 						}
 					}
-					if(a == null || b == null) continue; // 没有包围中点的两条参考线则跳过
+					if(a==null||b==null) continue; // 没有包围中点的两条参考线则跳过
 
 					float targetCenter = ((float) a + (float) b) / 2f;
-					shape.Left = targetCenter - (shape.Width / 2f);
+					shape.Left=targetCenter-(shape.Width/2f);
 				}
-				Toast.Show(ResourceManager.GetString("Align_GuideHCenter_Success", "已水平居中到参考线"), Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_GuideHCenter_Success","已水平居中到参考线"),Toast.ToastType.Success);
 			});
 		}
 
@@ -217,7 +225,7 @@ namespace PPA.Formatting
 		public static void GuideAlignLeft(NETOP.Application app)
 		{
 			var sel = ShapeUtils.ValidateSelection(app);
-			if(sel == null) return;
+			if(sel==null) return;
 
 			ExHandler.Run(() =>
 			{
@@ -225,52 +233,50 @@ namespace PPA.Formatting
 				List < float > verticalGuides =[];
 				foreach(NETOP.Guide guide in guides.Cast<NETOP.Guide>())
 				{
-					if(guide.Orientation == NETOP.Enums.PpGuideOrientation.ppVerticalGuide)
+					if(guide.Orientation==NETOP.Enums.PpGuideOrientation.ppVerticalGuide)
 						verticalGuides.Add(guide.Position);
 				}
-				if(verticalGuides.Count == 0)
+				if(verticalGuides.Count==0)
 				{
-					Toast.Show(ResourceManager.GetString("Align_NoVerticalGuides", "当前文档没有垂直参考线"), Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_NoVerticalGuides","当前文档没有垂直参考线"),Toast.ToastType.Warning);
 					return;
 				}
 
 				List<NETOP.Shape> shapesToProcess = [];
-				
+
 				// 处理不同类型的选择
 				if(sel is NETOP.ShapeRange shapeRange)
 				{
-					shapesToProcess = [.. shapeRange.Cast<NETOP.Shape>()];
-				}
-				else if(sel is NETOP.Shape singleShape)
+					shapesToProcess= [.. shapeRange.Cast<NETOP.Shape>()];
+				} else if(sel is NETOP.Shape singleShape)
 				{
-					shapesToProcess = [singleShape];
-				}
-				else
+					shapesToProcess= [singleShape];
+				} else
 				{
-					Toast.Show(ResourceManager.GetString("Align_InvalidSelection", "无法识别选择的对象类型"), Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_InvalidSelection","无法识别选择的对象类型"),Toast.ToastType.Warning);
 					return;
 				}
-				
+
 				foreach(NETOP.Shape shape in shapesToProcess)
 				{
 					float left = shape.Left;
 					// 只考虑在左侧的参考线
 					var leftGuides = verticalGuides.Where(g => g <= left).ToList();
-					if(leftGuides.Count == 0) continue; // 没有左侧参考线则跳过
+					if(leftGuides.Count==0) continue; // 没有左侧参考线则跳过
 					float nearest = leftGuides[0];
 					float minDist = Math.Abs(left - nearest);
 					foreach(var guideX in leftGuides)
 					{
 						float dist = Math.Abs(left - guideX);
-						if(dist < minDist)
+						if(dist<minDist)
 						{
-							minDist = dist;
-							nearest = guideX;
+							minDist=dist;
+							nearest=guideX;
 						}
 					}
-					shape.Left = nearest;
+					shape.Left=nearest;
 				}
-				Toast.Show(ResourceManager.GetString("Align_GuideLeft_Success", "已左对齐到参考线"), Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_GuideLeft_Success","已左对齐到参考线"),Toast.ToastType.Success);
 			});
 		}
 
@@ -278,7 +284,7 @@ namespace PPA.Formatting
 		public static void GuideAlignRight(NETOP.Application app)
 		{
 			var sel = ShapeUtils.ValidateSelection(app);
-			if(sel == null) return;
+			if(sel==null) return;
 
 			ExHandler.Run(() =>
 			{
@@ -286,52 +292,50 @@ namespace PPA.Formatting
 				List<float> verticalGuides = [];
 				foreach(NETOP.Guide guide in guides.Cast<NETOP.Guide>())
 				{
-					if(guide.Orientation == NETOP.Enums.PpGuideOrientation.ppVerticalGuide)
+					if(guide.Orientation==NETOP.Enums.PpGuideOrientation.ppVerticalGuide)
 						verticalGuides.Add(guide.Position);
 				}
-				if(verticalGuides.Count == 0)
+				if(verticalGuides.Count==0)
 				{
-					Toast.Show(ResourceManager.GetString("Align_NoVerticalGuides", "当前文档没有垂直参考线"), Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_NoVerticalGuides","当前文档没有垂直参考线"),Toast.ToastType.Warning);
 					return;
 				}
 
 				List<NETOP.Shape> shapesToProcess = [];
-				
+
 				// 处理不同类型的选择
 				if(sel is NETOP.ShapeRange shapeRange)
 				{
-					shapesToProcess = [.. shapeRange.Cast<NETOP.Shape>()];
-				}
-				else if(sel is NETOP.Shape singleShape)
+					shapesToProcess= [.. shapeRange.Cast<NETOP.Shape>()];
+				} else if(sel is NETOP.Shape singleShape)
 				{
-					shapesToProcess = [singleShape];
-				}
-				else
+					shapesToProcess= [singleShape];
+				} else
 				{
-					Toast.Show(ResourceManager.GetString("Align_InvalidSelection", "无法识别选择的对象类型"), Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_InvalidSelection","无法识别选择的对象类型"),Toast.ToastType.Warning);
 					return;
 				}
-				
+
 				foreach(NETOP.Shape shape in shapesToProcess)
 				{
 					float right = shape.Left + shape.Width;
 					// 只考虑在右侧的参考线
 					var rightGuides = verticalGuides.Where(g => g >= right).ToList();
-					if(rightGuides.Count == 0) continue; // 没有右侧参考线则跳过
+					if(rightGuides.Count==0) continue; // 没有右侧参考线则跳过
 					float nearest = rightGuides[0];
 					float minDist = Math.Abs(right - nearest);
 					foreach(var guideX in rightGuides)
 					{
 						float dist = Math.Abs(right - guideX);
-						if(dist < minDist)
+						if(dist<minDist)
 						{
-							minDist = dist;
-							nearest = guideX;
+							minDist=dist;
+							nearest=guideX;
 						}
 					}
-					shape.Left = nearest - shape.Width;
+					shape.Left=nearest-shape.Width;
 				}
-				Toast.Show(ResourceManager.GetString("Align_GuideRight_Success", "已右对齐到参考线"), Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_GuideRight_Success","已右对齐到参考线"),Toast.ToastType.Success);
 			});
 		}
 
@@ -339,7 +343,7 @@ namespace PPA.Formatting
 		public static void GuideAlignTop(NETOP.Application app)
 		{
 			var sel = ShapeUtils.ValidateSelection(app);
-			if(sel == null) return;
+			if(sel==null) return;
 
 			ExHandler.Run(() =>
 			{
@@ -347,52 +351,50 @@ namespace PPA.Formatting
 				List<float> horizontalGuides = [];
 				foreach(NETOP.Guide guide in guides.Cast<NETOP.Guide>())
 				{
-					if(guide.Orientation == NETOP.Enums.PpGuideOrientation.ppHorizontalGuide)
+					if(guide.Orientation==NETOP.Enums.PpGuideOrientation.ppHorizontalGuide)
 						horizontalGuides.Add(guide.Position);
 				}
-				if(horizontalGuides.Count == 0)
+				if(horizontalGuides.Count==0)
 				{
-					Toast.Show(ResourceManager.GetString("Align_NoHorizontalGuides", "当前文档没有水平参考线"), Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_NoHorizontalGuides","当前文档没有水平参考线"),Toast.ToastType.Warning);
 					return;
 				}
 
 				List<NETOP.Shape> shapesToProcess = [];
-				
+
 				// 处理不同类型的选择
 				if(sel is NETOP.ShapeRange shapeRange)
 				{
-					shapesToProcess = [.. shapeRange.Cast<NETOP.Shape>()];
-				}
-				else if(sel is NETOP.Shape singleShape)
+					shapesToProcess= [.. shapeRange.Cast<NETOP.Shape>()];
+				} else if(sel is NETOP.Shape singleShape)
 				{
-					shapesToProcess = [singleShape];
-				}
-				else
+					shapesToProcess= [singleShape];
+				} else
 				{
-					Toast.Show(ResourceManager.GetString("Align_InvalidSelection", "无法识别选择的对象类型"), Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_InvalidSelection","无法识别选择的对象类型"),Toast.ToastType.Warning);
 					return;
 				}
-				
+
 				foreach(NETOP.Shape shape in shapesToProcess)
 				{
 					float top = shape.Top;
 					// 只考虑在上方的参考线
 					var topGuides = horizontalGuides.Where(g => g <= top).ToList();
-					if(topGuides.Count == 0) continue; // 没有上方参考线则跳过
+					if(topGuides.Count==0) continue; // 没有上方参考线则跳过
 					float nearest = topGuides[0];
 					float minDist = Math.Abs(top - nearest);
 					foreach(var guideY in topGuides)
 					{
 						float dist = Math.Abs(top - guideY);
-						if(dist < minDist)
+						if(dist<minDist)
 						{
-							minDist = dist;
-							nearest = guideY;
+							minDist=dist;
+							nearest=guideY;
 						}
 					}
-					shape.Top = nearest;
+					shape.Top=nearest;
 				}
-				Toast.Show(ResourceManager.GetString("Align_GuideTop_Success", "已顶对齐到参考线"), Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_GuideTop_Success","已顶对齐到参考线"),Toast.ToastType.Success);
 			});
 		}
 
@@ -400,7 +402,7 @@ namespace PPA.Formatting
 		public static void GuideAlignVCenter(NETOP.Application app)
 		{
 			var sel = ShapeUtils.ValidateSelection(app);
-			if(sel == null) return;
+			if(sel==null) return;
 
 			ExHandler.Run(() =>
 			{
@@ -408,12 +410,12 @@ namespace PPA.Formatting
 				List<float> horizontalGuides = [];
 				foreach(NETOP.Guide guide in guides.Cast<NETOP.Guide>())
 				{
-					if(guide.Orientation == NETOP.Enums.PpGuideOrientation.ppHorizontalGuide)
+					if(guide.Orientation==NETOP.Enums.PpGuideOrientation.ppHorizontalGuide)
 						horizontalGuides.Add(guide.Position);
 				}
-				if(horizontalGuides.Count < 2)
+				if(horizontalGuides.Count<2)
 				{
-					Toast.Show(ResourceManager.GetString("Align_NeedTwoHorizontalGuides", "至少需要两条水平参考线"), Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_NeedTwoHorizontalGuides","至少需要两条水平参考线"),Toast.ToastType.Warning);
 					return;
 				}
 				horizontalGuides.Sort();
@@ -422,15 +424,13 @@ namespace PPA.Formatting
 				IEnumerable<NETOP.Shape> shapesToProcess;
 				if(sel is NETOP.Shape singleShape)
 				{
-					shapesToProcess = [singleShape];
-				}
-				else if(sel is NETOP.ShapeRange shapeRange)
+					shapesToProcess= [singleShape];
+				} else if(sel is NETOP.ShapeRange shapeRange)
 				{
-					shapesToProcess = shapeRange.Cast<NETOP.Shape>();
-				}
-				else
+					shapesToProcess=shapeRange.Cast<NETOP.Shape>();
+				} else
 				{
-					Toast.Show(ResourceManager.GetString("Align_InvalidSelection", "无法识别选中的对象类型"), Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_InvalidSelection","无法识别选中的对象类型"),Toast.ToastType.Warning);
 					return;
 				}
 
@@ -441,19 +441,19 @@ namespace PPA.Formatting
 					float? a = null, b = null;
 					foreach(var g in horizontalGuides)
 					{
-						if(g <= center) a = g;
-						if(g > center)
+						if(g<=center) a=g;
+						if(g>center)
 						{
-							b = g;
+							b=g;
 							break;
 						}
 					}
-					if(a == null || b == null) continue; // 没有包围中点的两条参考线则跳过
+					if(a==null||b==null) continue; // 没有包围中点的两条参考线则跳过
 
 					float targetCenter = ((float) a + (float) b) / 2f;
-					shape.Top = targetCenter - (shape.Height / 2f);
+					shape.Top=targetCenter-(shape.Height/2f);
 				}
-				Toast.Show(ResourceManager.GetString("Align_GuideVCenter_Success", "已垂直居中到参考线"), Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_GuideVCenter_Success","已垂直居中到参考线"),Toast.ToastType.Success);
 			});
 		}
 
@@ -461,7 +461,7 @@ namespace PPA.Formatting
 		public static void GuidesStretchHeight(NETOP.Application app)
 		{
 			var sel = ShapeUtils.ValidateSelection(app);
-			if(sel == null) return;
+			if(sel==null) return;
 
 			ExHandler.Run(() =>
 			{
@@ -470,14 +470,14 @@ namespace PPA.Formatting
 				// 收集所有水平参考线
 				foreach(NETOP.Guide guide in guides.Cast<NETOP.Guide>())
 				{
-					if(guide.Orientation == NETOP.Enums.PpGuideOrientation.ppHorizontalGuide)
+					if(guide.Orientation==NETOP.Enums.PpGuideOrientation.ppHorizontalGuide)
 						horizontalGuides.Add(guide.Position);
 				}
 
 				// 检查参考线数量
-				if(horizontalGuides.Count < 2)
+				if(horizontalGuides.Count<2)
 				{
-					Toast.Show(ResourceManager.GetString("Align_NeedTwoHorizontalGuides", "至少需要两条水平参考线"), Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_NeedTwoHorizontalGuides","至少需要两条水平参考线"),Toast.ToastType.Warning);
 					return;
 				}
 
@@ -485,22 +485,20 @@ namespace PPA.Formatting
 				horizontalGuides.Sort();
 
 				List<NETOP.Shape> shapesToProcess = [];
-				
+
 				// 处理不同类型的选择
 				if(sel is NETOP.ShapeRange shapeRange)
 				{
-					shapesToProcess = [.. shapeRange.Cast<NETOP.Shape>()];
-				}
-				else if(sel is NETOP.Shape singleShape)
+					shapesToProcess= [.. shapeRange.Cast<NETOP.Shape>()];
+				} else if(sel is NETOP.Shape singleShape)
 				{
-					shapesToProcess = [singleShape];
-				}
-				else
+					shapesToProcess= [singleShape];
+				} else
 				{
-					Toast.Show(ResourceManager.GetString("Align_InvalidSelection", "无法识别选择的对象类型"), Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_InvalidSelection","无法识别选择的对象类型"),Toast.ToastType.Warning);
 					return;
 				}
-				
+
 				// 处理每个选中形状
 				foreach(NETOP.Shape shape in shapesToProcess)
 				{
@@ -511,24 +509,24 @@ namespace PPA.Formatting
 					// 查找最近的上下参考线
 					foreach(var guideY in horizontalGuides)
 					{
-						if(guideY <= centerY)
-							topGuide = guideY;  // 当前参考线在中心上方
-						if(guideY > centerY)
+						if(guideY<=centerY)
+							topGuide=guideY;  // 当前参考线在中心上方
+						if(guideY>centerY)
 						{
-							bottomGuide = guideY;  // 找到中心下方的第一条参考线
+							bottomGuide=guideY;  // 找到中心下方的第一条参考线
 							break;
 						}
 					}
 
 					// 应用参考线位置
-					if(topGuide != null && bottomGuide != null)
+					if(topGuide!=null&&bottomGuide!=null)
 					{
-						shape.Top = (float) topGuide;
-						shape.Height = (float) bottomGuide - (float) topGuide;
+						shape.Top=(float) topGuide;
+						shape.Height=(float) bottomGuide-(float) topGuide;
 					}
 				}
 
-				Toast.Show(ResourceManager.GetString("Align_StretchHeight_Success", "已将高度拉伸到参考线"), Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_StretchHeight_Success","已将高度拉伸到参考线"),Toast.ToastType.Success);
 			});
 		}
 
@@ -536,7 +534,7 @@ namespace PPA.Formatting
 		public static void GuidesStretchSize(NETOP.Application app)
 		{
 			var sel = ShapeUtils.ValidateSelection(app);
-			if(sel == null) return;
+			if(sel==null) return;
 
 			ExHandler.Run(() =>
 			{
@@ -547,25 +545,25 @@ namespace PPA.Formatting
 				// 一次性收集所有参考线
 				foreach(NETOP.Guide guide in guides.Cast<NETOP.Guide>())
 				{
-					if(guide.Orientation == NETOP.Enums.PpGuideOrientation.ppVerticalGuide)
+					if(guide.Orientation==NETOP.Enums.PpGuideOrientation.ppVerticalGuide)
 						verticalGuides.Add(guide.Position);
-					else if(guide.Orientation == NETOP.Enums.PpGuideOrientation.ppHorizontalGuide)
+					else if(guide.Orientation==NETOP.Enums.PpGuideOrientation.ppHorizontalGuide)
 						horizontalGuides.Add(guide.Position);
 				}
 
 				// 检查参考线数量
-				if(verticalGuides.Count < 2 || horizontalGuides.Count < 2)
+				if(verticalGuides.Count<2||horizontalGuides.Count<2)
 				{
 					string message = "";
-					if(verticalGuides.Count < 2) 
-						message += ResourceManager.GetString("Align_NeedTwoVerticalGuides", "至少需要两条垂直参考线");
-					if(horizontalGuides.Count < 2)
+					if(verticalGuides.Count<2)
+						message+=ResourceManager.GetString("Align_NeedTwoVerticalGuides","至少需要两条垂直参考线");
+					if(horizontalGuides.Count<2)
 					{
-						if(message != "") message += ResourceManager.GetString("Align_And", "和");
-						message += ResourceManager.GetString("Align_NeedTwoHorizontalGuides", "至少需要两条水平参考线");
+						if(message!="") message+=ResourceManager.GetString("Align_And","和");
+						message+=ResourceManager.GetString("Align_NeedTwoHorizontalGuides","至少需要两条水平参考线");
 					}
 
-					Toast.Show(message, Toast.ToastType.Warning);
+					Toast.Show(message,Toast.ToastType.Warning);
 					return;
 				}
 
@@ -574,22 +572,20 @@ namespace PPA.Formatting
 				horizontalGuides.Sort();
 
 				List<NETOP.Shape> shapesToProcess = [];
-				
+
 				// 处理不同类型的选择
 				if(sel is NETOP.ShapeRange shapeRange)
 				{
-					shapesToProcess = [.. shapeRange.Cast<NETOP.Shape>()];
-				}
-				else if(sel is NETOP.Shape singleShape)
+					shapesToProcess= [.. shapeRange.Cast<NETOP.Shape>()];
+				} else if(sel is NETOP.Shape singleShape)
 				{
-					shapesToProcess = [singleShape];
-				}
-				else
+					shapesToProcess= [singleShape];
+				} else
 				{
-					Toast.Show(ResourceManager.GetString("Align_InvalidSelection", "无法识别选择的对象类型"), Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_InvalidSelection","无法识别选择的对象类型"),Toast.ToastType.Warning);
 					return;
 				}
-				
+
 				// 处理每个选中形状
 				foreach(NETOP.Shape shape in shapesToProcess)
 				{
@@ -598,17 +594,17 @@ namespace PPA.Formatting
 					float? topGuide = null, bottomGuide = null;
 					foreach(var guideY in horizontalGuides)
 					{
-						if(guideY <= centerY) topGuide = guideY;
-						if(guideY > centerY)
+						if(guideY<=centerY) topGuide=guideY;
+						if(guideY>centerY)
 						{
-							bottomGuide = guideY;
+							bottomGuide=guideY;
 							break;
 						}
 					}
-					if(topGuide != null && bottomGuide != null)
+					if(topGuide!=null&&bottomGuide!=null)
 					{
-						shape.Top = (float) topGuide;
-						shape.Height = (float) bottomGuide - (float) topGuide;
+						shape.Top=(float) topGuide;
+						shape.Height=(float) bottomGuide-(float) topGuide;
 					}
 
 					// 处理宽度
@@ -616,21 +612,21 @@ namespace PPA.Formatting
 					float? leftGuide = null, rightGuide = null;
 					foreach(var guideX in verticalGuides)
 					{
-						if(guideX <= centerX) leftGuide = guideX;
-						if(guideX > centerX)
+						if(guideX<=centerX) leftGuide=guideX;
+						if(guideX>centerX)
 						{
-							rightGuide = guideX;
+							rightGuide=guideX;
 							break;
 						}
 					}
-					if(leftGuide != null && rightGuide != null)
+					if(leftGuide!=null&&rightGuide!=null)
 					{
-						shape.Left = (float) leftGuide;
-						shape.Width = (float) rightGuide - (float) leftGuide;
+						shape.Left=(float) leftGuide;
+						shape.Width=(float) rightGuide-(float) leftGuide;
 					}
 				}
 
-				Toast.Show(ResourceManager.GetString("Align_StretchBoth_Success", "已将宽度和高度拉伸到参考线"), Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_StretchBoth_Success","已将宽度和高度拉伸到参考线"),Toast.ToastType.Success);
 			});
 		}
 
@@ -638,7 +634,7 @@ namespace PPA.Formatting
 		public static void GuidesStretchWidth(NETOP.Application app)
 		{
 			var sel = ShapeUtils.ValidateSelection(app);
-			if(sel == null) return;
+			if(sel==null) return;
 
 			ExHandler.Run(() =>
 			{
@@ -646,51 +642,49 @@ namespace PPA.Formatting
 				List<float> verticalGuides = [];
 				foreach(NETOP.Guide guide in guides.Cast<NETOP.Guide>())
 				{
-					if(guide.Orientation == NETOP.Enums.PpGuideOrientation.ppVerticalGuide)
+					if(guide.Orientation==NETOP.Enums.PpGuideOrientation.ppVerticalGuide)
 						verticalGuides.Add(guide.Position);
 				}
-				if(verticalGuides.Count < 2)
+				if(verticalGuides.Count<2)
 				{
-					Toast.Show(ResourceManager.GetString("Align_NeedTwoVerticalGuides", "至少需要两条垂直参考线"), Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_NeedTwoVerticalGuides","至少需要两条垂直参考线"),Toast.ToastType.Warning);
 					return;
 				}
 				verticalGuides.Sort();
 
 				List<NETOP.Shape> shapesToProcess = [];
-				
+
 				// 处理不同类型的选择
 				if(sel is NETOP.ShapeRange shapeRange)
 				{
-					shapesToProcess = [.. shapeRange.Cast<NETOP.Shape>()];
-				}
-				else if(sel is NETOP.Shape singleShape)
+					shapesToProcess= [.. shapeRange.Cast<NETOP.Shape>()];
+				} else if(sel is NETOP.Shape singleShape)
 				{
-					shapesToProcess = [singleShape];
-				}
-				else
+					shapesToProcess= [singleShape];
+				} else
 				{
-					Toast.Show(ResourceManager.GetString("Align_InvalidSelection", "无法识别选择的对象类型"), Toast.ToastType.Warning);
+					Toast.Show(ResourceManager.GetString("Align_InvalidSelection","无法识别选择的对象类型"),Toast.ToastType.Warning);
 					return;
 				}
-				
+
 				foreach(NETOP.Shape shape in shapesToProcess)
 				{
 					float center = shape.Left + (shape.Width / 2f);
 					float? a = null, b = null;
 					foreach(var g in verticalGuides)
 					{
-						if(g <= center) a = g;
-						if(g > center)
+						if(g<=center) a=g;
+						if(g>center)
 						{
-							b = g;
+							b=g;
 							break;
 						}
 					}
-					if(a == null || b == null) continue;
-					shape.Left = (float) a;
-					shape.Width = (float) b - (float) a;
+					if(a==null||b==null) continue;
+					shape.Left=(float) a;
+					shape.Width=(float) b-(float) a;
 				}
-				Toast.Show(ResourceManager.GetString("Align_StretchWidth_Success", "已将宽度拉伸到参考线"), Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_StretchWidth_Success","已将宽度拉伸到参考线"),Toast.ToastType.Success);
 			});
 		}
 
@@ -698,15 +692,15 @@ namespace PPA.Formatting
 		public static void SetEqualHeight(NETOP.Application app)
 		{
 			var sel = ShapeUtils.ValidateSelection(app, true);
-			if(sel == null) return;
+			if(sel==null) return;
 			var shapes = sel;
 
 			ExHandler.Run(() =>
 			{
 				float sourceHeight = shapes[1].Height;
-				for(int i = 1;i <= shapes.Count;i++)
-					shapes[i].Height = sourceHeight;
-				Toast.Show(ResourceManager.GetString("Align_SetEqualHeight_Success", "已设置等高"), Toast.ToastType.Success);
+				for(int i = 1;i<=shapes.Count;i++)
+					shapes[i].Height=sourceHeight;
+				Toast.Show(ResourceManager.GetString("Align_SetEqualHeight_Success","已设置等高"),Toast.ToastType.Success);
 			});
 		}
 
@@ -714,18 +708,18 @@ namespace PPA.Formatting
 		public static void SetEqualSize(NETOP.Application app)
 		{
 			var sel = ShapeUtils.ValidateSelection(app, true);
-			if(sel == null) return;
+			if(sel==null) return;
 			var shapes = sel;
 
 			ExHandler.Run(() =>
 			{
 				float sourceWidth = shapes[1].Width, sourceHeight = shapes[1].Height;
-				for(int i = 1;i <= shapes.Count;i++)
+				for(int i = 1;i<=shapes.Count;i++)
 				{
-					shapes[i].Width = sourceWidth;
-					shapes[i].Height = sourceHeight;
+					shapes[i].Width=sourceWidth;
+					shapes[i].Height=sourceHeight;
 				}
-				Toast.Show(ResourceManager.GetString("Align_SetEqualSize_Success", "已设置等大小"), Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_SetEqualSize_Success","已设置等大小"),Toast.ToastType.Success);
 			});
 		}
 
@@ -733,15 +727,15 @@ namespace PPA.Formatting
 		public static void SetEqualWidth(NETOP.Application app)
 		{
 			var sel = ShapeUtils.ValidateSelection(app, true);
-			if(sel == null) return;
+			if(sel==null) return;
 			var shapes = sel;
 
 			ExHandler.Run(() =>
 			{
 				float sourceWidth = shapes[1].Width;
-				for(int i = 1;i <= shapes.Count;i++)
-					shapes[i].Width = sourceWidth;
-				Toast.Show(ResourceManager.GetString("Align_SetEqualWidth_Success", "已设置等宽"), Toast.ToastType.Success);
+				for(int i = 1;i<=shapes.Count;i++)
+					shapes[i].Width=sourceWidth;
+				Toast.Show(ResourceManager.GetString("Align_SetEqualWidth_Success","已设置等宽"),Toast.ToastType.Success);
 			});
 		}
 
@@ -749,23 +743,23 @@ namespace PPA.Formatting
 		public static void StretchBottom(NETOP.Application app)
 		{
 			var sel = ShapeUtils.ValidateSelection(app, true);
-			if(sel == null) return;
+			if(sel==null) return;
 			var shapes = sel;
 
 			ExHandler.Run(() =>
 			{
 				float maxBottom = float.MinValue;
-				for(int i = 1;i <= shapes.Count;i++)
+				for(int i = 1;i<=shapes.Count;i++)
 				{
 					float bottom = shapes[i].Top + shapes[i].Height;
-					if(bottom > maxBottom) maxBottom = bottom;
+					if(bottom>maxBottom) maxBottom=bottom;
 				}
 
-				for(int i = 1;i <= shapes.Count;i++)
+				for(int i = 1;i<=shapes.Count;i++)
 				{
-					shapes[i].Height = maxBottom - shapes[i].Top;
+					shapes[i].Height=maxBottom-shapes[i].Top;
 				}
-				Toast.Show(ResourceManager.GetString("Align_StretchBottom_Success", "已向下延伸对齐"), Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_StretchBottom_Success","已向下延伸对齐"),Toast.ToastType.Success);
 			});
 		}
 
@@ -773,22 +767,22 @@ namespace PPA.Formatting
 		public static void StretchLeft(NETOP.Application app)
 		{
 			var sel = ShapeUtils.ValidateSelection(app, true);
-			if(sel == null) return;
+			if(sel==null) return;
 			var shapes = sel;
 
 			ExHandler.Run(() =>
 			{
 				float minLeft = float.MaxValue;
-				for(int i = 1;i <= shapes.Count;i++)
-					if(shapes[i].Left < minLeft) minLeft = shapes[i].Left;
+				for(int i = 1;i<=shapes.Count;i++)
+					if(shapes[i].Left<minLeft) minLeft=shapes[i].Left;
 
-				for(int i = 1;i <= shapes.Count;i++)
+				for(int i = 1;i<=shapes.Count;i++)
 				{
 					float right = shapes[i].Left + shapes[i].Width;
-					shapes[i].Width = right - minLeft;
-					shapes[i].Left = minLeft;
+					shapes[i].Width=right-minLeft;
+					shapes[i].Left=minLeft;
 				}
-				Toast.Show(ResourceManager.GetString("Align_StretchLeft_Success", "已向左延伸对齐"), Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_StretchLeft_Success","已向左延伸对齐"),Toast.ToastType.Success);
 			});
 		}
 
@@ -796,24 +790,24 @@ namespace PPA.Formatting
 		public static void StretchRight(NETOP.Application app)
 		{
 			var sel = ShapeUtils.ValidateSelection(app, true);
-			if(sel == null) return;
+			if(sel==null) return;
 			var shapes = sel;
 
 			ExHandler.Run(() =>
 			{
 				float maxRight = float.MinValue;
-				for(int i = 1;i <= shapes.Count;i++)
+				for(int i = 1;i<=shapes.Count;i++)
 				{
 					float right = shapes[i].Left + shapes[i].Width;
-					if(right > maxRight) maxRight = right;
+					if(right>maxRight) maxRight=right;
 				}
 
-				for(int i = 1;i <= shapes.Count;i++)
+				for(int i = 1;i<=shapes.Count;i++)
 				{
-					shapes[i].Width = maxRight - shapes[i].Left;
+					shapes[i].Width=maxRight-shapes[i].Left;
 					// shapes[i].Left 不变
 				}
-				Toast.Show(ResourceManager.GetString("Align_StretchRight_Success", "已向右延伸对齐"), Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_StretchRight_Success","已向右延伸对齐"),Toast.ToastType.Success);
 			});
 		}
 
@@ -821,22 +815,22 @@ namespace PPA.Formatting
 		public static void StretchTop(NETOP.Application app)
 		{
 			var sel = ShapeUtils.ValidateSelection(app, true);
-			if(sel == null) return;
+			if(sel==null) return;
 			var shapes = sel;
 
 			ExHandler.Run(() =>
 			{
 				float minTop = float.MaxValue;
-				for(int i = 1;i <= shapes.Count;i++)
-					if(shapes[i].Top < minTop) minTop = shapes[i].Top;
+				for(int i = 1;i<=shapes.Count;i++)
+					if(shapes[i].Top<minTop) minTop=shapes[i].Top;
 
-				for(int i = 1;i <= shapes.Count;i++)
+				for(int i = 1;i<=shapes.Count;i++)
 				{
 					float bottom = shapes[i].Top + shapes[i].Height;
-					shapes[i].Height = bottom - minTop;
-					shapes[i].Top = minTop;
+					shapes[i].Height=bottom-minTop;
+					shapes[i].Top=minTop;
 				}
-				Toast.Show(ResourceManager.GetString("Align_StretchTop_Success", "已向上延伸对齐"), Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_StretchTop_Success","已向上延伸对齐"),Toast.ToastType.Success);
 			});
 		}
 
@@ -844,7 +838,7 @@ namespace PPA.Formatting
 		public static void SwapSize(NETOP.Application app)
 		{
 			var sel = ShapeUtils.ValidateSelection(app, true);
-			if(sel == null) return;
+			if(sel==null) return;
 			var shapes = sel;
 
 			ExHandler.Run(() =>
@@ -852,74 +846,68 @@ namespace PPA.Formatting
 				var shape1 = shapes[1];
 				var shape2 = shapes[2];
 				// 交换大小
-				(shape1.Width, shape2.Width) = (shape2.Width, shape1.Width);
-				(shape1.Height, shape2.Height) = (shape2.Height, shape1.Height);
+				(shape1.Width, shape2.Width)=(shape2.Width, shape1.Width);
+				(shape1.Height, shape2.Height)=(shape2.Height, shape1.Height);
 
 				// 交换位置
-				(shape1.Left, shape2.Left) = (shape2.Left, shape1.Left);
-				(shape1.Top, shape2.Top) = (shape2.Top, shape1.Top);
+				(shape1.Left, shape2.Left)=(shape2.Left, shape1.Left);
+				(shape1.Top, shape2.Top)=(shape2.Top, shape1.Top);
 
 				// 交换填充颜色
 				try
 				{
-					(shape1.Fill.ForeColor.RGB, shape2.Fill.ForeColor.RGB) = (shape2.Fill.ForeColor.RGB, shape1.Fill.ForeColor.RGB);
-				}
-				catch { /* 某些形状可能不支持填充颜色 */ }
+					(shape1.Fill.ForeColor.RGB, shape2.Fill.ForeColor.RGB)=(shape2.Fill.ForeColor.RGB, shape1.Fill.ForeColor.RGB);
+				} catch { /* 某些形状可能不支持填充颜色 */ }
 
 				// 交换线条样式（安全处理，某些形状可能不支持这些属性）
 				try
 				{
-					if (shape1.Line.Visible == MsoTriState.msoTrue && shape2.Line.Visible == MsoTriState.msoTrue)
+					if(shape1.Line.Visible==MsoTriState.msoTrue&&shape2.Line.Visible==MsoTriState.msoTrue)
 					{
 						var dashStyle1 = shape1.Line.DashStyle;
 						var dashStyle2 = shape2.Line.DashStyle;
-						shape1.Line.DashStyle = dashStyle2;
-						shape2.Line.DashStyle = dashStyle1;
+						shape1.Line.DashStyle=dashStyle2;
+						shape2.Line.DashStyle=dashStyle1;
 					}
-				}
-				catch { /* 某些形状可能不支持 DashStyle */ }
+				} catch { /* 某些形状可能不支持 DashStyle */ }
 
 				try
 				{
-					if (shape1.Line.Visible == MsoTriState.msoTrue && shape2.Line.Visible == MsoTriState.msoTrue)
+					if(shape1.Line.Visible==MsoTriState.msoTrue&&shape2.Line.Visible==MsoTriState.msoTrue)
 					{
 						var style1 = shape1.Line.Style;
 						var style2 = shape2.Line.Style;
-						shape1.Line.Style = style2;
-						shape2.Line.Style = style1;
+						shape1.Line.Style=style2;
+						shape2.Line.Style=style1;
 					}
-				}
-				catch { /* 某些形状可能不支持 Style */ }
+				} catch { /* 某些形状可能不支持 Style */ }
 
 				// 交换线条颜色
 				try
 				{
-					if (shape1.Line.Visible == MsoTriState.msoTrue && shape2.Line.Visible == MsoTriState.msoTrue)
+					if(shape1.Line.Visible==MsoTriState.msoTrue&&shape2.Line.Visible==MsoTriState.msoTrue)
 					{
-						(shape1.Line.ForeColor.RGB, shape2.Line.ForeColor.RGB) = (shape2.Line.ForeColor.RGB, shape1.Line.ForeColor.RGB);
+						(shape1.Line.ForeColor.RGB, shape2.Line.ForeColor.RGB)=(shape2.Line.ForeColor.RGB, shape1.Line.ForeColor.RGB);
 					}
-				}
-				catch { /* 某些形状可能不支持线条颜色 */ }
+				} catch { /* 某些形状可能不支持线条颜色 */ }
 
 				// 交换线条宽度
 				try
 				{
-					if (shape1.Line.Visible == MsoTriState.msoTrue && shape2.Line.Visible == MsoTriState.msoTrue)
+					if(shape1.Line.Visible==MsoTriState.msoTrue&&shape2.Line.Visible==MsoTriState.msoTrue)
 					{
-						(shape1.Line.Weight, shape2.Line.Weight) = (shape2.Line.Weight, shape1.Line.Weight);
+						(shape1.Line.Weight, shape2.Line.Weight)=(shape2.Line.Weight, shape1.Line.Weight);
 					}
-				}
-				catch { /* 某些形状可能不支持线条宽度 */ }
+				} catch { /* 某些形状可能不支持线条宽度 */ }
 
 				// 交换透明度
 				try
 				{
-					(shape1.Fill.Transparency, shape2.Fill.Transparency) = (shape2.Fill.Transparency, shape1.Fill.Transparency);
-				}
-				catch { /* 某些形状可能不支持透明度 */ }
+					(shape1.Fill.Transparency, shape2.Fill.Transparency)=(shape2.Fill.Transparency, shape1.Fill.Transparency);
+				} catch { /* 某些形状可能不支持透明度 */ }
 
 				// 交换字体字号和颜色
-				if(shape1.TextFrame.HasText == MsoTriState.msoTrue && shape2.TextFrame.HasText == MsoTriState.msoTrue)
+				if(shape1.TextFrame.HasText==MsoTriState.msoTrue&&shape2.TextFrame.HasText==MsoTriState.msoTrue)
 				{
 					try
 					{
@@ -927,14 +915,128 @@ namespace PPA.Formatting
 						var textRange2 = shape2.TextFrame.TextRange;
 
 						// 交换字体字号
-						(textRange1.Font.Size, textRange2.Font.Size) = (textRange2.Font.Size, textRange1.Font.Size);
+						(textRange1.Font.Size, textRange2.Font.Size)=(textRange2.Font.Size, textRange1.Font.Size);
 
 						// 交换字体颜色
-						(textRange1.Font.Color.RGB, textRange2.Font.Color.RGB) = (textRange2.Font.Color.RGB, textRange1.Font.Color.RGB);
-					}
-					catch { /* 某些形状可能不支持字体属性 */ }
+						(textRange1.Font.Color.RGB, textRange2.Font.Color.RGB)=(textRange2.Font.Color.RGB, textRange1.Font.Color.RGB);
+					} catch { /* 某些形状可能不支持字体属性 */ }
 				}
-				Toast.Show(ResourceManager.GetString("Align_SwapSize_Success", "已交换大小和位置"), Toast.ToastType.Success);
+				Toast.Show(ResourceManager.GetString("Align_SwapSize_Success","已交换大小和位置"),Toast.ToastType.Success);
+			});
+		}
+
+		/// <summary>
+		/// 执行对齐操作
+		/// </summary>
+		/// <param name="app"> PowerPoint 应用程序实例 </param>
+		/// <param name="alignment"> 对齐类型 </param>
+		/// <param name="alignToSlideMode"> 是否对齐到幻灯片（true：对齐到幻灯片，false：对齐到形状） </param>
+		public static void ExecuteAlignment(NETOP.Application app,AlignmentType alignment,bool alignToSlideMode)
+		{
+			UndoHelper.BeginUndoEntry(app,UndoHelper.UndoNames.AlignShapes);
+			ExHandler.Run(() =>
+			{
+				var sel = ShapeUtils.ValidateSelection(app);
+				if(sel==null)
+				{
+					Toast.Show(ResourceManager.GetString("Toast_NoSelection"),Toast.ToastType.Warning);
+					return;
+				}
+
+				NETOP.ShapeRange shapes;
+				// 尝试直接转换为 ShapeRange
+				if(sel is NETOP.ShapeRange shapeRange)
+				{
+					shapes=shapeRange;
+				}
+				// 如果不是，则尝试处理单个 Shape
+				else if(sel is NETOP.Shape shape&&shape.Parent is NETOP.Slide parentSlide)
+				{
+					// 使用模式匹配确保 Parent 是 Slide 类型，然后创建 ShapeRange
+					shapes=parentSlide.Shapes.Range(new object[] { shape.Name });
+				} else
+				{
+					// 如果两种情况都不满足，则选择无效，直接返回
+					Toast.Show(ResourceManager.GetString("Toast_InvalidSelection"),Toast.ToastType.Warning);
+					return;
+				}
+
+				// 判断对齐基准，1.单选形状：总是对齐到幻灯片；2.多选形状：根据按钮状态决定
+				MsoTriState alignToSlide = (shapes.Count == 1 || alignToSlideMode) ? MsoTriState.msoTrue : MsoTriState.msoFalse;
+
+				// 执行对齐操作
+				switch(alignment)
+				{
+					case AlignmentType.Left:
+						shapes.Align(MsoAlignCmd.msoAlignLefts,alignToSlide);
+						Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						break;
+
+					case AlignmentType.Right:
+						shapes.Align(MsoAlignCmd.msoAlignRights,alignToSlide);
+						Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						break;
+
+					case AlignmentType.Top:
+						shapes.Align(MsoAlignCmd.msoAlignTops,alignToSlide);
+						Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						break;
+
+					case AlignmentType.Bottom:
+						shapes.Align(MsoAlignCmd.msoAlignBottoms,alignToSlide);
+						Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						break;
+
+					case AlignmentType.Centers:
+						shapes.Align(MsoAlignCmd.msoAlignCenters,alignToSlide);
+						Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						break;
+
+					case AlignmentType.Middles:
+						shapes.Align(MsoAlignCmd.msoAlignMiddles,alignToSlide);
+						Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						break;
+
+					case AlignmentType.Horizontally:
+					{
+						// 根据对齐基准确定所需的最小形状数
+						int minRequired = (alignToSlide == MsoTriState.msoTrue) ? 1 : 3;
+						if(shapes.Count>=minRequired)
+						{
+							shapes.Distribute(MsoDistributeCmd.msoDistributeHorizontally,alignToSlide);
+							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						} else
+						{
+							string basis = (alignToSlide == MsoTriState.msoTrue)
+									? ResourceManager.GetString("Toast_Basis_Page", "页面")
+									: ResourceManager.GetString("Toast_Basis_Shape", "形状");
+							Toast.Show(ResourceManager.GetString("Toast_AlignMinShapes",basis,minRequired),Toast.ToastType.Warning);
+						}
+					}
+					break;
+
+					case AlignmentType.Vertically:
+					{
+						// 根据对齐基准确定所需的最小形状数
+						int minRequired = (alignToSlide == MsoTriState.msoTrue) ? 1 : 3;
+						if(shapes.Count>=minRequired)
+						{
+							shapes.Distribute(MsoDistributeCmd.msoDistributeVertically,alignToSlide);
+							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						} else
+						{
+							string basis = (alignToSlide == MsoTriState.msoTrue)
+									? ResourceManager.GetString("Toast_Basis_Page", "页面")
+									: ResourceManager.GetString("Toast_Basis_Shape", "形状");
+							Toast.Show(ResourceManager.GetString("Toast_AlignMinShapes",basis,minRequired),Toast.ToastType.Warning);
+						}
+					}
+					break;
+
+					default:
+						Toast.Show(ResourceManager.GetString("Toast_UnknownAlignment",alignment.ToString()),Toast.ToastType.Error);
+						break;
+				}
 			});
 		}
 

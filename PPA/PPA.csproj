@@ -159,7 +159,6 @@
       <HintPath>packages\NetOfficeFw.VBIDE.2.0.0-preview20\lib\net462\VBIDEApi.dll</HintPath>
       <EmbedInteropTypes>False</EmbedInteropTypes>
     </Reference>
-
   </ItemGroup>
   <!-- 可选的VSTO引用，仅在Visual Studio环境中需要 -->
   <ItemGroup Condition="Exists('$(VSToolsPath)\OfficeTools\')">
@@ -222,10 +221,15 @@
     <Compile Include="Utilities\Toast.cs" />
     <Compile Include="Utilities\FileLocator.cs" />
     <Compile Include="Utilities\ComListExtensions.cs" />
-    <Compile Include="Formatting\FormatHelper.cs" />
-    <Compile Include="Formatting\BatchHelper.cs" />
+    <Compile Include="Formatting\TableFormatHelper.cs" />
+    <Compile Include="Formatting\TextFormatHelper.cs" />
+    <Compile Include="Formatting\ChartFormatHelper.cs" />
+    <Compile Include="Formatting\TableBatchHelper.cs" />
+    <Compile Include="Formatting\TextBatchHelper.cs" />
+    <Compile Include="Formatting\ChartBatchHelper.cs" />
+    <Compile Include="Formatting\ShapeBatchHelper.cs" />
     <Compile Include="Formatting\FormattingConfig.cs" />
-    <Compile Include="Formatting\AsyncOperationHelper.cs" />
+    <Compile Include="Utilities\AsyncOperationHelper.cs" />
     <Compile Include="Formatting\UndoHelper.cs" />
     <Compile Include="Formatting\AlignHelper.cs" />
     <Compile Include="Shape\ShapeUtils.cs" />
@@ -267,14 +271,16 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="AddIn\ThisAddIn.cs">
+    <Compile Include="ThisAddIn.cs">
       <SubType>Code</SubType>
     </Compile>
-    <None Include="AddIn\ThisAddIn.Designer.xml">
+    <None Include="ThisAddIn.Designer.xml">
       <DependentUpon>ThisAddIn.cs</DependentUpon>
     </None>
-    <Compile Include="AddIn\ThisAddIn.Designer.cs">
+    <Compile Include="ThisAddIn.Designer.cs">
       <DependentUpon>ThisAddIn.Designer.xml</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
     </Compile>
     <AppDesigner Include="Properties\" />
   </ItemGroup>
@@ -313,7 +319,7 @@
       <FlavorProperties GUID="{BAA0C2D2-18E2-41B9-852F-F413020CAA33}">
         <ProjectProperties HostName="PowerPoint" HostPackage="{29A7B9D7-A7F1-4328-8EF0-6B2D1A56B2C1}" OfficeVersion="15.0" VstxVersion="4.0" ApplicationType="PowerPoint" Language="cs" TemplatesPath="" DebugInfoExeName="#Software\Microsoft\Office\16.0\PowerPoint\InstallRoot\Path#powerpnt.exe" AddItemTemplatesGuid="{51063C3A-E220-4D12-8922-BDA915ACD783}" />
         <Host Name="PowerPoint" GeneratedCodeNamespace="PPA" IconIndex="0">
-          <HostItem Name="ThisAddIn" Code="AddIn\ThisAddIn.cs" CanonicalName="AddIn" CanActivate="false" IconIndex="1" Blueprint="AddIn\ThisAddIn.Designer.xml" GeneratedCode="AddIn\ThisAddIn.Designer.cs" />
+          <HostItem Name="ThisAddIn" Code="ThisAddIn.cs" CanonicalName="AddIn" CanActivate="false" IconIndex="1" Blueprint="ThisAddIn.Designer.xml" GeneratedCode="ThisAddIn.Designer.cs" />
         </Host>
       </FlavorProperties>
     </VisualStudio>
