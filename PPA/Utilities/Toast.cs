@@ -489,10 +489,19 @@ namespace PPA.Utilities
 		#endregion Private Methods
 	}
 
+	/// <summary>
+	/// 双缓冲面板类
+	/// 继承自Panel，启用双缓冲以减少绘制时的闪烁
+	/// </summary>
 	internal class DoubleBufferedPanel:Panel
 	{
+		/// <summary>
+		/// 构造函数
+		/// 初始化面板并启用双缓冲功能
+		/// </summary>
 		public DoubleBufferedPanel()
 		{
+			// 启用双缓冲，减少绘制时的闪烁现象
 			this.DoubleBuffered=true;
 		}
 	}

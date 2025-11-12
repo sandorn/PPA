@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
@@ -43,31 +42,6 @@ namespace PPA.Formatting
 			}
 		}
 
-		/// <summary>
-		/// 获取程序集版本号
-		/// </summary>
-		/// <param name="formatAsThreePart"> 如果为 true，当修订号为 0 时返回三段式版本（如 "0.9.0"），否则返回四段式（如 "0.9.0.0"） </param>
-		private static string GetAssemblyVersion(bool formatAsThreePart = false)
-		{
-			try
-			{
-				var assembly = Assembly.GetExecutingAssembly();
-				var version = assembly.GetName().Version;
-				if(version==null)
-					return formatAsThreePart ? "0.9.0" : "0.9.0.0";
-
-				// 如果修订号为 0 且需要三段式格式，则返回三段式
-				if(formatAsThreePart&&version.Revision==0)
-				{
-					return $"{version.Major}.{version.Minor}.{version.Build}";
-				}
-
-				return version.ToString();
-			} catch
-			{
-				return formatAsThreePart ? "0.9.0" : "0.9.0.0";
-			}
-		}
 
 		/// <summary>
 		/// 获取配置文件路径
@@ -112,43 +86,16 @@ namespace PPA.Formatting
 		private static FormattingConfig LoadConfig()
 		{
 			string configPath = GetConfigFilePath();
-			string oldConfigPath = GetOldConfigFilePath(); // 旧路径（用户主目录）
 
 			try
 			{
-				// 如果新路径存在，直接加载
+				// 如果配置文件存在，直接加载
 				if(File.Exists(configPath))
 				{
 					var config = LoadConfigFromFile(configPath);
 					if(config!=null)
 					{
-						// 同步程序集版本到配置文件
-						SyncVersionFromAssembly(config,configPath);
 						return config;
-					}
-				}
-
-				// 如果新路径不存在，但旧路径存在，则迁移旧配置
-				if(File.Exists(oldConfigPath)&&!File.Exists(configPath))
-				{
-					Profiler.LogMessage($"发现旧配置文件，正在迁移: {oldConfigPath} -> {configPath}");
-					try
-					{
-						var oldConfig = LoadConfigFromFile(oldConfigPath);
-						if(oldConfig!=null)
-						{
-							// 设置程序集版本并保存到新位置
-							oldConfig.Version=GetAssemblyVersion();
-							oldConfig.Save();
-							Profiler.LogMessage($"配置文件已迁移到新位置: {configPath}");
-
-							// 可选：删除旧配置文件（保留作为备份） File.Delete(oldConfigPath);
-
-							return oldConfig;
-						}
-					} catch(Exception ex)
-					{
-						Profiler.LogMessage($"迁移配置文件失败: {ex.Message}，将创建新配置");
 					}
 				}
 			} catch(Exception ex)
@@ -158,8 +105,7 @@ namespace PPA.Formatting
 
 			// 如果加载失败或文件不存在，返回默认配置
 			var defaultConfig = new FormattingConfig();
-			defaultConfig.Version=GetAssemblyVersion(); // 使用程序集版本
-														// 设置默认快捷键（仅在创建新配置文件时） 只配置数字或字母，系统会自动添加 Ctrl 修饰键
+			// 设置默认快捷键（仅在创建新配置文件时） 只配置数字或字母，系统会自动添加 Ctrl 修饰键
 			defaultConfig.Shortcuts.FormatChart="3";
 			defaultConfig.Save(); // 保存默认配置到文件
 			return defaultConfig;
@@ -185,89 +131,12 @@ namespace PPA.Formatting
 		}
 
 		/// <summary>
-		/// 获取旧配置文件路径（用户主目录）
-		/// </summary>
-		private static string GetOldConfigFilePath()
-		{
-			string userProfileDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-			if(string.IsNullOrEmpty(userProfileDir))
-			{
-				userProfileDir=Environment.GetEnvironmentVariable("USERPROFILE")??
-								 Environment.GetEnvironmentVariable("HOME")??
-								 ".";
-			}
-			return Path.Combine(userProfileDir,"PPAConfig.xml");
-		}
-
-		/// <summary>
-		/// 同步程序集版本到配置文件
-		/// </summary>
-		private static void SyncVersionFromAssembly(FormattingConfig config,string configPath)
-		{
-			try
-			{
-				string assemblyVersion = GetAssemblyVersion();
-
-				// 如果配置文件版本与程序集版本不一致，更新配置文件
-				if(string.IsNullOrEmpty(config.Version)||config.Version!=assemblyVersion)
-				{
-					string oldVersion = config.Version ?? "未知";
-					Profiler.LogMessage($"配置文件版本 ({oldVersion}) 与程序集版本 ({assemblyVersion}) 不一致，正在同步");
-
-					// 设置程序集版本
-					config.Version=assemblyVersion;
-
-					// 这里可以添加版本特定的迁移逻辑 例如：添加新字段、转换旧格式等
-
-					// 保存更新后的配置
-					config.Save();
-					Profiler.LogMessage($"配置版本已同步到程序集版本: {assemblyVersion}");
-				}
-			} catch(Exception ex)
-			{
-				Profiler.LogMessage($"同步版本失败: {ex.Message}");
-			}
-		}
-
-		/// <summary> 比较版本号 </summary> <returns>负数表示 version1 < version2，0 表示相等，正数表示 version1 > version2</returns>
-		private static int CompareVersion(string version1,string version2)
-		{
-			if(string.IsNullOrEmpty(version1)) return -1;
-			if(string.IsNullOrEmpty(version2)) return 1;
-
-			try
-			{
-				var v1Parts = version1.Split('.').Select(int.Parse).ToArray();
-				var v2Parts = version2.Split('.').Select(int.Parse).ToArray();
-
-				int maxLength = Math.Max(v1Parts.Length, v2Parts.Length);
-				for(int i = 0;i<maxLength;i++)
-				{
-					int v1Part = i < v1Parts.Length ? v1Parts[i] : 0;
-					int v2Part = i < v2Parts.Length ? v2Parts[i] : 0;
-
-					if(v1Part<v2Part) return -1;
-					if(v1Part>v2Part) return 1;
-				}
-
-				return 0;
-			} catch
-			{
-				// 如果版本格式不正确，使用字符串比较
-				return string.Compare(version1,version2,StringComparison.Ordinal);
-			}
-		}
-
-		/// <summary>
 		/// 保存配置到文件
 		/// </summary>
 		public void Save()
 		{
 			try
 			{
-				// 保存前确保版本与程序集版本一致
-				this.Version=GetAssemblyVersion();
-
 				string configPath = GetConfigFilePath();
 				var serializer = new XmlSerializer(typeof(FormattingConfig));
 				var ns = new XmlSerializerNamespaces();
@@ -396,16 +265,6 @@ namespace PPA.Formatting
 
 		#endregion Singleton
 
-		#region Version
-
-		/// <summary>
-		/// 配置文件版本（与程序集版本同步） 注意：此默认值仅在首次创建配置对象时使用，实际运行时会自动同步到程序集版本 .NET
-		/// 程序集版本使用四段式格式（主版本.次版本.生成号.修订号），如 "0.9.0.0"
-		/// </summary>
-		[XmlAttribute("Version")]
-		public string Version { get; set; } = "0.9.0.0";
-
-		#endregion Version
 
 		#region Table Formatting Configuration
 

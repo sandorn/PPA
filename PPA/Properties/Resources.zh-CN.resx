@@ -148,6 +148,30 @@
   <data name="Settings_ConfigReloaded" xml:space="preserve">
     <value>配置已重新加载</value>
   </data>
+  <data name="SettingsForm_Title" xml:space="preserve">
+    <value>格式化参数设置</value>
+  </data>
+  <data name="SettingsForm_Reload" xml:space="preserve">
+    <value>重新加载</value>
+  </data>
+  <data name="SettingsForm_Save" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="SettingsForm_Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="SettingsForm_ConfigFilePath" xml:space="preserve">
+    <value>配置文件路径: </value>
+  </data>
+  <data name="SettingsForm_DesignModeConfigFilePath" xml:space="preserve">
+    <value>设计时配置文件路径</value>
+  </data>
+  <data name="SettingsForm_EditValue" xml:space="preserve">
+    <value>编辑值:</value>
+  </data>
+  <data name="SettingsForm_NodeDescription" xml:space="preserve">
+    <value>节点说明:</value>
+  </data>
   
   <!-- Ribbon 界面文本 -->
   <data name="Ribbon_CustomTabXml" xml:space="preserve">
@@ -513,6 +537,224 @@
   </data>
   <data name="AboutForm_Error" xml:space="preserve">
     <value>错误</value>
+  </data>
+  <!-- 配置说明 - 属性说明 -->
+  <data name="ConfigDesc_Attr_Table_StyleId" xml:space="preserve">
+    <value>表格样式 ID（Office 主题样式的 GUID）。用于应用内置主题表格样式。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Table_DataRowBorderWidth" xml:space="preserve">
+    <value>数据行边框宽度（磅）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Table_HeaderRowBorderWidth" xml:space="preserve">
+    <value>标题行边框宽度（磅）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Table_DataRowBorderColor" xml:space="preserve">
+    <value>数据行边框颜色主题（如 Accent1~Accent6、Dark1、Light1）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Table_HeaderRowBorderColor" xml:space="preserve">
+    <value>标题行边框颜色主题（如 Accent1~Accent6、Dark1、Light1）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Table_AutoNumberFormat" xml:space="preserve">
+    <value>是否启用数字格式化（true/false）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Table_DecimalPlaces" xml:space="preserve">
+    <value>数字格式化保留的小数位数。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Table_NegativeTextColor" xml:space="preserve">
+    <value>负数文本颜色（整数 RGB，-65536 表示红色）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_TableSettings_FirstRow" xml:space="preserve">
+    <value>启用"标题行"格式（true/false）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_TableSettings_FirstCol" xml:space="preserve">
+    <value>启用"首列"格式（true/false）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_TableSettings_LastRow" xml:space="preserve">
+    <value>启用"汇总行/最后一行"格式（true/false）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_TableSettings_LastCol" xml:space="preserve">
+    <value>启用"末列"格式（true/false）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_TableSettings_HorizBanding" xml:space="preserve">
+    <value>启用"交错着色（横向条纹）"（true/false）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_TableSettings_VertBanding" xml:space="preserve">
+    <value>启用"交错着色（纵向条纹）"（true/false）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_LeftIndent" xml:space="preserve">
+    <value>段落左缩进（厘米）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Margins_Top" xml:space="preserve">
+    <value>文本框上边距（厘米）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Margins_Bottom" xml:space="preserve">
+    <value>文本框下边距（厘米）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Margins_Left" xml:space="preserve">
+    <value>文本框左边距（厘米）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Margins_Right" xml:space="preserve">
+    <value>文本框右边距（厘米）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Font_Name" xml:space="preserve">
+    <value>字体名称（西文字体），如 Arial、Consolas。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Font_NameFarEast" xml:space="preserve">
+    <value>中文/东亚字体名称（如 +mn-ea）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Font_Size" xml:space="preserve">
+    <value>字体大小（磅）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Font_Bold" xml:space="preserve">
+    <value>是否加粗（true/false）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Font_ThemeColor" xml:space="preserve">
+    <value>字体主题颜色名称（如 Dark1、Accent1~Accent6）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Paragraph_Alignment" xml:space="preserve">
+    <value>段落对齐方式：Left、Center、Right、Justify、Distribute。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Paragraph_WordWrap" xml:space="preserve">
+    <value>是否自动换行（true/false）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Paragraph_SpaceBefore" xml:space="preserve">
+    <value>段前间距（磅）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Paragraph_SpaceAfter" xml:space="preserve">
+    <value>段后间距（磅）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Paragraph_SpaceWithin" xml:space="preserve">
+    <value>行距（倍数）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Paragraph_FarEastLineBreakControl" xml:space="preserve">
+    <value>中文断行控制（true/false）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Paragraph_HangingPunctuation" xml:space="preserve">
+    <value>标点悬挂（true/false）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Bullet_Type" xml:space="preserve">
+    <value>项目符号类型：None、Numbered、Unnumbered、Picture。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Bullet_Character" xml:space="preserve">
+    <value>项目符号字符（Unicode 码点，如 9632 为实心方块）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Bullet_FontName" xml:space="preserve">
+    <value>项目符号字体名称（用于正确显示符号）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Bullet_RelativeSize" xml:space="preserve">
+    <value>项目符号相对字号（相对于段落字体）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Bullet_ThemeColor" xml:space="preserve">
+    <value>项目符号主题颜色名称。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Shortcuts_FormatTables" xml:space="preserve">
+    <value>"美化表格"快捷键：填写数字或字母（如 1、T），实际为 Ctrl+键。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Shortcuts_FormatText" xml:space="preserve">
+    <value>"美化文本"快捷键：填写数字或字母（如 2、X），实际为 Ctrl+键。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Shortcuts_FormatChart" xml:space="preserve">
+    <value>"美化图表"快捷键：填写数字或字母（如 3、C），实际为 Ctrl+键。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Shortcuts_CreateBoundingBox" xml:space="preserve">
+    <value>"插入形状"快捷键：填写数字或字母（如 4、I），实际为 Ctrl+键。</value>
+  </data>
+  <!-- 配置说明 - 元素说明 -->
+  <data name="ConfigDesc_Elem_PPAConfig" xml:space="preserve">
+    <value>PPA 配置根节点，包含表格、文本、图表格式及快捷键配置。</value>
+  </data>
+  <data name="ConfigDesc_Elem_Table" xml:space="preserve">
+    <value>表格格式化配置：样式、边框、数字格式及表格标志设置。</value>
+  </data>
+  <data name="ConfigDesc_Elem_Table_DataRowFont" xml:space="preserve">
+    <value>数据行字体配置：名称、大小、粗细、主题颜色。</value>
+  </data>
+  <data name="ConfigDesc_Elem_Table_HeaderRowFont" xml:space="preserve">
+    <value>标题行字体配置：名称、大小、粗细、主题颜色。</value>
+  </data>
+  <data name="ConfigDesc_Elem_Table_TableSettings" xml:space="preserve">
+    <value>表格标志设置：标题行、首列、末列、汇总行、条纹等。</value>
+  </data>
+  <data name="ConfigDesc_Elem_Text" xml:space="preserve">
+    <value>文本格式化配置：边距、字体、段落、项目符号等。</value>
+  </data>
+  <data name="ConfigDesc_Elem_Text_Margins" xml:space="preserve">
+    <value>文本边距（厘米）：上/下/左/右。</value>
+  </data>
+  <data name="ConfigDesc_Elem_Text_Font" xml:space="preserve">
+    <value>文本字体配置：名称、中文字体、大小、粗细、主题颜色。</value>
+  </data>
+  <data name="ConfigDesc_Elem_Text_Paragraph" xml:space="preserve">
+    <value>段落格式：对齐、换行、段前/段后、行距、中文断行、标点悬挂。</value>
+  </data>
+  <data name="ConfigDesc_Elem_Text_Bullet" xml:space="preserve">
+    <value>项目符号：类型、符号字符、字体、相对字号、颜色。</value>
+  </data>
+  <data name="ConfigDesc_Elem_Chart" xml:space="preserve">
+    <value>图表格式化配置：常规与标题的字体样式。</value>
+  </data>
+  <data name="ConfigDesc_Elem_Chart_RegularFont" xml:space="preserve">
+    <value>图表常规字体：名称、中文字体、大小、粗细、主题颜色。</value>
+  </data>
+  <data name="ConfigDesc_Elem_Chart_TitleFont" xml:space="preserve">
+    <value>图表标题字体：名称、中文字体、大小、粗细、主题颜色。</value>
+  </data>
+  <data name="ConfigDesc_Elem_Shortcuts" xml:space="preserve">
+    <value>快捷键配置：填写数字或字母，实际组合为 Ctrl+键。</value>
+  </data>
+  <!-- 配置说明 - 标签文本 -->
+  <data name="ConfigDesc_Label_Attribute" xml:space="preserve">
+    <value>● 属性:</value>
+  </data>
+  <data name="ConfigDesc_Label_Element" xml:space="preserve">
+    <value>● 元素:</value>
+  </data>
+  <data name="ConfigDesc_Label_Path" xml:space="preserve">
+    <value>● 路径:</value>
+  </data>
+  <data name="ConfigDesc_Label_CurrentValue" xml:space="preserve">
+    <value>● 当前值:</value>
+  </data>
+  <data name="ConfigDesc_Label_NodeType" xml:space="preserve">
+    <value>● 节点类型:</value>
+  </data>
+  <data name="ConfigDesc_Label_ChildCount" xml:space="preserve">
+    <value>● 子节点数:</value>
+  </data>
+  <data name="ConfigDesc_Label_AttributeCount" xml:space="preserve">
+    <value>● 属性数:</value>
+  </data>
+  <data name="ConfigDesc_Label_ContainsAttributes" xml:space="preserve">
+    <value>包含属性:</value>
+  </data>
+  <!-- 配置说明 - 节点类型 -->
+  <data name="ConfigDesc_NodeType_Mixed" xml:space="preserve">
+    <value>混合节点</value>
+  </data>
+  <data name="ConfigDesc_NodeType_Container" xml:space="preserve">
+    <value>容器节点</value>
+  </data>
+  <data name="ConfigDesc_NodeType_Text" xml:space="preserve">
+    <value>文本节点</value>
+  </data>
+  <data name="ConfigDesc_NodeType_Attribute" xml:space="preserve">
+    <value>属性节点</value>
+  </data>
+  <data name="ConfigDesc_NodeType_Empty" xml:space="preserve">
+    <value>空节点</value>
+  </data>
+  <!-- 配置说明 - 其他 -->
+  <data name="ConfigDesc_NoSpecificDescription" xml:space="preserve">
+    <value>暂无针对性说明。</value>
+  </data>
+  <data name="ConfigDesc_NoNodeSelected" xml:space="preserve">
+    <value>未选择有效节点</value>
+  </data>
+  <data name="ConfigDesc_NodeHasMultipleAttributes" xml:space="preserve">
+    <value>节点包含 {0} 个属性</value>
+  </data>
+  <data name="ConfigDesc_NodeInfo" xml:space="preserve">
+    <value>节点: {0}&#x0D;&#x0A;子节点数: {1}&#x0D;&#x0A;属性数: {2}</value>
   </data>
 </root>
 

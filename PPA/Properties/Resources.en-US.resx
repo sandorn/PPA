@@ -148,6 +148,30 @@
   <data name="Settings_ConfigReloaded" xml:space="preserve">
     <value>Configuration reloaded</value>
   </data>
+  <data name="SettingsForm_Title" xml:space="preserve">
+    <value>Formatting Parameters Settings</value>
+  </data>
+  <data name="SettingsForm_Reload" xml:space="preserve">
+    <value>Reload</value>
+  </data>
+  <data name="SettingsForm_Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="SettingsForm_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="SettingsForm_ConfigFilePath" xml:space="preserve">
+    <value>Configuration file path: </value>
+  </data>
+  <data name="SettingsForm_DesignModeConfigFilePath" xml:space="preserve">
+    <value>Design-time configuration file path</value>
+  </data>
+  <data name="SettingsForm_EditValue" xml:space="preserve">
+    <value>Edit Value:</value>
+  </data>
+  <data name="SettingsForm_NodeDescription" xml:space="preserve">
+    <value>Node Description:</value>
+  </data>
   
   <!-- Ribbon UI Text -->
   <data name="Ribbon_CustomTabXml" xml:space="preserve">
@@ -514,6 +538,224 @@ Supports multi-language interface and customizable formatting parameters.</value
   </data>
   <data name="AboutForm_Error" xml:space="preserve">
     <value>Error</value>
+  </data>
+  <!-- Configuration Descriptions - Attribute Descriptions -->
+  <data name="ConfigDesc_Attr_Table_StyleId" xml:space="preserve">
+    <value>Table style ID (GUID of Office theme style). Used to apply built-in theme table styles.</value>
+  </data>
+  <data name="ConfigDesc_Attr_Table_DataRowBorderWidth" xml:space="preserve">
+    <value>Data row border width (points).</value>
+  </data>
+  <data name="ConfigDesc_Attr_Table_HeaderRowBorderWidth" xml:space="preserve">
+    <value>Header row border width (points).</value>
+  </data>
+  <data name="ConfigDesc_Attr_Table_DataRowBorderColor" xml:space="preserve">
+    <value>Data row border color theme (e.g., Accent1~Accent6, Dark1, Light1).</value>
+  </data>
+  <data name="ConfigDesc_Attr_Table_HeaderRowBorderColor" xml:space="preserve">
+    <value>Header row border color theme (e.g., Accent1~Accent6, Dark1, Light1).</value>
+  </data>
+  <data name="ConfigDesc_Attr_Table_AutoNumberFormat" xml:space="preserve">
+    <value>Enable number formatting (true/false).</value>
+  </data>
+  <data name="ConfigDesc_Attr_Table_DecimalPlaces" xml:space="preserve">
+    <value>Number of decimal places for number formatting.</value>
+  </data>
+  <data name="ConfigDesc_Attr_Table_NegativeTextColor" xml:space="preserve">
+    <value>Negative number text color (integer RGB, -65536 represents red).</value>
+  </data>
+  <data name="ConfigDesc_Attr_TableSettings_FirstRow" xml:space="preserve">
+    <value>Enable "Header Row" format (true/false).</value>
+  </data>
+  <data name="ConfigDesc_Attr_TableSettings_FirstCol" xml:space="preserve">
+    <value>Enable "First Column" format (true/false).</value>
+  </data>
+  <data name="ConfigDesc_Attr_TableSettings_LastRow" xml:space="preserve">
+    <value>Enable "Total Row/Last Row" format (true/false).</value>
+  </data>
+  <data name="ConfigDesc_Attr_TableSettings_LastCol" xml:space="preserve">
+    <value>Enable "Last Column" format (true/false).</value>
+  </data>
+  <data name="ConfigDesc_Attr_TableSettings_HorizBanding" xml:space="preserve">
+    <value>Enable "Banded Rows" (horizontal stripes) (true/false).</value>
+  </data>
+  <data name="ConfigDesc_Attr_TableSettings_VertBanding" xml:space="preserve">
+    <value>Enable "Banded Columns" (vertical stripes) (true/false).</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_LeftIndent" xml:space="preserve">
+    <value>Paragraph left indent (centimeters).</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Margins_Top" xml:space="preserve">
+    <value>Text box top margin (centimeters).</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Margins_Bottom" xml:space="preserve">
+    <value>Text box bottom margin (centimeters).</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Margins_Left" xml:space="preserve">
+    <value>Text box left margin (centimeters).</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Margins_Right" xml:space="preserve">
+    <value>Text box right margin (centimeters).</value>
+  </data>
+  <data name="ConfigDesc_Attr_Font_Name" xml:space="preserve">
+    <value>Font name (Western font), e.g., Arial, Consolas.</value>
+  </data>
+  <data name="ConfigDesc_Attr_Font_NameFarEast" xml:space="preserve">
+    <value>Chinese/East Asian font name (e.g., +mn-ea).</value>
+  </data>
+  <data name="ConfigDesc_Attr_Font_Size" xml:space="preserve">
+    <value>Font size (points).</value>
+  </data>
+  <data name="ConfigDesc_Attr_Font_Bold" xml:space="preserve">
+    <value>Bold (true/false).</value>
+  </data>
+  <data name="ConfigDesc_Attr_Font_ThemeColor" xml:space="preserve">
+    <value>Font theme color name (e.g., Dark1, Accent1~Accent6).</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Paragraph_Alignment" xml:space="preserve">
+    <value>Paragraph alignment: Left, Center, Right, Justify, Distribute.</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Paragraph_WordWrap" xml:space="preserve">
+    <value>Auto word wrap (true/false).</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Paragraph_SpaceBefore" xml:space="preserve">
+    <value>Space before paragraph (points).</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Paragraph_SpaceAfter" xml:space="preserve">
+    <value>Space after paragraph (points).</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Paragraph_SpaceWithin" xml:space="preserve">
+    <value>Line spacing (multiple).</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Paragraph_FarEastLineBreakControl" xml:space="preserve">
+    <value>East Asian line break control (true/false).</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Paragraph_HangingPunctuation" xml:space="preserve">
+    <value>Hanging punctuation (true/false).</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Bullet_Type" xml:space="preserve">
+    <value>Bullet type: None, Numbered, Unnumbered, Picture.</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Bullet_Character" xml:space="preserve">
+    <value>Bullet character (Unicode code point, e.g., 9632 for solid square).</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Bullet_FontName" xml:space="preserve">
+    <value>Bullet font name (for correct symbol display).</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Bullet_RelativeSize" xml:space="preserve">
+    <value>Bullet relative size (relative to paragraph font).</value>
+  </data>
+  <data name="ConfigDesc_Attr_Text_Bullet_ThemeColor" xml:space="preserve">
+    <value>Bullet theme color name.</value>
+  </data>
+  <data name="ConfigDesc_Attr_Shortcuts_FormatTables" xml:space="preserve">
+    <value>"Format Tables" shortcut: Enter a number or letter (e.g., 1, T), actual combination is Ctrl+key.</value>
+  </data>
+  <data name="ConfigDesc_Attr_Shortcuts_FormatText" xml:space="preserve">
+    <value>"Format Text" shortcut: Enter a number or letter (e.g., 2, X), actual combination is Ctrl+key.</value>
+  </data>
+  <data name="ConfigDesc_Attr_Shortcuts_FormatChart" xml:space="preserve">
+    <value>"Format Chart" shortcut: Enter a number or letter (e.g., 3, C), actual combination is Ctrl+key.</value>
+  </data>
+  <data name="ConfigDesc_Attr_Shortcuts_CreateBoundingBox" xml:space="preserve">
+    <value>"Insert Shape" shortcut: Enter a number or letter (e.g., 4, I), actual combination is Ctrl+key.</value>
+  </data>
+  <!-- Configuration Descriptions - Element Descriptions -->
+  <data name="ConfigDesc_Elem_PPAConfig" xml:space="preserve">
+    <value>PPA configuration root node, containing table, text, chart formatting, and shortcut configurations.</value>
+  </data>
+  <data name="ConfigDesc_Elem_Table" xml:space="preserve">
+    <value>Table formatting configuration: style, borders, number format, and table style settings.</value>
+  </data>
+  <data name="ConfigDesc_Elem_Table_DataRowFont" xml:space="preserve">
+    <value>Data row font configuration: name, size, weight, theme color.</value>
+  </data>
+  <data name="ConfigDesc_Elem_Table_HeaderRowFont" xml:space="preserve">
+    <value>Header row font configuration: name, size, weight, theme color.</value>
+  </data>
+  <data name="ConfigDesc_Elem_Table_TableSettings" xml:space="preserve">
+    <value>Table style settings: header row, first column, last column, total row, banding, etc.</value>
+  </data>
+  <data name="ConfigDesc_Elem_Text" xml:space="preserve">
+    <value>Text formatting configuration: margins, font, paragraph, bullets, etc.</value>
+  </data>
+  <data name="ConfigDesc_Elem_Text_Margins" xml:space="preserve">
+    <value>Text margins (centimeters): top/bottom/left/right.</value>
+  </data>
+  <data name="ConfigDesc_Elem_Text_Font" xml:space="preserve">
+    <value>Text font configuration: name, Chinese font, size, weight, theme color.</value>
+  </data>
+  <data name="ConfigDesc_Elem_Text_Paragraph" xml:space="preserve">
+    <value>Paragraph format: alignment, word wrap, space before/after, line spacing, East Asian line break, hanging punctuation.</value>
+  </data>
+  <data name="ConfigDesc_Elem_Text_Bullet" xml:space="preserve">
+    <value>Bullet: type, character, font, relative size, color.</value>
+  </data>
+  <data name="ConfigDesc_Elem_Chart" xml:space="preserve">
+    <value>Chart formatting configuration: regular and title font styles.</value>
+  </data>
+  <data name="ConfigDesc_Elem_Chart_RegularFont" xml:space="preserve">
+    <value>Chart regular font: name, Chinese font, size, weight, theme color.</value>
+  </data>
+  <data name="ConfigDesc_Elem_Chart_TitleFont" xml:space="preserve">
+    <value>Chart title font: name, Chinese font, size, weight, theme color.</value>
+  </data>
+  <data name="ConfigDesc_Elem_Shortcuts" xml:space="preserve">
+    <value>Shortcut configuration: Enter a number or letter, actual combination is Ctrl+key.</value>
+  </data>
+  <!-- Configuration Descriptions - Label Text -->
+  <data name="ConfigDesc_Label_Attribute" xml:space="preserve">
+    <value>● Attribute:</value>
+  </data>
+  <data name="ConfigDesc_Label_Element" xml:space="preserve">
+    <value>● Element:</value>
+  </data>
+  <data name="ConfigDesc_Label_Path" xml:space="preserve">
+    <value>● Path:</value>
+  </data>
+  <data name="ConfigDesc_Label_CurrentValue" xml:space="preserve">
+    <value>● Current Value:</value>
+  </data>
+  <data name="ConfigDesc_Label_NodeType" xml:space="preserve">
+    <value>● Node Type:</value>
+  </data>
+  <data name="ConfigDesc_Label_ChildCount" xml:space="preserve">
+    <value>● Child Count:</value>
+  </data>
+  <data name="ConfigDesc_Label_AttributeCount" xml:space="preserve">
+    <value>● Attribute Count:</value>
+  </data>
+  <data name="ConfigDesc_Label_ContainsAttributes" xml:space="preserve">
+    <value>Contains Attributes:</value>
+  </data>
+  <!-- Configuration Descriptions - Node Types -->
+  <data name="ConfigDesc_NodeType_Mixed" xml:space="preserve">
+    <value>Mixed Node</value>
+  </data>
+  <data name="ConfigDesc_NodeType_Container" xml:space="preserve">
+    <value>Container Node</value>
+  </data>
+  <data name="ConfigDesc_NodeType_Text" xml:space="preserve">
+    <value>Text Node</value>
+  </data>
+  <data name="ConfigDesc_NodeType_Attribute" xml:space="preserve">
+    <value>Attribute Node</value>
+  </data>
+  <data name="ConfigDesc_NodeType_Empty" xml:space="preserve">
+    <value>Empty Node</value>
+  </data>
+  <!-- Configuration Descriptions - Others -->
+  <data name="ConfigDesc_NoSpecificDescription" xml:space="preserve">
+    <value>No specific description available.</value>
+  </data>
+  <data name="ConfigDesc_NoNodeSelected" xml:space="preserve">
+    <value>No valid node selected</value>
+  </data>
+  <data name="ConfigDesc_NodeHasMultipleAttributes" xml:space="preserve">
+    <value>Node contains {0} attributes</value>
+  </data>
+  <data name="ConfigDesc_NodeInfo" xml:space="preserve">
+    <value>Node: {0}&#x0D;&#x0A;Child Count: {1}&#x0D;&#x0A;Attribute Count: {2}</value>
   </data>
 </root>
 

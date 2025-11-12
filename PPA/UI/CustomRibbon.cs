@@ -354,18 +354,36 @@ namespace PPA
 				switch(control.Id)
 				{
 					case "MenuLang_zhCN":
-						ResourceManager.SetLanguage("zh-CN");
-						Toast.Show(ResourceManager.GetString("Settings_LanguageChanged","语言已切换为中文"),Toast.ToastType.Success);
-						// 刷新整个 Ribbon 以更新所有文本
-						_ribbonUI?.Invalidate();
+					{
+						bool ok = ResourceManager.SetLanguage("zh-CN");
+						if (ok)
+						{
+							Toast.Show(ResourceManager.GetString("Settings_LanguageChanged","语言已切换为中文"),Toast.ToastType.Success);
+							// 刷新整个 Ribbon 以更新所有文本
+							_ribbonUI?.Invalidate();
+						}
+						else
+						{
+							Toast.Show(ResourceManager.GetString("Settings_LanguageChangeFailed","切换语言失败"), Toast.ToastType.Error);
+						}
 						break;
+					}
 
 					case "MenuLang_enUS":
-						ResourceManager.SetLanguage("en-US");
-						Toast.Show(ResourceManager.GetString("Settings_LanguageChanged","Language switched to English"),Toast.ToastType.Success);
-						// 刷新整个 Ribbon 以更新所有文本
-						_ribbonUI?.Invalidate();
+					{
+						bool ok = ResourceManager.SetLanguage("en-US");
+						if (ok)
+						{
+							Toast.Show(ResourceManager.GetString("Settings_LanguageChanged","Language switched to English"),Toast.ToastType.Success);
+							// 刷新整个 Ribbon 以更新所有文本
+							_ribbonUI?.Invalidate();
+						}
+						else
+						{
+							Toast.Show(ResourceManager.GetString("Settings_LanguageChangeFailed","Language change failed"), Toast.ToastType.Error);
+						}
 						break;
+					}
 
 					case "MenuSettings_Config": ShowSettingsDialog(); break;
 					case "MenuSettings_About": ShowAboutDialog(); break;
@@ -589,17 +607,39 @@ namespace PPA
 		#region Private Helper Methods
 
 		/// <summary>
-		/// 从文件中加载 Ribbon XML，如果找不到则返回 null 支持从多个可能的路径加载，增强灵活性
+		/// 从嵌入式资源中加载 Ribbon XML，如果找不到则返回 null
+		/// 使用 .NET Framework 的资源加载机制，自动处理 ClickOnce 部署
 		/// </summary>
 		/// <returns> 加载的XML字符串，如未找到则返回null </returns>
 		private string LoadRibbonXmlFromFile()
 		{
-			string filePath = FileLocator.FindFile("UI\\Ribbon.xml");
-			if(filePath!=null)
+			try
 			{
-				return File.ReadAllText(filePath);
+				// 从嵌入式资源加载 Ribbon.xml
+				// 资源名称格式：命名空间.文件夹.文件名
+				string resourceName = "PPA.UI.Ribbon.xml";
+				var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+				
+				using(var stream = assembly.GetManifestResourceStream(resourceName))
+				{
+					if(stream != null)
+					{
+						using(var reader = new StreamReader(stream))
+						{
+							string xmlContent = reader.ReadToEnd();
+							Profiler.LogMessage($"成功从嵌入式资源加载 Ribbon.xml");
+							return xmlContent;
+						}
+					}
+				}
+				
+				Profiler.LogMessage($"未找到嵌入式资源: {resourceName}，使用后备资源");
 			}
-			Profiler.LogMessage($"未找到外部XML文件，使用嵌入式资源");
+			catch(Exception ex)
+			{
+				Profiler.LogMessage($"从嵌入式资源加载 Ribbon.xml 失败: {ex.Message}");
+			}
+			
 			return null;
 		}
 
