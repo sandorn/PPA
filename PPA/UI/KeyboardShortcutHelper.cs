@@ -1,5 +1,8 @@
+using Microsoft.Extensions.DependencyInjection;
 using PPA.Core;
+using PPA.Core.Abstraction.Business;
 using PPA.Formatting;
+using PPA.Shape;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -145,21 +148,54 @@ namespace PPA.UI
 			if(!string.IsNullOrWhiteSpace(shortcuts.FormatTables))
 			{
 				RegisterShortcut(hWnd,HOTKEY_FORMAT_TABLES,shortcuts.FormatTables,
-					(app) => TableBatchHelper.Bt501_Click(app),"美化表格");
+					(app) =>
+					{
+						var helper = ResolveTableBatchHelper();
+						if(helper!=null)
+						{
+							helper.FormatTables(app);
+						}
+						else
+						{
+							TableBatchHelper.Bt501_Click(app);
+						}
+					},"美化表格");
 			}
 
 			// 注册美化文本快捷键
 			if(!string.IsNullOrWhiteSpace(shortcuts.FormatText))
 			{
 				RegisterShortcut(hWnd,HOTKEY_FORMAT_TEXT,shortcuts.FormatText,
-					(app) => TextBatchHelper.Bt502_Click(app),"美化文本");
+					(app) =>
+					{
+						var helper = ResolveTextBatchHelper();
+						if(helper!=null)
+						{
+							helper.FormatText(app);
+						}
+						else
+						{
+							TextBatchHelper.Bt502_Click(app);
+						}
+					},"美化文本");
 			}
 
 			// 注册美化图表快捷键
 			if(!string.IsNullOrWhiteSpace(shortcuts.FormatChart))
 			{
 				RegisterShortcut(hWnd,HOTKEY_FORMAT_CHART,shortcuts.FormatChart,
-					(app) => ChartBatchHelper.Bt503_Click(app),"美化图表");
+					(app) =>
+					{
+						var helper = ResolveChartBatchHelper();
+						if(helper!=null)
+						{
+							helper.FormatCharts(app);
+						}
+						else
+						{
+							ChartBatchHelper.Bt503_Click(app);
+						}
+					},"美化图表");
 			}
 
 			// 注册插入形状快捷键
@@ -168,6 +204,85 @@ namespace PPA.UI
 				RegisterShortcut(hWnd,HOTKEY_CREATE_BOUNDING_BOX,shortcuts.CreateBoundingBox,
 					(app) => ShapeBatchHelper.Bt601_Click(app),"插入形状");
 			}
+		}
+
+		private static ITextBatchHelper ResolveTextBatchHelper()
+		{
+			var serviceProvider = Globals.ThisAddIn?.ServiceProvider;
+			if(serviceProvider==null)
+			{
+				return null;
+			}
+
+			var batchHelper = serviceProvider.GetService<ITextBatchHelper>();
+			if(batchHelper!=null)
+			{
+				return batchHelper;
+			}
+
+			var textHelper = serviceProvider.GetService<ITextFormatHelper>();
+		var shapeHelper = ResolveShapeHelper(serviceProvider);
+		if(textHelper!=null)
+			{
+				return new TextBatchHelper(textHelper,shapeHelper);
+			}
+
+			return null;
+		}
+
+		private static IChartBatchHelper ResolveChartBatchHelper()
+		{
+			var serviceProvider = Globals.ThisAddIn?.ServiceProvider;
+			if(serviceProvider==null)
+			{
+				return null;
+			}
+
+			var batchHelper = serviceProvider.GetService<IChartBatchHelper>();
+			if(batchHelper!=null)
+			{
+				return batchHelper;
+			}
+
+			var formatHelper = serviceProvider.GetService<IChartFormatHelper>();
+			var shapeHelper = ResolveShapeHelper(serviceProvider);
+		if(formatHelper!=null)
+			{
+				return new ChartBatchHelper(formatHelper,shapeHelper);
+			}
+
+			return null;
+		}
+
+		private static ITableBatchHelper ResolveTableBatchHelper()
+		{
+			var serviceProvider = Globals.ThisAddIn?.ServiceProvider;
+			if(serviceProvider==null)
+			{
+				return null;
+			}
+
+			var batchHelper = serviceProvider.GetService<ITableBatchHelper>();
+			if(batchHelper!=null)
+			{
+				return batchHelper;
+			}
+
+			var tableHelper = serviceProvider.GetService<ITableFormatHelper>();
+			var shapeHelper = ResolveShapeHelper(serviceProvider);
+			if(tableHelper!=null)
+			{
+				return new TableBatchHelper(tableHelper,shapeHelper);
+			}
+
+			return null;
+		}
+
+		private static IShapeHelper ResolveShapeHelper(IServiceProvider serviceProvider = null)
+		{
+			serviceProvider ??= Globals.ThisAddIn?.ServiceProvider;
+			var helper = serviceProvider?.GetService<IShapeHelper>();
+			return helper ?? ShapeUtils.Default;
 		}
 
 		/// <summary>

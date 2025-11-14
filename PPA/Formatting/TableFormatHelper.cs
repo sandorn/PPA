@@ -1,27 +1,38 @@
+using System;
 using NetOffice.OfficeApi.Enums;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
+using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
+using PPA.Core;
+using PPA.Core.Abstraction.Business;
 using NETOP = NetOffice.PowerPointApi;
+using PPA.Core.Abstraction.Presentation;
+using PPA.Core.Adapters.PowerPoint;
 
 namespace PPA.Formatting
 {
 	/// <summary>
 	/// 表格格式化辅助类 提供表格的高性能格式化功能
 	/// </summary>
-	internal static class TableFormatHelper
+	/// <remarks>
+	/// 构造函数，通过依赖注入获取配置
+	/// </remarks>
+	/// <param name="config">格式化配置</param>
+	internal class TableFormatHelper(IFormattingConfig config): ITableFormatHelper
 	{
 		private static readonly int NegativeTextColor = ColorTranslator.ToOle(Color.Red);
+		private readonly IFormattingConfig _config = config ?? throw new System.ArgumentNullException(nameof(config));
 
 		/// <summary>
 		/// 对表格进行高性能格式化。
 		/// </summary>
 		/// <param name="tbl"> 要格式化的 PowerPoint 表格对象。 </param>
-		internal static void FormatTables(NETOP.Table tbl)
+		public void FormatTables(NETOP.Table tbl)
 		{
 			// 从配置加载参数
-			var config = FormattingConfig.Instance.Table;
-			var tableConfig = config;
+			var tableConfig = _config.Table;
 
 			string styleId = tableConfig.StyleId;
 			MsoThemeColorIndex dk1 = ConfigHelper.GetThemeColorIndex(tableConfig.DataRowFont.ThemeColor);
@@ -86,9 +97,119 @@ namespace PPA.Formatting
 		}
 
 		/// <summary>
+		/// 对表格进行高性能格式化（抽象接口版本）。
+		/// </summary>
+		/// <param name="tbl"> 要格式化的抽象表格对象。 </param>
+		public void FormatTables(ITable tbl)
+		{
+			PPA.Core.Profiler.LogMessage($"FormatTables(ITable) 被调用，tbl={tbl?.GetType().Name ?? "null"}", "INFO");
+			if(tbl==null)
+			{
+				PPA.Core.Profiler.LogMessage("FormatTables: tbl 为 null，返回", "WARN");
+				return;
+			}
+
+			// 检查 PowerPoint 适配器
+			if(tbl is PowerPointTable pptTable)
+			{
+				PPA.Core.Profiler.LogMessage("FormatTables: 检测到 PowerPointTable，使用 PowerPoint 格式化", "INFO");
+				// PowerPointTable 包装了 NETOP.Table，需要获取它
+				var native = (pptTable as IComWrapper)?.NativeObject as NETOP.Table;
+				if(native != null)
+				{
+					FormatTables(native);
+					return;
+				}
+			}
+
+			// 尝试从抽象表格中获取底层 NetOffice 对象
+			var nativeTable = (tbl as IComWrapper)?.NativeObject as NETOP.Table;
+			if(nativeTable!=null)
+			{
+				PPA.Core.Profiler.LogMessage("FormatTables: 检测到 NetOffice.Table，使用 PowerPoint 格式化", "INFO");
+				FormatTables(nativeTable);
+				return;
+			}
+
+			// 兜底：尝试已知的强类型包装
+			if(tbl is IComWrapper<NETOP.Table> typed)
+			{
+				PPA.Core.Profiler.LogMessage("FormatTables: 检测到 IComWrapper<NETOP.Table>，使用 PowerPoint 格式化", "INFO");
+				FormatTables(typed.NativeObject);
+				return;
+			}
+
+			PPA.Core.Profiler.LogMessage($"FormatTables: 未知的表格类型 {tbl.GetType().FullName}，无法格式化", "ERROR");
+		}
+
+
+		private static T SafeGet<T>(System.Func<T> getter, T @default = default)
+		{
+			try { return getter(); } catch { return @default; }
+		}
+
+		private static int AdjustColorBrightness(int oleColor, double factor)
+		{
+			factor = Math.Max(-1.0, Math.Min(1.0, factor));
+
+			Color baseColor = ColorTranslator.FromOle(oleColor);
+			double r = baseColor.R;
+			double g = baseColor.G;
+			double b = baseColor.B;
+
+			if(factor >= 0)
+			{
+				r = r + ((255 - r) * factor);
+				g = g + ((255 - g) * factor);
+				b = b + ((255 - b) * factor);
+			}
+			else
+			{
+				double scale = 1 + factor;
+				r *= scale;
+				g *= scale;
+				b *= scale;
+			}
+
+			var adjusted = Color.FromArgb(
+				(int)Math.Round(Math.Max(0, Math.Min(255, r))),
+				(int)Math.Round(Math.Max(0, Math.Min(255, g))),
+				(int)Math.Round(Math.Max(0, Math.Min(255, b))));
+
+			return ColorTranslator.ToOle(adjusted);
+		}
+
+		private static bool TryFormatNumericValue(string text, TableFormattingConfig config, out string formatted, out bool isNegative)
+		{
+			formatted = text;
+			isNegative = false;
+
+			if(string.IsNullOrWhiteSpace(text))
+				return false;
+
+			string trimmed = text.Trim();
+
+			if(double.TryParse(trimmed, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.CurrentCulture, out double value) ||
+				double.TryParse(trimmed, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out value))
+			{
+				isNegative = value < 0;
+				string formatSpecifier = config.DecimalPlaces > 0 ? $"N{config.DecimalPlaces}" : "N0";
+				formatted = value.ToString(formatSpecifier, CultureInfo.CurrentCulture);
+				return true;
+			}
+
+			return false;
+		}
+
+		private static void SafeSet(System.Action action)
+		{
+			try { action(); } catch { }
+		}
+
+		/// <summary>
 		/// 批量处理首末行的单元格，减少重复操作和COM调用
 		/// </summary>
-		private static void FormatOutsideRowCells(List<NETOP.Cell> firstRowCells,List<NETOP.Cell> lastRowCells,string fontName,string fontNameFarEast,float fontSize,MsoThemeColorIndex txtColor,float borderWidth,MsoThemeColorIndex borderColor)
+		private void FormatOutsideRowCells(List<NETOP.Cell> firstRowCells,List<NETOP.Cell> lastRowCells,string fontName,string fontNameFarEast,float fontSize,MsoThemeColorIndex txtColor,float borderWidth,MsoThemeColorIndex borderColor)
 		{
 			// 设置首行上下边框
 			for(int i = 0;i<firstRowCells.Count;i++)
@@ -116,7 +237,7 @@ namespace PPA.Formatting
 		/// <summary>
 		/// 批量处理数据行的单元格，使用更高效的处理方式
 		/// </summary>
-		private static void FormatDataRowCells(List<NETOP.Cell> cells,string fontName,string fontNameFarEast,float fontSize,MsoThemeColorIndex txtColor,float thinBorderWidth,MsoThemeColorIndex thinBorderColor,bool autonum,int decimalPlaces,int negativeTextColor)
+		private void FormatDataRowCells(List<NETOP.Cell> cells,string fontName,string fontNameFarEast,float fontSize,MsoThemeColorIndex txtColor,float thinBorderWidth,MsoThemeColorIndex thinBorderColor,bool autonum,int decimalPlaces,int negativeTextColor)
 		{
 			int cellCount = cells.Count;
 
@@ -141,7 +262,7 @@ namespace PPA.Formatting
 		/// <summary>
 		/// 批量设置字体属性，减少 COM 调用次数。
 		/// </summary>
-		private static void SetFontProperties(NETOP.TextRange textRange,string name,string nameFarEast,float size,MsoTriState bold,MsoThemeColorIndex color)
+		private void SetFontProperties(NETOP.TextRange textRange,string name,string nameFarEast,float size,MsoTriState bold,MsoThemeColorIndex color)
 		{
 			// 关键：通过 .Font 来访问字体属性
 			textRange.Font.Name=name;
@@ -154,7 +275,7 @@ namespace PPA.Formatting
 		/// <summary>
 		/// 高性能数字格式化，针对大量单元格优化，在必要时修改文本和颜色
 		/// </summary>
-		private static void SmartNumberFormat(NETOP.TextRange textRange,int decimalPlaces,int negativeTextColor)
+		private void SmartNumberFormat(NETOP.TextRange textRange,int decimalPlaces,int negativeTextColor)
 		{
 			// 性能优化1: 直接访问文本，避免多次Trim操作
 			string text = textRange.Text;
@@ -211,7 +332,7 @@ namespace PPA.Formatting
 		/// <summary>
 		/// 设置单元格边框
 		/// </summary>
-		private static void SetBorder(NETOP.Cell cell,NETOP.Enums.PpBorderType borderType,float setWeight,object tcolor,float transparency = 0)
+		private void SetBorder(NETOP.Cell cell,NETOP.Enums.PpBorderType borderType,float setWeight,object tcolor,float transparency = 0)
 		{
 			var border = cell.Borders[borderType];
 
@@ -224,7 +345,18 @@ namespace PPA.Formatting
 			{
 				border.Weight=setWeight;
 				border.Visible=MsoTriState.msoTrue;
-				border.Transparency=transparency;
+				
+				// WPS 不支持 Transparency，需要安全设置
+				try
+				{
+					border.Transparency=transparency;
+				}
+				catch(System.Exception ex)
+				{
+					// WPS 可能不支持 Transparency，忽略错误
+					PPA.Core.Profiler.LogMessage($"设置边框透明度失败（可能是不支持的属性）: {ex.Message}", "WARN");
+				}
+				
 				// 使用模式匹配简化颜色逻辑
 				if(tcolor is MsoThemeColorIndex themeColor) border.ForeColor.ObjectThemeColor=themeColor;
 				else if(tcolor is int rgbColor) border.ForeColor.RGB=rgbColor;

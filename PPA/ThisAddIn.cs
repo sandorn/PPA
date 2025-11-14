@@ -1,6 +1,8 @@
 using PPA.Core;
+using PPA.Core.DI;
 using PPA.UI;
 using System;
+using Microsoft.Extensions.DependencyInjection;
 using MSOP = Microsoft.Office.Interop.PowerPoint;
 using NETOP = NetOffice.PowerPointApi;
 using Office = Microsoft.Office.Core;
@@ -18,6 +20,12 @@ namespace PPA
 		private bool _resourcesDisposed = false; // 资源是否已释放的标记
 		public MSOP.Application NativeApp { get; private set; } // 本地PowerPoint应用程序实例
 		public NETOP.Application NetApp { get; private set; } // NetOffice PowerPoint 应用程序实例
+		private IServiceProvider _serviceProvider; // DI 容器服务提供者
+
+		/// <summary>
+		/// 获取 DI 容器服务提供者（用于向后兼容的静态方法）
+		/// </summary>
+		internal IServiceProvider ServiceProvider => _serviceProvider;
 
 		#endregion Private Fields
 
@@ -68,6 +76,23 @@ namespace PPA
 				_customRibbon?.Dispose();
 				_customRibbon=null;
 
+				// 释放 DI 容器
+				if(_serviceProvider is IDisposable disposableServiceProvider)
+				{
+					try
+					{
+						disposableServiceProvider.Dispose();
+					}
+					catch (Exception ex)
+					{
+						Profiler.LogMessage($"释放 DI 容器时出错: {ex.Message}");
+					}
+					finally
+					{
+						_serviceProvider = null;
+					}
+				}
+
 				// 释放NetOffice应用程序实例
 				if(NetApp!=null)
 				{
@@ -100,6 +125,12 @@ namespace PPA
 			// 初始化多语言资源管理器
 			ResourceManager.Initialize("PPA.Properties.Resources",System.Reflection.Assembly.GetExecutingAssembly());
 
+			// 初始化 DI 容器（在 Application 初始化之前，先注册基础服务）
+			InitializeDIContainer();
+
+			// 测试 DI 容器（可选，用于验证）
+			TestDIContainer();
+
 			InitializeNetOfficeApplication();
 
 			// Startup 完成后，将 App 设置到 CustomRibbon
@@ -107,6 +138,71 @@ namespace PPA
 
 			// 初始化快捷键系统
 			KeyboardShortcutHelper.Initialize(NetApp);
+		}
+
+		/// <summary>
+		/// 初始化 DI 容器
+		/// 注册所有 PPA 服务到依赖注入容器
+		/// </summary>
+		private void InitializeDIContainer()
+		{
+			try
+			{
+				// 启用文件日志
+				Profiler.EnableFileLogging = true;
+				var logPath = System.IO.Path.Combine(
+					Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+					"PPA",
+					$"PPA_{DateTime.Now:yyyyMMdd_HHmmss}.log"
+				);
+				// 确保目录存在
+				var logDir = System.IO.Path.GetDirectoryName(logPath);
+				if(!System.IO.Directory.Exists(logDir))
+				{
+					System.IO.Directory.CreateDirectory(logDir);
+				}
+				Profiler.LogFilePath = logPath;
+				Profiler.LogMessage($"日志文件路径: {logPath}");
+
+				var services = new ServiceCollection();
+				services.AddPPAServices();
+				_serviceProvider = services.BuildServiceProvider();
+				Profiler.LogMessage("DI 容器初始化成功");
+			}
+			catch (Exception ex)
+			{
+				Profiler.LogMessage($"初始化 DI 容器失败: {ex.Message}");
+				Profiler.LogMessage($"堆栈跟踪: {ex.StackTrace}");
+			}
+		}
+
+		/// <summary>
+		/// 测试 DI 容器是否正常工作
+		/// </summary>
+		private void TestDIContainer()
+		{
+			if(_serviceProvider==null)
+			{
+				Profiler.LogMessage("DI 容器未初始化");
+				return;
+			}
+
+			try
+			{
+				var config = _serviceProvider.GetService<PPA.Core.Abstraction.Business.IFormattingConfig>();
+				if(config!=null)
+				{
+					Profiler.LogMessage("DI 容器测试成功：可以获取 IFormattingConfig 服务");
+				}
+				else
+				{
+					Profiler.LogMessage("DI 容器测试失败：无法获取 IFormattingConfig 服务");
+				}
+			}
+			catch(Exception ex)
+			{
+				Profiler.LogMessage($"DI 容器测试失败: {ex.Message}");
+			}
 		}
 
 		/// <summary>

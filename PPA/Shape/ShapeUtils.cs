@@ -1,19 +1,37 @@
 using NetOffice.OfficeApi.Enums;
 using PPA.Core;
+using PPA.Core.Abstraction.Business;
+using PPA.Core.Abstraction.Presentation;
+using PPA.Core.Adapters;
+using PPA.Core.Adapters.PowerPoint;
 using PPA.Utilities;
 using System;
 using NETOP = NetOffice.PowerPointApi;
 
 namespace PPA.Shape
 {
-	public static class ShapeUtils
+	/// <summary>
+	/// 形状工具辅助类
+	/// 提供形状相关的工具方法
+	/// </summary>
+	public class ShapeUtils : IShapeHelper
 	{
+		/// <summary>
+		/// 静态实例，用于向后兼容（当无法从 DI 容器获取服务时使用）
+		/// </summary>
+		private static readonly ShapeUtils _defaultInstance = new ShapeUtils();
+
+		/// <summary>
+		/// 获取默认实例（用于向后兼容）
+		/// </summary>
+		public static ShapeUtils Default => _defaultInstance;
+
 		#region Public Methods
 
 		/// <summary>
 		/// 创建单个矩形的辅助函数
 		/// </summary>
-		public static NETOP.Shape AddOneShape(NETOP.Slide slide,float left,float top,float width,float height,float rotation = 0)
+		public NETOP.Shape AddOneShape(NETOP.Slide slide,float left,float top,float width,float height,float rotation = 0)
 		{
 			if(slide==null) throw new ArgumentNullException(nameof(slide));
 			if(width<=0||height<=0)
@@ -44,7 +62,7 @@ namespace PPA.Shape
 		/// <summary>
 		/// 获取形状的边框宽度
 		/// </summary>
-		public static (float top, float left, float right, float bottom) GetShapeBorderWeights(NETOP.Shape shape)
+		public (float top, float left, float right, float bottom) GetShapeBorderWeights(NETOP.Shape shape)
 		{
 			float top = 0, left = 0, right = 0, bottom = 0;
 
@@ -70,7 +88,7 @@ namespace PPA.Shape
 			return (top, left, right, bottom);
 		}
 
-		public static bool IsInvalidComObject(object comObj)
+		public bool IsInvalidComObject(object comObj)
 		{
 			// 简单方法检查对象状态
 			if(comObj==null) return true;
@@ -126,7 +144,7 @@ namespace PPA.Shape
 		/// </summary>
 		/// <param name="app"> PowerPoint 应用程序实例 </param>
 		/// <returns> 当前幻灯片对象，如果获取失败则返回 null </returns>
-		public static NETOP.Slide TryGetCurrentSlide(NETOP.Application app)
+		public NETOP.Slide TryGetCurrentSlide(NETOP.Application app)
 		{
 			if(app==null) return null;
 			try
@@ -166,7 +184,7 @@ namespace PPA.Shape
 		/// - Shape (当选择单个形状、文本框或光标在表格内时)
 		/// - null (如果选择无效或不满足条件)
 		/// </returns>
-		public static dynamic ValidateSelection(NETOP.Application app,bool requireMultipleShapes = false)
+		public dynamic ValidateSelection(NETOP.Application app,bool requireMultipleShapes = false)
 		{
 			// --- 安全检查 ---
 			if(app?.ActiveWindow?.Selection==null)
@@ -201,6 +219,62 @@ namespace PPA.Shape
 			// 如果所有情况都不匹配，则返回 null
 			return null;
 		}
+
+		/// <summary>
+		/// 抽象接口版本：获取当前幻灯片
+		/// </summary>
+		/// <param name="app">抽象应用实例</param>
+		public ISlide TryGetCurrentSlide(IApplication app)
+		{
+			if(app==null) return null;
+
+			if(app is IComWrapper<NETOP.Application> typed)
+			{
+				var native = TryGetCurrentSlide(typed.NativeObject);
+				if(native!=null)
+				{
+					return AdapterUtils.WrapSlide(typed.NativeObject,native);
+				}
+			}
+
+			if(app is IComWrapper wrapper)
+			{
+				if(wrapper.NativeObject is NETOP.Application netApp)
+				{
+					var native = TryGetCurrentSlide(netApp);
+					if(native!=null)
+					{
+						return AdapterUtils.WrapSlide(netApp,native);
+					}
+				}
+			}
+
+			return null;
+		}
+
+		/// <summary>
+		/// 抽象接口版本：验证当前选择
+		/// </summary>
+		public object ValidateSelection(IApplication app,bool requireMultipleShapes = false)
+		{
+			if(app==null) return null;
+
+			if(app is IComWrapper<NETOP.Application> typed)
+			{
+				return ValidateSelection(typed.NativeObject,requireMultipleShapes);
+			}
+
+			if(app is IComWrapper wrapper)
+			{
+				if(wrapper.NativeObject is NETOP.Application netApp)
+				{
+					return ValidateSelection(netApp,requireMultipleShapes);
+				}
+			}
+
+			return null;
+		}
+
 
 		#endregion Public Methods
 	}

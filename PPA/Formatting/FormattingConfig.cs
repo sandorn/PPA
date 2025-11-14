@@ -1,3 +1,4 @@
+using System.Drawing;
 using NetOffice.OfficeApi.Enums;
 using PPA.Core;
 using System;
@@ -16,7 +17,7 @@ namespace PPA.Formatting
 	/// PPA 配置类 用于管理表格、文本、图表的格式化样式配置和快捷键配置
 	/// </summary>
 	[XmlRoot("PPAConfig")]
-	public class FormattingConfig
+	public class FormattingConfig : PPA.Core.Abstraction.Business.IFormattingConfig
 	{
 		#region Singleton
 
@@ -665,6 +666,34 @@ namespace PPA.Formatting
 				"followedhyperlink" => MsoThemeColorIndex.msoThemeColorFollowedHyperlink,
 				_ => MsoThemeColorIndex.msoThemeColorDark1
 			};
+		}
+
+		/// <summary>
+		/// 将主题颜色名称转换为 RGB 颜色（0xRRGGBB）
+		/// </summary>
+		public static int GetThemeColorRgb(string themeColorName)
+		{
+			if(string.IsNullOrEmpty(themeColorName))
+				return ColorTranslator.ToOle(Color.Black);
+
+			Color color = themeColorName.ToLower() switch
+			{
+				"dark1" => Color.Black,
+				"dark2" => ColorTranslator.FromHtml("#1F4E79"),
+				"light1" => Color.White,
+				"light2" => ColorTranslator.FromHtml("#F2F2F2"),
+				"accent1" => ColorTranslator.FromHtml("#4472C4"),
+				"accent2" => ColorTranslator.FromHtml("#ED7D31"),
+				"accent3" => ColorTranslator.FromHtml("#A5A5A5"),
+				"accent4" => ColorTranslator.FromHtml("#FFC000"),
+				"accent5" => ColorTranslator.FromHtml("#5B9BD5"),
+				"accent6" => ColorTranslator.FromHtml("#70AD47"),
+				"hyperlink" => ColorTranslator.FromHtml("#0563C1"),
+				"followedhyperlink" => ColorTranslator.FromHtml("#954F72"),
+				_ => Color.Black
+			};
+
+			return ColorTranslator.ToOle(color);
 		}
 
 		/// <summary>

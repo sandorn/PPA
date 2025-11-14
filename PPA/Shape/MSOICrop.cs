@@ -125,7 +125,7 @@ namespace PPA.Shape
 				Profiler.LogMessage($"Processing: Id={shape.Id}, Name={shape.Name}, Type={shape.Type}");
 
 				// 创建裁剪矩形
-				NETOP.Shape slideRect = ShapeUtils.AddOneShape(slide, 0, 0, slideWidth, slideHeight);
+				NETOP.Shape slideRect = ShapeUtils.Default.AddOneShape(slide, 0, 0, slideWidth, slideHeight);
 
 				// 执行相交操作（ExHandler 会处理异常）
 				ExHandler.Run(() =>

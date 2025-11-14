@@ -26,8 +26,9 @@ namespace PPA.Formatting
 
 			ExHandler.Run(() =>
 			{
-				var sel = ShapeUtils.ValidateSelection(app);
-				var currentSlide = ShapeUtils.TryGetCurrentSlide(app);
+				var shapeHelper = ShapeUtils.Default;
+				var sel = shapeHelper.ValidateSelection(app);
+				var currentSlide = shapeHelper.TryGetCurrentSlide(app);
 
 				if(currentSlide==null)
 				{
@@ -55,7 +56,7 @@ namespace PPA.Formatting
 					// 处理单个形状
 					if(sel is NETOP.Shape shape)
 					{
-						var (top, left, bottom, right)=ShapeUtils.GetShapeBorderWeights(shape);
+						var (top, left, bottom, right)=shapeHelper.GetShapeBorderWeights(shape);
 
 						// 计算矩形参数
 						float rectLeft = shape.Left - left;
@@ -64,7 +65,7 @@ namespace PPA.Formatting
 						float rectHeight = shape.Height + (top + bottom);
 
 						// 创建矩形
-						var rect = ShapeUtils.AddOneShape(currentSlide, rectLeft, rectTop, rectWidth, rectHeight, shape.Rotation);
+						var rect = shapeHelper.AddOneShape(currentSlide, rectLeft, rectTop, rectWidth, rectHeight, shape.Rotation);
 						if(rect!=null) createdShapes.Add(rect);
 					}
 					// 处理形状范围
@@ -75,7 +76,7 @@ namespace PPA.Formatting
 							for(int i = 1;i<=shapes.Count;i++)
 							{
 								var currentShape = shapes[i];
-								var (top, left, bottom, right)=ShapeUtils.GetShapeBorderWeights(currentShape);
+								var (top, left, bottom, right)=shapeHelper.GetShapeBorderWeights(currentShape);
 
 								// 计算矩形参数
 								float rectLeft = currentShape.Left - left;
@@ -84,7 +85,7 @@ namespace PPA.Formatting
 								float rectHeight = currentShape.Height + (top + bottom);
 
 								// 创建矩形
-								var rect = ShapeUtils.AddOneShape(currentSlide, rectLeft, rectTop, rectWidth, rectHeight, currentShape.Rotation);
+								var rect = shapeHelper.AddOneShape(currentSlide, rectLeft, rectTop, rectWidth, rectHeight, currentShape.Rotation);
 
 								if(rect!=null) createdShapes.Add(rect);
 							}
@@ -130,7 +131,7 @@ namespace PPA.Formatting
 						for(int i = 0;i<slidesToProcess.Count;i++)
 						{
 							var slide = slidesToProcess[i];
-							var rect = ShapeUtils.AddOneShape(slide, 0, 0, slideWidth, slideHeight);
+							var rect = shapeHelper.AddOneShape(slide, 0, 0, slideWidth, slideHeight);
 
 							if(rect!=null)
 							{
@@ -161,14 +162,15 @@ namespace PPA.Formatting
 		{
 			ExHandler.Run(() =>
 			{
-				var slide = ShapeUtils.TryGetCurrentSlide(app);
+				var shapeHelper = ShapeUtils.Default;
+				var slide = shapeHelper.TryGetCurrentSlide(app);
 				if(slide==null)
 				{
 					Toast.Show(ResourceManager.GetString("Toast_NoSlide"),Toast.ToastType.Warning);
 					return;
 				}
 
-				var sel = ShapeUtils.ValidateSelection(app);
+				var sel = shapeHelper.ValidateSelection(app);
 				if(sel!=null)
 				{
 					// --- 场景1: 隐藏选中的对象 ---

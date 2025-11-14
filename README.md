@@ -1,6 +1,6 @@
 # PPA - PowerPoint 增强插件
 
-**版本**: v1.0.0  
+**版本**: v1.1.0  
 **发布日期**: 2025年1月
 
 PPA 是一个功能强大的 PowerPoint 增强插件，提供多种实用工具来提升 PowerPoint 演示文稿的编辑效率和质量。
@@ -261,6 +261,24 @@ PPA/
 -   检查日志输出以诊断问题
 
 ## 更新日志
+
+### v1.1.0 (2025-01) - 架构优化版本
+
+**主要变更**：
+- ✅ 完成依赖注入（DI）容器基础设施重构
+- ✅ 实现平台抽象层架构，支持多平台扩展
+- ✅ 将静态类重构为实例类，提升可测试性
+- ✅ 创建 PowerPoint 适配器实现
+- ✅ 重构业务逻辑使用 DI 和抽象接口
+- ⚠️ 回退 WPS 适配支持，专注于 PowerPoint 平台优化
+- ✅ 优化代码结构，提升可维护性
+
+**技术改进**：
+- 引入 `Microsoft.Extensions.DependencyInjection` DI 容器
+- 创建平台抽象接口层（`IApplication`、`IShape`、`ITable` 等）
+- 实现 PowerPoint 适配器（`PowerPointApplication`、`PowerPointShape` 等）
+- 重构格式化辅助类支持依赖注入
+- 优化代码组织，提升模块化程度
 
 ### v1.0.0 (2025-01) - 第一版正式发布
 

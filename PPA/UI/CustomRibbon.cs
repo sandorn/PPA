@@ -1,4 +1,8 @@
+using Microsoft.Extensions.DependencyInjection;
 using PPA.Core;
+using PPA.Core.Abstraction.Business;
+using PPA.Core.Abstraction.Presentation;
+using PPA.Core.Adapters.PowerPoint;
 using PPA.Formatting;
 using PPA.Properties;
 using PPA.Shape;
@@ -10,7 +14,7 @@ using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
-using ALT = PPA.Formatting.AlignHelper.AlignmentType;
+using ALT = PPA.Core.Abstraction.Business.AlignmentType;
 using NETOP = NetOffice.PowerPointApi;
 using Office = Microsoft.Office.Core;
 
@@ -28,6 +32,8 @@ namespace PPA
 		private bool _disposed = false;
 		private bool _appInitialized = false;
 		private CancellationTokenSource _bt501Cancellation;
+		private AlignHelper _alignHelper; // 对齐工具服务（使用具体类型以访问所有方法）
+		private IApplication _abstractApp;
 
 		#endregion Private Fields
 
@@ -58,6 +64,17 @@ namespace PPA
 
 			_app=application;
 			_appInitialized=true;
+
+			// 从 DI 容器获取服务
+			var addIn = Globals.ThisAddIn;
+			if (addIn != null && addIn.ServiceProvider != null)
+			{
+				var service = addIn.ServiceProvider.GetService<IAlignHelper>();
+				_alignHelper = service as AlignHelper;
+			}
+
+			_abstractApp = ResolveAbstractApplication();
+
 			Profiler.LogMessage("Application 设置成功");
 		}
 
@@ -478,37 +495,171 @@ namespace PPA
 				return;
 			}
 
+			// 如果未获取到服务，尝试从 DI 容器获取（向后兼容）
+			if (_alignHelper == null)
+			{
+				var addIn = Globals.ThisAddIn;
+				if (addIn != null && addIn.ServiceProvider != null)
+				{
+					var service = addIn.ServiceProvider.GetService<IAlignHelper>();
+					_alignHelper = service as AlignHelper;
+				}
+			}
+
+			if (_alignHelper == null)
+			{
+				Profiler.LogMessage("警告：无法获取 IAlignHelper 服务，创建新实例");
+				// 向后兼容：如果无法获取服务，创建临时实例
+				_alignHelper = new AlignHelper();
+			}
+
 			switch(buttonId)
 			{
-				case "Bt101": AlignHelper.ExecuteAlignment(_app,ALT.Left,_tb101Press); break;
-				case "Bt102": AlignHelper.ExecuteAlignment(_app,ALT.Centers,_tb101Press); break;
-				case "Bt103": AlignHelper.ExecuteAlignment(_app,ALT.Right,_tb101Press); break;
-				case "Bt104": AlignHelper.ExecuteAlignment(_app,ALT.Horizontally,_tb101Press); break;
-				case "Bt111": AlignHelper.ExecuteAlignment(_app,ALT.Top,_tb101Press); break;
-				case "Bt112": AlignHelper.ExecuteAlignment(_app,ALT.Middles,_tb101Press); break;
-				case "Bt113": AlignHelper.ExecuteAlignment(_app,ALT.Bottom,_tb101Press); break;
-				case "Bt114": AlignHelper.ExecuteAlignment(_app,ALT.Vertically,_tb101Press); break;
-				case "Bt121": AlignHelper.AttachLeft(_app); break;
-				case "Bt122": AlignHelper.AttachRight(_app); break;
-				case "Bt123": AlignHelper.AttachTop(_app); break;
-				case "Bt124": AlignHelper.AttachBottom(_app); break;
-				case "Bt201": AlignHelper.SetEqualWidth(_app); break;
-				case "Bt202": AlignHelper.SetEqualHeight(_app); break;
-				case "Bt203": AlignHelper.SetEqualSize(_app); break;
-				case "Bt204": AlignHelper.SwapSize(_app); break;
-				case "Bt211": AlignHelper.StretchLeft(_app); break;
-				case "Bt212": AlignHelper.StretchRight(_app); break;
-				case "Bt213": AlignHelper.StretchTop(_app); break;
-				case "Bt214": AlignHelper.StretchBottom(_app); break;
-				case "Bt301": AlignHelper.GuideAlignLeft(_app); break;
-				case "Bt302": AlignHelper.GuideAlignHCenter(_app); break;
-				case "Bt303": AlignHelper.GuideAlignRight(_app); break;
-				case "Bt311": AlignHelper.GuideAlignTop(_app); break;
-				case "Bt312": AlignHelper.GuideAlignVCenter(_app); break;
-				case "Bt313": AlignHelper.GuideAlignBottom(_app); break;
-				case "Bt321": AlignHelper.GuidesStretchWidth(_app); break;
-				case "Bt322": AlignHelper.GuidesStretchHeight(_app); break;
-				case "Bt323": AlignHelper.GuidesStretchSize(_app); break;
+				case "Bt101":
+					PerformAlignment(
+						(helper, app) => helper.ExecuteAlignment(app, ALT.Left, _tb101Press),
+						(helper, app) => helper.ExecuteAlignment(app, ALT.Left, _tb101Press));
+					break;
+				case "Bt102":
+					PerformAlignment(
+						(helper, app) => helper.ExecuteAlignment(app, ALT.Centers, _tb101Press),
+						(helper, app) => helper.ExecuteAlignment(app, ALT.Centers, _tb101Press));
+					break;
+				case "Bt103":
+					PerformAlignment(
+						(helper, app) => helper.ExecuteAlignment(app, ALT.Right, _tb101Press),
+						(helper, app) => helper.ExecuteAlignment(app, ALT.Right, _tb101Press));
+					break;
+				case "Bt104":
+					PerformAlignment(
+						(helper, app) => helper.ExecuteAlignment(app, ALT.Horizontally, _tb101Press),
+						(helper, app) => helper.ExecuteAlignment(app, ALT.Horizontally, _tb101Press));
+					break;
+				case "Bt111":
+					PerformAlignment(
+						(helper, app) => helper.ExecuteAlignment(app, ALT.Top, _tb101Press),
+						(helper, app) => helper.ExecuteAlignment(app, ALT.Top, _tb101Press));
+					break;
+				case "Bt112":
+					PerformAlignment(
+						(helper, app) => helper.ExecuteAlignment(app, ALT.Middles, _tb101Press),
+						(helper, app) => helper.ExecuteAlignment(app, ALT.Middles, _tb101Press));
+					break;
+				case "Bt113":
+					PerformAlignment(
+						(helper, app) => helper.ExecuteAlignment(app, ALT.Bottom, _tb101Press),
+						(helper, app) => helper.ExecuteAlignment(app, ALT.Bottom, _tb101Press));
+					break;
+				case "Bt114":
+					PerformAlignment(
+						(helper, app) => helper.ExecuteAlignment(app, ALT.Vertically, _tb101Press),
+						(helper, app) => helper.ExecuteAlignment(app, ALT.Vertically, _tb101Press));
+					break;
+				case "Bt121":
+					PerformAlignment(
+						(helper, app) => helper.AttachLeft(app),
+						(helper, app) => helper.AttachLeft(app));
+					break;
+				case "Bt122":
+					PerformAlignment(
+						(helper, app) => helper.AttachRight(app),
+						(helper, app) => helper.AttachRight(app));
+					break;
+				case "Bt123":
+					PerformAlignment(
+						(helper, app) => helper.AttachTop(app),
+						(helper, app) => helper.AttachTop(app));
+					break;
+				case "Bt124":
+					PerformAlignment(
+						(helper, app) => helper.AttachBottom(app),
+						(helper, app) => helper.AttachBottom(app));
+					break;
+				case "Bt201":
+					PerformAlignment(
+						(helper, app) => helper.SetEqualWidth(app),
+						(helper, app) => helper.SetEqualWidth(app));
+					break;
+				case "Bt202":
+					PerformAlignment(
+						(helper, app) => helper.SetEqualHeight(app),
+						(helper, app) => helper.SetEqualHeight(app));
+					break;
+				case "Bt203":
+					PerformAlignment(
+						(helper, app) => helper.SetEqualSize(app),
+						(helper, app) => helper.SetEqualSize(app));
+					break;
+				case "Bt204":
+					PerformAlignment(
+						(helper, app) => helper.SwapSize(app),
+						(helper, app) => helper.SwapSize(app));
+					break;
+				case "Bt211":
+					PerformAlignment(
+						(helper, app) => helper.StretchLeft(app),
+						(helper, app) => helper.StretchLeft(app));
+					break;
+				case "Bt212":
+					PerformAlignment(
+						(helper, app) => helper.StretchRight(app),
+						(helper, app) => helper.StretchRight(app));
+					break;
+				case "Bt213":
+					PerformAlignment(
+						(helper, app) => helper.StretchTop(app),
+						(helper, app) => helper.StretchTop(app));
+					break;
+				case "Bt214":
+					PerformAlignment(
+						(helper, app) => helper.StretchBottom(app),
+						(helper, app) => helper.StretchBottom(app));
+					break;
+				case "Bt301":
+					PerformAlignment(
+						(helper, app) => helper.GuideAlignLeft(app),
+						(helper, app) => helper.GuideAlignLeft(app));
+					break;
+				case "Bt302":
+					PerformAlignment(
+						(helper, app) => helper.GuideAlignHCenter(app),
+						(helper, app) => helper.GuideAlignHCenter(app));
+					break;
+				case "Bt303":
+					PerformAlignment(
+						(helper, app) => helper.GuideAlignRight(app),
+						(helper, app) => helper.GuideAlignRight(app));
+					break;
+				case "Bt311":
+					PerformAlignment(
+						(helper, app) => helper.GuideAlignTop(app),
+						(helper, app) => helper.GuideAlignTop(app));
+					break;
+				case "Bt312":
+					PerformAlignment(
+						(helper, app) => helper.GuideAlignVCenter(app),
+						(helper, app) => helper.GuideAlignVCenter(app));
+					break;
+				case "Bt313":
+					PerformAlignment(
+						(helper, app) => helper.GuideAlignBottom(app),
+						(helper, app) => helper.GuideAlignBottom(app));
+					break;
+				case "Bt321":
+					PerformAlignment(
+						(helper, app) => helper.GuidesStretchWidth(app),
+						(helper, app) => helper.GuidesStretchWidth(app));
+					break;
+				case "Bt322":
+					PerformAlignment(
+						(helper, app) => helper.GuidesStretchHeight(app),
+						(helper, app) => helper.GuidesStretchHeight(app));
+					break;
+				case "Bt323":
+					PerformAlignment(
+						(helper, app) => helper.GuidesStretchSize(app),
+						(helper, app) => helper.GuidesStretchSize(app));
+					break;
 				case "Bt401": ShapeBatchHelper.ToggleShapeVisibility(_app); break;
 				case "Bt402": MSOICrop.CropShapesToSlide(_app); break;
 
@@ -522,16 +673,51 @@ namespace PPA
 					AsyncOperationHelper.ExecuteAsyncOperation(async () =>
 					{
 						var progress = new ProgressIndicator(ResourceManager.GetString("Ribbon_Bt501", "美化表格"));
-						await TableBatchHelper.Bt501_ClickAsync(
-							_app,
-							progress,
-							_bt501Cancellation.Token);
+						var helper = ResolveTableBatchHelper();
+						if(helper!=null)
+						{
+							await helper.FormatTablesAsync(
+								_app,
+								progress,
+								_bt501Cancellation.Token);
+						}
+						else
+						{
+							await TableBatchHelper.Bt501_ClickAsync(
+								_app,
+								progress,
+								_bt501Cancellation.Token);
+						}
 					},ResourceManager.GetString("Ribbon_Bt501","美化表格"));
 					// 注意：ExecuteAsyncOperation 是 async void，设计为 fire-and-forget，不需要 await
 					break;
 
-				case "Bt502": TextBatchHelper.Bt502_Click(_app); break;
-				case "Bt503": ChartBatchHelper.Bt503_Click(_app); break;
+				case "Bt502":
+				{
+					var helper = ResolveTextBatchHelper();
+					if(helper != null)
+					{
+						helper.FormatText(_app);
+					}
+					else
+					{
+						TextBatchHelper.Bt502_Click(_app);
+					}
+					break;
+				}
+				case "Bt503":
+				{
+					var helper = ResolveChartBatchHelper();
+					if(helper!=null)
+					{
+						helper.FormatCharts(_app);
+					}
+					else
+					{
+						ChartBatchHelper.Bt503_Click(_app);
+					}
+					break;
+				}
 				case "Bt601": ShapeBatchHelper.Bt601_Click(_app); break;
 				default: Profiler.LogMessage($"未知按钮ID: {buttonId}"); break;
 			}
@@ -624,12 +810,10 @@ namespace PPA
 				{
 					if(stream != null)
 					{
-						using(var reader = new StreamReader(stream))
-						{
-							string xmlContent = reader.ReadToEnd();
-							Profiler.LogMessage($"成功从嵌入式资源加载 Ribbon.xml");
-							return xmlContent;
-						}
+						using var reader = new StreamReader(stream);
+						string xmlContent = reader.ReadToEnd();
+						Profiler.LogMessage($"成功从嵌入式资源加载 Ribbon.xml");
+						return xmlContent;
 					}
 				}
 				
@@ -644,5 +828,62 @@ namespace PPA
 		}
 
 		#endregion Private Helper Methods
+
+		private ITextBatchHelper ResolveTextBatchHelper()
+		{
+			var addIn = Globals.ThisAddIn;
+			return addIn?.ServiceProvider?.GetService<ITextBatchHelper>();
+		}
+
+		private IChartBatchHelper ResolveChartBatchHelper()
+		{
+			var addIn = Globals.ThisAddIn;
+			return addIn?.ServiceProvider?.GetService<IChartBatchHelper>();
+		}
+
+		private ITableBatchHelper ResolveTableBatchHelper()
+		{
+			var addIn = Globals.ThisAddIn;
+			return addIn?.ServiceProvider?.GetService<ITableBatchHelper>();
+		}
+
+	private IApplication GetAbstractApplication()
+	{
+		if(_abstractApp == null)
+		{
+			_abstractApp = ResolveAbstractApplication();
+		}
+		return _abstractApp;
+	}
+
+	private IApplication ResolveAbstractApplication()
+	{
+		var addIn = Globals.ThisAddIn;
+		var serviceProvider = addIn?.ServiceProvider;
+		if(serviceProvider != null)
+		{
+			var factory = serviceProvider.GetService<IApplicationFactory>();
+			var app = factory?.GetCurrent();
+			if(app != null)
+			{
+				return app;
+			}
+		}
+
+		return _app != null ? new PowerPointApplication(_app) : null;
+	}
+
+	private void PerformAlignment(Action<AlignHelper, IApplication> abstractAction, Action<AlignHelper, NETOP.Application> nativeAction)
+	{
+		var abstractApp = GetAbstractApplication();
+		if(abstractApp != null)
+		{
+			abstractAction?.Invoke(_alignHelper, abstractApp);
+		}
+		else
+		{
+			nativeAction?.Invoke(_alignHelper, _app);
+		}
+	}
 	}
 }

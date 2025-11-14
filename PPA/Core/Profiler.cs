@@ -93,23 +93,26 @@ namespace PPA.Core
 				? callerMethod
 				: $"{Path.GetFileNameWithoutExtension(filePath)}.{callerMethod}";
 
+			var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}]\t[{logLevel}]\t{methodIdentifier}\t{message}";
+
 #if DEBUG
 			// 开发状态：输出到Debug控制台
 			Debug.WriteLine($"[{logLevel}]\t{methodIdentifier}\t{message}");
-#else
-			// 非开发状态：写入日志文件
-			var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}]\t[{logLevel}]\t{methodIdentifier}\t{message}";
+#endif
 
-			lock(_lockObj)
+			// 如果启用了文件日志，也写入文件（DEBUG 和 Release 都支持）
+			if(EnableFileLogging)
 			{
-				_buffer.Enqueue(line);
-
-				if(_buffer.Count >= BufferCapacity || _writer == null)
+				lock(_lockObj)
 				{
-					FlushBuffer();
+					_buffer.Enqueue(line);
+
+					if(_buffer.Count >= BufferCapacity || _writer == null)
+					{
+						FlushBuffer();
+					}
 				}
 			}
-#endif
 		}
 
 		#endregion Public Methods
