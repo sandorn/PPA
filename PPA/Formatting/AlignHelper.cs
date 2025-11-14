@@ -10,6 +10,8 @@ using PPA.Core.Abstraction.Presentation;
 using PPA.Core.Adapters.PowerPoint;
 using AlignmentType = PPA.Core.Abstraction.Business.AlignmentType;
 using NETOP = NetOffice.PowerPointApi;
+using static PPA.Core.Abstraction.Business.OfficeCommands;
+using System.Diagnostics;
 
 namespace PPA.Formatting
 {
@@ -19,12 +21,14 @@ namespace PPA.Formatting
 	public class AlignHelper : IAlignHelper
 	{
 		private readonly IShapeHelper _shapeHelper;
+		private readonly ICommandExecutor _commandExecutor;
 
 		/// <summary>
 		/// 构造函数，通过依赖注入获取服务
 		/// </summary>
 		/// <param name="shapeHelper">形状工具服务（可选，如果为 null 则创建新实例）</param>
-		public AlignHelper(IShapeHelper shapeHelper = null)
+		/// <param name="commandExecutor">命令执行器（可选，如果为 null 则从 DI 容器获取）</param>
+		public AlignHelper(IShapeHelper shapeHelper = null, ICommandExecutor commandExecutor = null)
 		{
 			// 如果未注入服务，尝试从 DI 容器获取
 			if (shapeHelper == null)
@@ -38,6 +42,17 @@ namespace PPA.Formatting
 
 			// 如果仍然为 null，创建新实例（向后兼容）
 			_shapeHelper = shapeHelper ?? new ShapeUtils();
+
+			// 获取命令执行器
+			if (commandExecutor == null)
+			{
+				var addIn = Globals.ThisAddIn;
+				if (addIn != null && addIn.ServiceProvider != null)
+				{
+					commandExecutor = addIn.ServiceProvider.GetService(typeof(ICommandExecutor)) as ICommandExecutor;
+				}
+			}
+			_commandExecutor = commandExecutor;
 		}
 
 		public void GuidesStretchHeight(IApplication app) => InvokeWithNative(app, a => GuidesStretchHeight(a));
@@ -1062,37 +1077,99 @@ namespace PPA.Formatting
 				// 判断对齐基准，1.单选形状：总是对齐到幻灯片；2.多选形状：根据按钮状态决定
 				MsoTriState alignToSlide = (shapes.Count == 1 || alignToSlideMode) ? MsoTriState.msoTrue : MsoTriState.msoFalse;
 
+				bool TryExecuteMso(string commandName)
+				{
+					if(string.IsNullOrWhiteSpace(commandName) || _commandExecutor == null)
+					{
+						return false;
+					}
+
+					Profiler.LogMessage($"ExecuteAlignment: 尝试 MSO 命令 '{commandName}'","DEBUG");
+					var success = _commandExecutor.ExecuteMso(commandName);
+					if(success)
+					{
+						Profiler.LogMessage($"ExecuteAlignment: MSO 命令 '{commandName}' 执行成功","INFO");
+					}
+					else
+					{
+						Profiler.LogMessage($"ExecuteAlignment: MSO 命令 '{commandName}' 执行失败","DEBUG");
+					}
+					return success;
+				}
+
 				// 执行对齐操作
 				switch(alignment)
 				{
 					case AlignmentType.Left:
-						shapes.Align(MsoAlignCmd.msoAlignLefts,alignToSlide);
-						Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						if(TryExecuteMso(ObjectsAlignLeftSmart))
+						{
+							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						}
+						else
+						{
+							shapes.Align(MsoAlignCmd.msoAlignLefts,alignToSlide);
+							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						}
 						break;
 
 					case AlignmentType.Right:
-						shapes.Align(MsoAlignCmd.msoAlignRights,alignToSlide);
-						Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						if(TryExecuteMso(ObjectsAlignRightSmart))
+						{
+							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						}
+						else
+						{
+							shapes.Align(MsoAlignCmd.msoAlignRights,alignToSlide);
+							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						}
 						break;
 
 					case AlignmentType.Top:
-						shapes.Align(MsoAlignCmd.msoAlignTops,alignToSlide);
-						Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						if(TryExecuteMso(ObjectsAlignTopSmart))
+						{
+							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						}
+						else
+						{
+							shapes.Align(MsoAlignCmd.msoAlignTops,alignToSlide);
+							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						}
 						break;
 
 					case AlignmentType.Bottom:
-						shapes.Align(MsoAlignCmd.msoAlignBottoms,alignToSlide);
-						Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						if(TryExecuteMso(ObjectsAlignBottomSmart))
+						{
+							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						}
+						else
+						{
+							shapes.Align(MsoAlignCmd.msoAlignBottoms,alignToSlide);
+							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						}
 						break;
 
 					case AlignmentType.Centers:
-						shapes.Align(MsoAlignCmd.msoAlignCenters,alignToSlide);
-						Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						if(TryExecuteMso(ObjectsAlignCenterHorizontalSmart))
+						{
+							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						}
+						else
+						{
+							shapes.Align(MsoAlignCmd.msoAlignCenters,alignToSlide);
+							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						}
 						break;
 
 					case AlignmentType.Middles:
-						shapes.Align(MsoAlignCmd.msoAlignMiddles,alignToSlide);
-						Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						if(TryExecuteMso(ObjectsAlignMiddleVerticalSmart))
+						{
+							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						}
+						else
+						{
+							shapes.Align(MsoAlignCmd.msoAlignMiddles,alignToSlide);
+							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+						}
 						break;
 
 					case AlignmentType.Horizontally:
@@ -1101,8 +1178,15 @@ namespace PPA.Formatting
 						int minRequired = (alignToSlide == MsoTriState.msoTrue) ? 1 : 3;
 						if(shapes.Count>=minRequired)
 						{
-							shapes.Distribute(MsoDistributeCmd.msoDistributeHorizontally,alignToSlide);
-							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+							if(TryExecuteMso(AlignDistributeHorizontally))
+							{
+								Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+							}
+							else
+							{
+								shapes.Distribute(MsoDistributeCmd.msoDistributeHorizontally,alignToSlide);
+								Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+							}
 						} else
 						{
 							string basis = (alignToSlide == MsoTriState.msoTrue)
@@ -1119,8 +1203,15 @@ namespace PPA.Formatting
 						int minRequired = (alignToSlide == MsoTriState.msoTrue) ? 1 : 3;
 						if(shapes.Count>=minRequired)
 						{
-							shapes.Distribute(MsoDistributeCmd.msoDistributeVertically,alignToSlide);
-							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+							if(TryExecuteMso(AlignDistributeVertically))
+							{
+								Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+							}
+							else
+							{
+								shapes.Distribute(MsoDistributeCmd.msoDistributeVertically,alignToSlide);
+								Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
+							}
 						} else
 						{
 							string basis = (alignToSlide == MsoTriState.msoTrue)

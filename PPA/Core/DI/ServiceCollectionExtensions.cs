@@ -3,8 +3,8 @@ using PPA.Core.Abstraction.Business;
 using PPA.Core.Abstraction.Presentation;
 using PPA.Core.Adapters;
 using PPA.Core.Adapters.PowerPoint;
-// using PPA.Core.Adapters.Wps; // WPS 支持已禁用
 using PPA.Formatting;
+using PPA.Utilities;
 
 namespace PPA.Core.DI
 {
@@ -35,6 +35,9 @@ namespace PPA.Core.DI
 
 			// 注册工具服务（单例，因为是无状态的工具类）
 			services.AddSingleton<IShapeHelper, PPA.Shape.ShapeUtils>();
+
+			// 注册命令执行器（瞬态，需要应用程序实例）
+			services.AddTransient<ICommandExecutor, CommandExecutor>();
 
 			// 平台抽象与适配器（仅 PowerPoint）：注册工厂 + IApplication 解析
 			// WPS 支持已禁用，如需启用请取消注释下面的 WpsApplicationFactory 注册

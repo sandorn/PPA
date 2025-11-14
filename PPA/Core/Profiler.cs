@@ -27,10 +27,12 @@ namespace PPA.Core
 
 		#region Private Fields
 
-		private const int BufferCapacity = 100; // 日志缓冲区容量
+		private const int BufferCapacity = 20; // 日志缓冲区容量
 		private static readonly Queue<string> _buffer = new(); // 日志缓冲区
 		private static readonly object _lockObj = new(); // 线程同步锁
 		private static StreamWriter _writer; // 文件写入器
+		private static readonly TimeSpan MaxFlushInterval = TimeSpan.FromSeconds(1);
+		private static DateTime _lastFlushTime = DateTime.UtcNow;
 
 		#endregion Private Fields
 
@@ -77,6 +79,22 @@ namespace PPA.Core
 
 		#endregion Public Methods
 
+		/// <summary>
+		/// 强制把缓冲日志写入文件
+		/// </summary>
+		public static void Flush()
+		{
+			if(!EnableFileLogging)
+			{
+				return;
+			}
+
+			lock(_lockObj)
+			{
+				FlushBuffer();
+			}
+		}
+
 		#region Public Methods
 
 		/// <summary>
@@ -107,7 +125,8 @@ namespace PPA.Core
 				{
 					_buffer.Enqueue(line);
 
-					if(_buffer.Count >= BufferCapacity || _writer == null)
+					var shouldFlush = _buffer.Count >= BufferCapacity || _writer == null || (DateTime.UtcNow - _lastFlushTime) >= MaxFlushInterval;
+					if(shouldFlush)
 					{
 						FlushBuffer();
 					}
@@ -126,7 +145,10 @@ namespace PPA.Core
 				try
 				{
 					// 延迟初始化写入器
-					_writer=new StreamWriter(LogFilePath,append: true);
+					_writer=new StreamWriter(LogFilePath,append: true)
+					{
+						AutoFlush = true
+					};
 				} catch
 				{
 					// 初始化失败时清空缓冲区
@@ -143,6 +165,7 @@ namespace PPA.Core
 					_writer.WriteLine(_buffer.Dequeue());
 				}
 				_writer.Flush();
+				_lastFlushTime = DateTime.UtcNow;
 			} catch
 			{
 				// 写入失败时清理资源

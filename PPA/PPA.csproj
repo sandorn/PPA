@@ -256,6 +256,8 @@
     <Compile Include="Core\Abstraction\Business\IChartBatchHelper.cs" />
     <Compile Include="Core\Abstraction\Business\IAlignHelper.cs" />
     <Compile Include="Core\Abstraction\Business\IShapeHelper.cs" />
+    <Compile Include="Core\Abstraction\Business\ICommandExecutor.cs" />
+    <Compile Include="Core\Abstraction\Business\OfficeCommands.cs" />
     <Compile Include="Core\Adapters\PowerPoint\PowerPointApplicationFactory.cs" />
     <Compile Include="Core\Adapters\AdapterUtils.cs" />
     <Compile Include="Core\Adapters\PowerPoint\PowerPointApplication.cs" />
@@ -270,6 +272,7 @@
     <Compile Include="Utilities\Toast.cs" />
     <Compile Include="Utilities\FileLocator.cs" />
     <Compile Include="Utilities\ComListExtensions.cs" />
+    <Compile Include="Utilities\CommandExecutor.cs" />
     <Compile Include="Formatting\TableFormatHelper.cs" />
     <Compile Include="Formatting\TextFormatHelper.cs" />
     <Compile Include="Formatting\ChartFormatHelper.cs" />
