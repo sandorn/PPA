@@ -151,14 +151,12 @@ namespace PPA.UI
 					(app) =>
 					{
 						var helper = ResolveTableBatchHelper();
-						if(helper!=null)
+						if(helper==null)
 						{
-							helper.FormatTables(app);
+							Profiler.LogMessage("警告：无法获取 ITableBatchHelper 服务", "WARN");
+							return;
 						}
-						else
-						{
-							TableBatchHelper.Bt501_Click(app);
-						}
+						helper.FormatTables(app);
 					},"美化表格");
 			}
 
@@ -169,14 +167,12 @@ namespace PPA.UI
 					(app) =>
 					{
 						var helper = ResolveTextBatchHelper();
-						if(helper!=null)
+						if(helper==null)
 						{
-							helper.FormatText(app);
+							Profiler.LogMessage("警告：无法获取 ITextBatchHelper 服务", "WARN");
+							return;
 						}
-						else
-						{
-							TextBatchHelper.Bt502_Click(app);
-						}
+						helper.FormatText(app);
 					},"美化文本");
 			}
 
@@ -187,14 +183,12 @@ namespace PPA.UI
 					(app) =>
 					{
 						var helper = ResolveChartBatchHelper();
-						if(helper!=null)
+						if(helper==null)
 						{
-							helper.FormatCharts(app);
+							Profiler.LogMessage("警告：无法获取 IChartBatchHelper 服务", "WARN");
+							return;
 						}
-						else
-						{
-							ChartBatchHelper.Bt503_Click(app);
-						}
+						helper.FormatCharts(app);
 					},"美化图表");
 			}
 

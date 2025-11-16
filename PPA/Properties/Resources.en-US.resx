@@ -198,11 +198,11 @@
   <data name="Ribbon_group6" xml:space="preserve">
     <value>Settings</value>
   </data>
-  <data name="Ribbon_Tb101_Page" xml:space="preserve">
-    <value>Page</value>
+  <data name="Ribbon_Tb101_Slide" xml:space="preserve">
+    <value>Slide</value>
   </data>
-  <data name="Ribbon_Tb101_Shape" xml:space="preserve">
-    <value>Shape</value>
+  <data name="Ribbon_Tb101_Objects" xml:space="preserve">
+    <value>Selected Objects</value>
   </data>
   <data name="Ribbon_Bt101" xml:space="preserve">
     <value>Align Left</value>

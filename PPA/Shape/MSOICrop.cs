@@ -13,10 +13,17 @@ namespace PPA.Shape
 	{
 		#region Public Methods
 
-		public static void CropShapesToSlide(NETOP.Application app)
+		/// <summary>
+		/// 裁剪形状到幻灯片范围
+		/// </summary>
+		/// <param name="nativeApp">原生 COM Application 对象（MSOP.Application）</param>
+		public static void CropShapesToSlide(MSOP.Application nativeApp)
 		{
-			MSOP.Application nativeApp = Globals.ThisAddIn.NativeApp;
-			var NetApp = app;
+			if(nativeApp == null)
+			{
+				Profiler.LogMessage("CropShapesToSlide: 传入的 Application 对象为空", "ERROR");
+				return;
+			}
 
 			ExHandler.Run(() =>
 			{
@@ -82,71 +89,6 @@ namespace PPA.Shape
 					BooleanCrop(slide,shape,rect);
 				}
 			});
-		}
-
-		// NetOffice PowerPoint API 裁剪形状到幻灯片范围，无效
-		public static void CropShapesToSlideByNETOP(NETOP.Application app)
-		{
-			var slide = app.ActiveWindow.View.Slide as NETOP.Slide;
-			var sel = app.ActiveWindow?.Selection;
-			var presentation = app.ActivePresentation;
-			var pageSetup = presentation?.PageSetup;
-			float slideWidth = pageSetup?.SlideWidth ?? 0;
-			float slideHeight = pageSetup?.SlideHeight ?? 0;
-
-			List<NETOP.Shape> shapesToProcess = [];
-
-			// 判断是否有选中形状
-			if(sel!=null&&sel.Type==NETOP.Enums.PpSelectionType.ppSelectionShapes)
-			{
-				// 只处理选中的形状
-				for(int i = 1;i<=sel.ShapeRange.Count;i++)
-					shapesToProcess.Add(sel.ShapeRange[i]);
-			} else
-			{
-				// 没有选中形状时，处理当前幻灯片上的所有形状
-				for(int i = 1;i<=slide.Shapes.Count;i++)
-					shapesToProcess.Add(slide.Shapes[i]);
-			}
-
-			foreach(var shape in shapesToProcess)
-			{
-				float left = shape.Left, top = shape.Top;
-				float right = left + shape.Width, bottom = top + shape.Height;
-
-				// 检查是否超出边界
-				bool isOutside = left < -0.5f || top < -0.5f || right > slideWidth + 0.5f || bottom > slideHeight + 0.5f;
-				if(!isOutside) continue;
-
-				// 检查是否与幻灯片有重叠区域
-				bool hasOverlap = !(right <= 0 || bottom <= 0 || left >= slideWidth || top >= slideHeight);
-				if(!hasOverlap) continue;
-
-				Profiler.LogMessage($"Processing: Id={shape.Id}, Name={shape.Name}, Type={shape.Type}");
-
-				// 创建裁剪矩形
-				NETOP.Shape slideRect = ShapeUtils.Default.AddOneShape(slide, 0, 0, slideWidth, slideHeight);
-
-				// 执行相交操作（ExHandler 会处理异常）
-				ExHandler.Run(() =>
-				{
-					var shapeRange = slide.Shapes.Range(new object[] { shape.Name, slideRect.Name });
-					Profiler.LogMessage($"shapeRange.Count={shapeRange.Count}");
-					for(int i = 1;i<=shapeRange.Count;i++)
-					{
-						Profiler.LogMessage($"shapeRange[{i}].Name={shapeRange[i].Name}, Type={shapeRange[i].Type}");
-					}
-					shapeRange.MergeShapes(NetOffice.OfficeApi.Enums.MsoMergeCmd.msoMergeIntersect);
-
-					// 如果操作成功，slideRect 会被 MergeShapes 操作处理，不需要手动删除
-				});
-
-				// 清理资源：如果操作失败，矩形可能仍然存在，尝试删除 注意：即使操作成功，尝试删除已不存在的对象也不会造成问题
-				if(slideRect!=null)
-				{
-					try { slideRect.Delete(); } catch { /* 忽略：对象可能已被 MergeShapes 删除 */ }
-				}
-			}
 		}
 
 		#endregion Public Methods

@@ -185,6 +185,16 @@ namespace PPA.Core.Abstraction.Business
 		/// </summary>
 		public const string AlignDistributeVertically = "AlignDistributeVertically";
 
+		/// <summary>
+		/// 形状对齐到所选对象（Smart 命令）
+		/// </summary>
+		public const string ObjectsAlignSelectedSmart = "ObjectsAlignSelectedSmart";
+
+		/// <summary>
+		/// 形状对齐到容器/幻灯片（Smart 命令）
+		/// </summary>
+		public const string ObjectsAlignRelativeToContainerSmart = "ObjectsAlignRelativeToContainerSmart";
+
 		#endregion
 
 		#region PowerPoint 特定命令 ID
@@ -192,17 +202,17 @@ namespace PPA.Core.Abstraction.Business
 		/// <summary>
 		/// 另存为命令 ID
 		/// </summary>
-		public const int PpFileSaveAs = 101;
+		public const int PpFileSaveAs = 748;
 
 		/// <summary>
 		/// 从开始放映命令 ID
 		/// </summary>
-		public const int PpSlideShowFromBeginning = 100;
+		public const int PpSlideShowFromBeginning = 12629;
 
 		/// <summary>
 		/// 从当前幻灯片放映命令 ID
 		/// </summary>
-		public const int PpSlideShowFromCurrent = 101;
+		public const int PpSlideShowFromCurrent = 11521;
 
 		#endregion
 	}

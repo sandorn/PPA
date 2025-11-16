@@ -29,61 +29,22 @@ namespace PPA.Formatting
 
 		#region IChartBatchHelper 实现
 
-		public void FormatCharts(NETOP.Application app)
+		public void FormatCharts(NETOP.Application netApp)
 		{
-			if(app==null) throw new ArgumentNullException(nameof(app));
-			FormatChartsInternal(app,_chartFormatHelper);
+			if(netApp==null) throw new ArgumentNullException(nameof(netApp));
+			FormatChartsInternal(netApp,_chartFormatHelper);
 		}
 
-		public Task FormatChartsAsync(NETOP.Application app, IProgress<AsyncProgress> progress = null)
+		public Task FormatChartsAsync(NETOP.Application netApp, IProgress<AsyncProgress> progress = null)
 		{
-			FormatCharts(app);
+			FormatCharts(netApp);
 			progress?.Report(new AsyncProgress(100,ResourceManager.GetString("Progress_FormatCharts_Complete","图表美化完成"),1,1));
 			return Task.CompletedTask;
 		}
 
 		#endregion
 
-		#region 向后兼容的静态入口
-
-		public static void Bt503_Click(NETOP.Application app, IChartFormatHelper chartFormatHelper = null)
-		{
-			var helper = ResolveInstance(chartFormatHelper);
-			helper.FormatCharts(app);
-		}
-
-		private static IChartBatchHelper ResolveInstance(IChartFormatHelper overrideHelper)
-		{
-			if(overrideHelper!=null)
-			{
-				return new ChartBatchHelper(overrideHelper,ResolveShapeHelper());
-			}
-
-			var serviceProvider = Globals.ThisAddIn?.ServiceProvider;
-			if(serviceProvider!=null)
-			{
-				var resolved = serviceProvider.GetService<IChartBatchHelper>();
-				if(resolved!=null) return resolved;
-
-				var formatHelper = serviceProvider.GetService<IChartFormatHelper>();
-				var shapeHelper = serviceProvider.GetService<IShapeHelper>();
-				if(formatHelper!=null&&shapeHelper!=null)
-				{
-					return new ChartBatchHelper(formatHelper,shapeHelper);
-				}
-			}
-
-			return new ChartBatchHelper(
-				new ChartFormatHelper(FormattingConfig.Instance,ResolveShapeHelper()),
-				ResolveShapeHelper());
-		}
-
-		private static IShapeHelper ResolveShapeHelper()
-		{
-			var serviceProvider = Globals.ThisAddIn?.ServiceProvider;
-			var helper = serviceProvider?.GetService<IShapeHelper>();
-			return helper ?? ShapeUtils.Default;
-		}
+		#region 内部实现
 
 		private static T SafeGet<T>(System.Func<T> getter, T @default = default)
 		{
@@ -94,22 +55,22 @@ namespace PPA.Formatting
 
 		#region 内部实现
 
-		private void FormatChartsInternal(NETOP.Application app, IChartFormatHelper chartFormatHelper)
+		private void FormatChartsInternal(NETOP.Application netApp, IChartFormatHelper chartFormatHelper)
 		{
-			PPA.Core.Profiler.LogMessage($"FormatChartsInternal 开始，app类型={app?.GetType().Name ?? "null"}", "INFO");
+			PPA.Core.Profiler.LogMessage($"FormatChartsInternal 开始，netApp类型={netApp?.GetType().Name ?? "null"}", "INFO");
 			if(chartFormatHelper==null)
 				throw new InvalidOperationException("无法获取 IChartFormatHelper 服务");
 
-			UndoHelper.BeginUndoEntry(app,UndoHelper.UndoNames.FormatCharts);
+			UndoHelper.BeginUndoEntry(netApp,UndoHelper.UndoNames.FormatCharts);
 
 			ExHandler.Run(() =>
 			{
-				var slide = _shapeHelper.TryGetCurrentSlide(app);
+				var slide = _shapeHelper.TryGetCurrentSlide(netApp);
 				PPA.Core.Profiler.LogMessage($"TryGetCurrentSlide 返回: {slide?.GetType().Name ?? "null"}", "INFO");
 				if(slide==null) return;
 
 				var chartShapes = new List<NETOP.Shape>();
-				var selection = _shapeHelper.ValidateSelection(app);
+				var selection = _shapeHelper.ValidateSelection(netApp);
 				PPA.Core.Profiler.LogMessage($"ValidateSelection 返回: {selection?.GetType().Name ?? "null"}", "INFO");
 
 				// 动态选区兜底：当 ValidateSelection 返回 null 时，直接从 ActiveWindow.Selection 读取
@@ -117,7 +78,7 @@ namespace PPA.Formatting
 				{
 					try
 					{
-						dynamic dynApp = app;
+						dynamic dynApp = netApp;
 						dynamic activeWindow = SafeGet(() => dynApp.ActiveWindow, null);
 						if(activeWindow != null)
 						{
@@ -259,7 +220,7 @@ namespace PPA.Formatting
 						}
 						catch(System.Exception ex)
 						{
-							// NetOffice 无法枚举 WPS ShapeRange，使用 dynamic 访问
+							// NetOffice 无法枚举某些 ShapeRange，使用 dynamic 访问作为后备方案
 							PPA.Core.Profiler.LogMessage($"NetOffice 枚举 ShapeRange 失败: {ex.Message}，尝试使用 dynamic 访问", "WARN");
 							try
 							{
@@ -271,7 +232,7 @@ namespace PPA.Formatting
 									dynamic dynShape = SafeGet(() => dynShapeRange[i], null);
 									if(dynShape != null)
 									{
-										// WPS 中 HasChart 可能不可用，直接检查 Chart 属性是否存在
+										// 某些情况下 HasChart 可能不可用，直接检查 Chart 属性是否存在
 										dynamic dynChart = null;
 										bool hasChart = false;
 										try
@@ -307,7 +268,7 @@ namespace PPA.Formatting
 												// 转换失败，尝试通过 AdapterUtils 包装
 												try
 												{
-													var iShape = AdapterUtils.WrapShape(app, dynShape);
+													var iShape = AdapterUtils.WrapShape(netApp, dynShape);
 													if(iShape != null && iShape.HasChart)
 													{
 														if(iShape is IComWrapper wrapper)
@@ -409,7 +370,7 @@ namespace PPA.Formatting
 						}
 					catch(System.Exception ex)
 					{
-						// NetOffice 无法枚举 WPS Shapes，使用 dynamic 访问
+						// NetOffice 无法枚举某些 Shapes，使用 dynamic 访问作为后备方案
 						PPA.Core.Profiler.LogMessage($"NetOffice 枚举失败: {ex.Message}，尝试使用 dynamic 访问", "WARN");
 						try
 						{
@@ -437,7 +398,7 @@ namespace PPA.Formatting
 										dynamic dynShape = SafeGet(() => dynShapes[i], null);
 										if(dynShape != null)
 										{
-											// WPS 中 HasChart 可能不可用，需要直接检查 Chart 属性
+											// 某些情况下 HasChart 可能不可用，需要直接检查 Chart 属性
 											dynamic dynChart = null;
 											bool hasChart = false;
 											try
@@ -478,7 +439,7 @@ namespace PPA.Formatting
 													// 如果转换失败，尝试通过 AdapterUtils 包装
 													try
 													{
-														var iShape = AdapterUtils.WrapShape(app, dynShape);
+														var iShape = AdapterUtils.WrapShape(netApp, dynShape);
 														if(iShape != null && iShape.HasChart)
 														{
 															// 从 IShape 获取底层 NETOP.Shape
@@ -544,7 +505,7 @@ namespace PPA.Formatting
 				foreach(var shape in chartShapes)
 				{
 					PPA.Core.Profiler.LogMessage($"处理图表形状: {shape.Name}", "INFO");
-					var iShape = AdapterUtils.WrapShape(app,shape);
+					var iShape = AdapterUtils.WrapShape(netApp,shape);
 					PPA.Core.Profiler.LogMessage($"WrapShape 返回: {iShape?.GetType().Name ?? "null"}", "INFO");
 					if(iShape != null)
 					{

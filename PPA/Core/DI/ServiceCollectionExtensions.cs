@@ -40,14 +40,13 @@ namespace PPA.Core.DI
 			services.AddTransient<ICommandExecutor, CommandExecutor>();
 
 			// 平台抽象与适配器（仅 PowerPoint）：注册工厂 + IApplication 解析
-			// WPS 支持已禁用，如需启用请取消注释下面的 WpsApplicationFactory 注册
-			// services.AddSingleton<WpsApplicationFactory>();
+			// 注意：当前版本仅支持 PowerPoint，WPS 支持已废弃
+			// 抽象接口主要用于：1) 依赖注入集成 2) 单元测试支持 3) 代码解耦
 			services.AddSingleton<PowerPointApplicationFactory>();
 			services.AddSingleton<IApplicationFactory>(sp =>
 			{
 				var factories = new IApplicationFactory[]
 				{
-					// sp.GetRequiredService<WpsApplicationFactory>(), // WPS 支持已禁用
 					sp.GetRequiredService<PowerPointApplicationFactory>()
 				};
 				return new CompositeApplicationFactory(factories);

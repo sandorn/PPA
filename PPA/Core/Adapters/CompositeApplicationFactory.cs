@@ -9,6 +9,10 @@ namespace PPA.Core.Adapters
 	/// <summary>
 	/// 组合应用工厂：按顺序尝试多个工厂，返回首个可用平台
 	/// </summary>
+	/// <remarks>
+	/// 当前版本仅支持 PowerPoint，但保留此设计以便未来扩展支持其他平台（如 WPS）。
+	/// 工厂会按顺序尝试所有注册的工厂，返回第一个成功获取的应用程序实例。
+	/// </remarks>
 	public sealed class CompositeApplicationFactory : IApplicationFactory
 	{
 		private readonly IReadOnlyList<IApplicationFactory> _factories;

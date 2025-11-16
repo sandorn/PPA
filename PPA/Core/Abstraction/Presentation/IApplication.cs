@@ -6,10 +6,19 @@ namespace PPA.Core.Abstraction.Presentation
 	/// <summary>
 	/// 表示演示文稿应用程序的抽象接口
 	/// </summary>
+	/// <remarks>
+	/// 此接口主要用于：
+	/// 1. 依赖注入（DI）集成：通过 IApplicationFactory 统一获取应用程序对象
+	/// 2. 单元测试支持：可以创建 Mock 对象进行测试
+	/// 3. 代码解耦：业务层不直接依赖具体的 NetOffice 类型
+	/// 
+	/// 注意：当前版本仅支持 PowerPoint，WPS 支持已废弃。
+	/// 抽象接口的设计不是为了多平台支持，而是为了测试和 DI 的便利性。
+	/// </remarks>
 	public interface IApplication : IComWrapper
 	{
 		/// <summary>
-		/// 获取应用程序类型（PowerPoint、WPS 等）
+		/// 获取应用程序类型（当前仅支持 PowerPoint）
 		/// </summary>
 		ApplicationType ApplicationType { get; }
 

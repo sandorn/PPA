@@ -24,95 +24,40 @@ namespace PPA.Formatting
 
 		#region ITableBatchHelper 实现
 
-		public void FormatTables(NETOP.Application app)
+		public void FormatTables(NETOP.Application netApp)
 		{
-			if(app==null) throw new ArgumentNullException(nameof(app));
-			FormatTablesInternal(app,_tableFormatHelper);
+			if(netApp==null) throw new ArgumentNullException(nameof(netApp));
+			FormatTablesInternal(netApp,_tableFormatHelper);
 		}
 
 		public Task FormatTablesAsync(
-			NETOP.Application app,
+			NETOP.Application netApp,
 			IProgress<AsyncProgress> progress = null,
 			CancellationToken cancellationToken = default)
 		{
-			if(app==null) throw new ArgumentNullException(nameof(app));
-			return FormatTablesInternalAsync(app,progress,cancellationToken,_tableFormatHelper);
-		}
-
-		#endregion
-
-		#region 向后兼容的静态方法
-
-		/// <summary>
-		/// 同步美化表格（向后兼容入口）
-		/// </summary>
-		public static void Bt501_Click(NETOP.Application app, ITableFormatHelper tableFormatHelper = null)
-		{
-			var batchHelper = ResolveInstance(tableFormatHelper);
-			batchHelper.FormatTables(app);
-		}
-
-		/// <summary>
-		/// 异步美化表格（向后兼容入口）
-		/// </summary>
-		public static Task Bt501_ClickAsync(
-			NETOP.Application app,
-			IProgress<AsyncProgress> progress = null,
-			CancellationToken cancellationToken = default,
-			ITableFormatHelper tableFormatHelper = null)
-		{
-			var batchHelper = ResolveInstance(tableFormatHelper);
-			return batchHelper.FormatTablesAsync(app,progress,cancellationToken);
-		}
-
-		private static ITableBatchHelper ResolveInstance(ITableFormatHelper overrideHelper)
-		{
-			if(overrideHelper!=null)
-				return new TableBatchHelper(overrideHelper,ResolveShapeHelper());
-
-			var serviceProvider = Globals.ThisAddIn?.ServiceProvider;
-			if(serviceProvider!=null)
-			{
-				var resolved = serviceProvider.GetService(typeof(ITableBatchHelper)) as ITableBatchHelper;
-				if(resolved!=null) return resolved;
-
-				var tableHelper = serviceProvider.GetService(typeof(ITableFormatHelper)) as ITableFormatHelper;
-				var shapeHelper = serviceProvider.GetService(typeof(IShapeHelper)) as IShapeHelper;
-				if(tableHelper!=null&&shapeHelper!=null)
-					return new TableBatchHelper(tableHelper,shapeHelper);
-			}
-
-			return new TableBatchHelper(
-				new TableFormatHelper(FormattingConfig.Instance),
-				ResolveShapeHelper());
-		}
-
-		private static IShapeHelper ResolveShapeHelper()
-		{
-			var serviceProvider = Globals.ThisAddIn?.ServiceProvider;
-			var helper = serviceProvider?.GetService(typeof(IShapeHelper)) as IShapeHelper;
-			return helper ?? ShapeUtils.Default;
+			if(netApp==null) throw new ArgumentNullException(nameof(netApp));
+			return FormatTablesInternalAsync(netApp,progress,cancellationToken,_tableFormatHelper);
 		}
 
 		#endregion
 
 		#region 内部实现
 
-		private void FormatTablesInternal(NETOP.Application app,ITableFormatHelper tableFormatHelper)
+		private void FormatTablesInternal(NETOP.Application netApp,ITableFormatHelper tableFormatHelper)
 		{
-			PPA.Core.Profiler.LogMessage($"FormatTablesInternal 开始，app类型={app?.GetType().Name ?? "null"}", "INFO");
+			Profiler.LogMessage($"FormatTablesInternal 开始，netApp类型={netApp?.GetType().Name ?? "null"}", "INFO");
 			if(tableFormatHelper==null)
 				throw new InvalidOperationException("无法获取 ITableFormatHelper 服务");
 
-			UndoHelper.BeginUndoEntry(app,UndoHelper.UndoNames.FormatTables);
+			UndoHelper.BeginUndoEntry(netApp,UndoHelper.UndoNames.FormatTables);
 
-			var slide = _shapeHelper.TryGetCurrentSlide(app);
-			PPA.Core.Profiler.LogMessage($"TryGetCurrentSlide 返回: {slide?.GetType().Name ?? "null"}", "INFO");
+			var slide = _shapeHelper.TryGetCurrentSlide(netApp);
+			Profiler.LogMessage($"TryGetCurrentSlide 返回: {slide?.GetType().Name ?? "null"}", "INFO");
 
 			ExHandler.Run(() =>
 			{
-				var sel = _shapeHelper.ValidateSelection(app);
-				PPA.Core.Profiler.LogMessage($"ValidateSelection 返回: {sel?.GetType().Name ?? "null"}", "INFO");
+				var sel = _shapeHelper.ValidateSelection(netApp);
+				Profiler.LogMessage($"ValidateSelection 返回: {sel?.GetType().Name ?? "null"}", "INFO");
 				int tableCount = 0;
 				var processedKeys = new List<object>();
 
@@ -134,31 +79,31 @@ namespace PPA.Formatting
 
 					string shapeName = null;
 					try { shapeName = abstractShape.Name; } catch { }
-					PPA.Core.Profiler.LogMessage($"处理抽象形状: {shapeName ?? "未知"}, HasTable={abstractShape.HasTable}", "INFO");
+					Profiler.LogMessage($"处理抽象形状: {shapeName ?? "未知"}, HasTable={abstractShape.HasTable}", "INFO");
 
 					if(!abstractShape.HasTable)
 					{
-						PPA.Core.Profiler.LogMessage($"抽象形状 {shapeName ?? "未知"} 不包含表格，跳过", "INFO");
+						Profiler.LogMessage($"抽象形状 {shapeName ?? "未知"} 不包含表格，跳过", "INFO");
 						return false;
 					}
 
 					var key = (abstractShape as IComWrapper)?.NativeObject ?? abstractShape;
 					if(AlreadyProcessed(key))
 					{
-						PPA.Core.Profiler.LogMessage($"抽象形状 {shapeName ?? "未知"} 已处理，跳过", "INFO");
+						Profiler.LogMessage($"抽象形状 {shapeName ?? "未知"} 已处理，跳过", "INFO");
 						return false;
 					}
 
 					var table = abstractShape.GetTable();
 					if(table != null)
 					{
-						PPA.Core.Profiler.LogMessage($"抽象形状 {shapeName ?? "未知"} 返回表格实例: {table.GetType().Name}", "INFO");
+						Profiler.LogMessage($"抽象形状 {shapeName ?? "未知"} 返回表格实例: {table.GetType().Name}", "INFO");
 						tableFormatHelper.FormatTables(table);
 						tableCount++;
 						return true;
 					}
 
-					PPA.Core.Profiler.LogMessage($"抽象形状 {shapeName ?? "未知"} GetTable 返回 null", "WARN");
+					Profiler.LogMessage($"抽象形状 {shapeName ?? "未知"} GetTable 返回 null", "WARN");
 					return false;
 				}
 
@@ -170,7 +115,7 @@ namespace PPA.Formatting
 					{
 						if(AlreadyProcessed(shape))
 						{
-							PPA.Core.Profiler.LogMessage($"形状 {shape.Name} 已经处理，跳过", "INFO");
+							Profiler.LogMessage($"形状 {shape.Name} 已经处理，跳过", "INFO");
 						}
 						else
 						{
@@ -179,7 +124,7 @@ namespace PPA.Formatting
 						dynamic dynTable = null;
 						try
 						{
-							PPA.Core.Profiler.LogMessage($"选中单个形状，HasTable={shape.HasTable}", "INFO");
+								Profiler.LogMessage($"选中单个形状，HasTable={shape.HasTable}", "INFO");
 							if(shape.HasTable == MsoTriState.msoTrue)
 							{
 								isTable = true;
@@ -188,26 +133,26 @@ namespace PPA.Formatting
 						}
 						catch
 						{
-							// HasTable 不可用，尝试直接检查 Table 属性
-							PPA.Core.Profiler.LogMessage("HasTable 不可用，尝试直接检查 Table 属性", "INFO");
+								// HasTable 不可用，尝试直接检查 Table 属性
+								Profiler.LogMessage("HasTable 不可用，尝试直接检查 Table 属性", "INFO");
 							try
 							{
 								dynamic dynShape = shape;
 								dynTable = SafeGet(() => dynShape.Table, null);
 								isTable = (dynTable != null);
-								PPA.Core.Profiler.LogMessage($"直接检查 Table 属性: isTable={isTable}", "INFO");
+									Profiler.LogMessage($"直接检查 Table 属性: isTable={isTable}", "INFO");
 							}
 							catch(System.Exception ex)
 							{
-								PPA.Core.Profiler.LogMessage($"检查 Table 属性失败: {ex.Message}", "WARN");
+									Profiler.LogMessage($"检查 Table 属性失败: {ex.Message}", "WARN");
 							}
 						}
 						
 						if(isTable && dynTable != null)
 						{
-							PPA.Core.Profiler.LogMessage("开始包装表格", "INFO");
-							var iTable = AdapterUtils.WrapTable(app, shape, dynTable);
-							PPA.Core.Profiler.LogMessage($"WrapTable 返回: {iTable?.GetType().Name ?? "null"}", "INFO");
+								Profiler.LogMessage("开始包装表格", "INFO");
+							var iTable = AdapterUtils.WrapTable(netApp, shape, dynTable);
+								Profiler.LogMessage($"WrapTable 返回: {iTable?.GetType().Name ?? "null"}", "INFO");
 							if(iTable != null)
 							{
 								tableFormatHelper.FormatTables(iTable);
@@ -215,17 +160,17 @@ namespace PPA.Formatting
 							}
 							else
 							{
-								PPA.Core.Profiler.LogMessage("WrapTable 返回 null，无法格式化", "ERROR");
+									Profiler.LogMessage("WrapTable 返回 null，无法格式化", "ERROR");
 							}
 						}
 						else
 						{
-							PPA.Core.Profiler.LogMessage("形状不是表格或 Table 属性为 null", "INFO");
+								Profiler.LogMessage("形状不是表格或 Table 属性为 null", "INFO");
 						}
 						}
 					} else if(sel is NETOP.ShapeRange shapes)
 					{
-						PPA.Core.Profiler.LogMessage($"选中多个形状，Count={shapes.Count}", "INFO");
+						Profiler.LogMessage($"选中多个形状，Count={shapes.Count}", "INFO");
 						try
 						{
 							foreach(NETOP.Shape s in shapes)
@@ -257,12 +202,12 @@ namespace PPA.Formatting
 								{
 									if(AlreadyProcessed(s))
 									{
-										PPA.Core.Profiler.LogMessage($"形状 {s.Name} 已处理，跳过", "INFO");
+										Profiler.LogMessage($"形状 {s.Name} 已处理，跳过", "INFO");
 										continue;
 									}
-									PPA.Core.Profiler.LogMessage($"处理形状 {s.Name}，检测到表格", "INFO");
-									var iTable = AdapterUtils.WrapTable(app, s, dynTable);
-									PPA.Core.Profiler.LogMessage($"WrapTable 返回: {iTable?.GetType().Name ?? "null"}", "INFO");
+									Profiler.LogMessage($"处理形状 {s.Name}，检测到表格", "INFO");
+									var iTable = AdapterUtils.WrapTable(netApp, s, dynTable);
+									Profiler.LogMessage($"WrapTable 返回: {iTable?.GetType().Name ?? "null"}", "INFO");
 									if(iTable != null)
 									{
 										tableFormatHelper.FormatTables(iTable);
@@ -270,26 +215,26 @@ namespace PPA.Formatting
 									}
 									else
 									{
-										PPA.Core.Profiler.LogMessage("WrapTable 返回 null，无法格式化", "ERROR");
+										Profiler.LogMessage("WrapTable 返回 null，无法格式化", "ERROR");
 									}
 								}
 							}
 						}
 						catch(System.Exception ex)
 						{
-							// NetOffice 无法枚举 WPS ShapeRange，使用 dynamic 访问
-							PPA.Core.Profiler.LogMessage($"NetOffice 枚举 ShapeRange 失败: {ex.Message}，尝试使用 dynamic 访问", "WARN");
+							// NetOffice 无法枚举某些 ShapeRange，使用 dynamic 访问作为后备方案
+							Profiler.LogMessage($"NetOffice 枚举 ShapeRange 失败: {ex.Message}，尝试使用 dynamic 访问", "WARN");
 							try
 							{
 								dynamic dynShapeRange = shapes;
 								int rangeCount = SafeGet(() => (int)dynShapeRange.Count, 0);
-								PPA.Core.Profiler.LogMessage($"使用 dynamic 访问 ShapeRange，Count={rangeCount}", "INFO");
+								Profiler.LogMessage($"使用 dynamic 访问 ShapeRange，Count={rangeCount}", "INFO");
 								for(int i = 1; i <= rangeCount; i++)
 								{
 										dynamic dynShape = SafeGet(() => dynShapeRange[i], null);
 										if(dynShape != null)
 										{
-											// WPS 中 HasTable 可能不可用，直接检查 Table 属性
+											// 某些情况下 HasTable 可能不可用，直接检查 Table 属性
 											dynamic dynTable = null;
 											bool hasTable = false;
 											try
@@ -318,11 +263,11 @@ namespace PPA.Formatting
 											{
 											if(AlreadyProcessed(dynShape))
 											{
-												PPA.Core.Profiler.LogMessage($"dynamic 形状 {i} 已处理，跳过", "INFO");
+												Profiler.LogMessage($"dynamic 形状 {i} 已处理，跳过", "INFO");
 												continue;
 											}
-												PPA.Core.Profiler.LogMessage($"发现表格形状 {i}", "INFO");
-												var iTable = AdapterUtils.WrapTable(app, dynShape, dynTable);
+											Profiler.LogMessage($"发现表格形状 {i}", "INFO");
+												var iTable = AdapterUtils.WrapTable(netApp, dynShape, dynTable);
 												if(iTable != null)
 												{
 													tableFormatHelper.FormatTables(iTable);
@@ -334,7 +279,7 @@ namespace PPA.Formatting
 							}
 							catch(System.Exception ex2)
 							{
-								PPA.Core.Profiler.LogMessage($"dynamic 访问 ShapeRange 也失败: {ex2.Message}", "ERROR");
+								Profiler.LogMessage($"dynamic 访问 ShapeRange 也失败: {ex2.Message}", "ERROR");
 							}
 						}
 					}
@@ -368,7 +313,7 @@ namespace PPA.Formatting
 					// 未选中对象的情况，美化当前幻灯片所有表格
 					if(slide!=null)
 					{
-						PPA.Core.Profiler.LogMessage($"处理幻灯片所有形状，slide类型={slide.GetType().Name}", "INFO");
+						Profiler.LogMessage($"处理幻灯片所有形状，slide类型={slide.GetType().Name}", "INFO");
 						try
 						{
 							// 尝试使用 NetOffice 枚举
@@ -399,9 +344,9 @@ namespace PPA.Formatting
 								
 								if(isTable && dynTable != null)
 								{
-									PPA.Core.Profiler.LogMessage($"发现表格形状: {shape.Name}", "INFO");
-									var iTable = AdapterUtils.WrapTable(app, shape, dynTable);
-									PPA.Core.Profiler.LogMessage($"WrapTable 返回: {iTable?.GetType().Name ?? "null"}", "INFO");
+									Profiler.LogMessage($"发现表格形状: {shape.Name}", "INFO");
+									var iTable = AdapterUtils.WrapTable(netApp, shape, dynTable);
+									Profiler.LogMessage($"WrapTable 返回: {iTable?.GetType().Name ?? "null"}", "INFO");
 									if(iTable != null)
 									{
 										tableFormatHelper.FormatTables(iTable);
@@ -409,15 +354,15 @@ namespace PPA.Formatting
 									}
 									else
 									{
-										PPA.Core.Profiler.LogMessage("WrapTable 返回 null，无法格式化", "ERROR");
+										Profiler.LogMessage("WrapTable 返回 null，无法格式化", "ERROR");
 									}
 								}
 							}
 						}
 						catch(System.Exception ex)
 						{
-							// NetOffice 无法枚举 WPS Shapes，使用 dynamic 访问
-							PPA.Core.Profiler.LogMessage($"NetOffice 枚举失败: {ex.Message}，尝试使用 dynamic 访问", "WARN");
+							// NetOffice 无法枚举某些 Shapes，使用 dynamic 访问作为后备方案
+							Profiler.LogMessage($"NetOffice 枚举失败: {ex.Message}，尝试使用 dynamic 访问", "WARN");
 							try
 							{
 								dynamic dynSlide = slide;
@@ -433,7 +378,7 @@ namespace PPA.Formatting
 								if(dynShapes != null)
 								{
 									int count = SafeGet(() => (int)dynShapes.Count, 0);
-									PPA.Core.Profiler.LogMessage($"使用 dynamic 访问，Shapes Count={count}", "INFO");
+									Profiler.LogMessage($"使用 dynamic 访问，Shapes Count={count}", "INFO");
 									for(int i = 1; i <= count; i++)
 									{
 										try
@@ -441,7 +386,7 @@ namespace PPA.Formatting
 											dynamic dynShape = SafeGet(() => dynShapes[i], null);
 											if(dynShape != null)
 											{
-												// WPS 中 HasTable 可能不可用，直接检查 Table 属性是否存在
+												// 某些情况下 HasTable 可能不可用，直接检查 Table 属性是否存在
 												dynamic dynTable = null;
 												bool hasTable = false;
 												try
@@ -468,8 +413,8 @@ namespace PPA.Formatting
 												
 												if(hasTable && dynTable != null)
 												{
-													PPA.Core.Profiler.LogMessage($"发现表格形状 {i}，Table 属性存在", "INFO");
-													var iTable = AdapterUtils.WrapTable(app, dynShape, dynTable);
+													Profiler.LogMessage($"发现表格形状 {i}，Table 属性存在", "INFO");
+													var iTable = AdapterUtils.WrapTable(netApp, dynShape, dynTable);
 													if(iTable != null)
 													{
 														tableFormatHelper.FormatTables(iTable);
@@ -477,21 +422,21 @@ namespace PPA.Formatting
 													}
 													else
 													{
-														PPA.Core.Profiler.LogMessage($"形状 {i} WrapTable 返回 null", "WARN");
+														Profiler.LogMessage($"形状 {i} WrapTable 返回 null", "WARN");
 													}
 												}
 											}
 										}
 										catch(System.Exception ex3)
 										{
-											PPA.Core.Profiler.LogMessage($"处理形状 {i} 时出错: {ex3.Message}", "WARN");
+											Profiler.LogMessage($"处理形状 {i} 时出错: {ex3.Message}", "WARN");
 										}
 									}
 								}
 							}
 							catch(System.Exception ex2)
 							{
-								PPA.Core.Profiler.LogMessage($"dynamic 访问也失败: {ex2.Message}", "ERROR");
+								Profiler.LogMessage($"dynamic 访问也失败: {ex2.Message}", "ERROR");
 							}
 						}
 
@@ -505,7 +450,7 @@ namespace PPA.Formatting
 		}
 
 		private async Task FormatTablesInternalAsync(
-			NETOP.Application app,
+			NETOP.Application netApp,
 			IProgress<AsyncProgress> progress,
 			CancellationToken cancellationToken,
 			ITableFormatHelper tableFormatHelper)
@@ -515,11 +460,11 @@ namespace PPA.Formatting
 
 			try
 			{
-				await UndoHelper.BeginUndoEntryAsync(app,UndoHelper.UndoNames.FormatTables);
+				await UndoHelper.BeginUndoEntryAsync(netApp,UndoHelper.UndoNames.FormatTables);
 
 				var slide = await AsyncOperationHelper.RunOnUIThread(() =>
 				{
-					return _shapeHelper.TryGetCurrentSlide(app);
+					return _shapeHelper.TryGetCurrentSlide(netApp);
 				});
 
 				if(slide==null)
@@ -530,7 +475,7 @@ namespace PPA.Formatting
 
 				var tables = await AsyncOperationHelper.RunOnUIThread(() =>
 				{
-					var sel = _shapeHelper.ValidateSelection(app);
+					var sel = _shapeHelper.ValidateSelection(netApp);
 					var result = new List<(NETOP.Shape shape, NETOP.Table table)>();
 
 					if(sel!=null)
@@ -587,8 +532,8 @@ namespace PPA.Formatting
 							}
 							catch(System.Exception ex)
 							{
-								// NetOffice 无法枚举 WPS ShapeRange，使用 dynamic 访问
-								PPA.Core.Profiler.LogMessage($"NetOffice 枚举 ShapeRange 失败: {ex.Message}，尝试使用 dynamic 访问", "WARN");
+								// NetOffice 无法枚举某些 ShapeRange，使用 dynamic 访问作为后备方案
+								Profiler.LogMessage($"NetOffice 枚举 ShapeRange 失败: {ex.Message}，尝试使用 dynamic 访问", "WARN");
 								try
 								{
 									dynamic dynShapeRange = shapes;
@@ -599,7 +544,7 @@ namespace PPA.Formatting
 										dynamic dynShape = SafeGet(() => dynShapeRange[i], null);
 										if(dynShape != null)
 										{
-											// WPS 中 HasTable 可能不可用，直接检查 Table 属性
+											// 某些情况下 HasTable 可能不可用，直接检查 Table 属性
 											dynamic dynTable2 = null;
 											bool hasTable = false;
 											try
@@ -655,8 +600,8 @@ namespace PPA.Formatting
 						}
 						catch(System.Exception ex)
 						{
-							// NetOffice 无法枚举 WPS Shapes，使用 dynamic 访问
-							PPA.Core.Profiler.LogMessage($"NetOffice 枚举 Shapes 失败: {ex.Message}，尝试使用 dynamic 访问", "WARN");
+							// NetOffice 无法枚举某些 Shapes，使用 dynamic 访问作为后备方案
+							Profiler.LogMessage($"NetOffice 枚举 Shapes 失败: {ex.Message}，尝试使用 dynamic 访问", "WARN");
 							try
 							{
 								dynamic dynSlide = slide;
@@ -677,7 +622,7 @@ namespace PPA.Formatting
 										dynamic dynShape = SafeGet(() => dynShapes[i], null);
 										if(dynShape != null)
 										{
-											// WPS 中 HasTable 可能不可用，直接检查 Table 属性
+											// 某些情况下 HasTable 可能不可用，直接检查 Table 属性
 											dynamic dynTable3 = null;
 											bool hasTable = false;
 											try
@@ -725,7 +670,7 @@ namespace PPA.Formatting
 				{
 					var hasSelection = await AsyncOperationHelper.RunOnUIThread(() =>
 					{
-						return _shapeHelper.ValidateSelection(app)!=null;
+						return _shapeHelper.ValidateSelection(netApp)!=null;
 					});
 					Toast.Show(hasSelection ? ResourceManager.GetString("Toast_FormatTables_NoSelection","选中的对象中没有表格") : ResourceManager.GetString("Toast_FormatTables_NoTables","当前幻灯片上没有表格"),Toast.ToastType.Info);
 					return;
@@ -750,7 +695,7 @@ namespace PPA.Formatting
 
 					await AsyncOperationHelper.RunOnUIThread(() =>
 					{
-						var iTable = AdapterUtils.WrapTable(app,shape,table);
+						var iTable = AdapterUtils.WrapTable(netApp,shape,table);
 						tableFormatHelper.FormatTables(iTable);
 					});
 

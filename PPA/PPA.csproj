@@ -271,6 +271,7 @@
     <Compile Include="Core\Adapters\CompositeApplicationFactory.cs" />
     <Compile Include="Utilities\Toast.cs" />
     <Compile Include="Utilities\FileLocator.cs" />
+    <Compile Include="Utilities\ApplicationHelper.cs" />
     <Compile Include="Utilities\ComListExtensions.cs" />
     <Compile Include="Utilities\CommandExecutor.cs" />
     <Compile Include="Formatting\TableFormatHelper.cs" />

@@ -198,11 +198,11 @@
   <data name="Ribbon_group6" xml:space="preserve">
     <value>设置</value>
   </data>
-  <data name="Ribbon_Tb101_Page" xml:space="preserve">
-    <value>页面</value>
+  <data name="Ribbon_Tb101_Slide" xml:space="preserve">
+    <value>幻灯片</value>
   </data>
-  <data name="Ribbon_Tb101_Shape" xml:space="preserve">
-    <value>形状</value>
+  <data name="Ribbon_Tb101_Objects" xml:space="preserve">
+    <value>所选对象</value>
   </data>
   <data name="Ribbon_Bt101" xml:space="preserve">
     <value>左对齐</value>

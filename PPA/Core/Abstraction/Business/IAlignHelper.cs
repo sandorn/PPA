@@ -18,20 +18,20 @@ namespace PPA.Core.Abstraction.Business
 	public interface IAlignHelper
 	{
 		/// <summary>
-		/// 执行对齐操作
+		/// 执行对齐操作（NetOffice 版本）
 		/// </summary>
-		/// <param name="app">PowerPoint 应用程序实例</param>
+		/// <param name="netApp">NetOffice PowerPoint 应用程序实例</param>
 		/// <param name="alignment">对齐类型</param>
 		/// <param name="alignToSlideMode">是否对齐到幻灯片</param>
-		void ExecuteAlignment(NETOP.Application app, AlignmentType alignment, bool alignToSlideMode);
+		void ExecuteAlignment(NETOP.Application netApp, AlignmentType alignment, bool alignToSlideMode);
 
 		/// <summary>
 		/// 执行对齐操作（抽象接口版本）
 		/// </summary>
-		/// <param name="app">抽象应用程序实例</param>
+		/// <param name="abstractApp">抽象应用程序实例</param>
 		/// <param name="alignment">对齐类型</param>
 		/// <param name="alignToSlideMode">是否对齐到幻灯片</param>
-		void ExecuteAlignment(IApplication app, AlignmentType alignment, bool alignToSlideMode);
+		void ExecuteAlignment(IApplication abstractApp, AlignmentType alignment, bool alignToSlideMode);
 
 		// 注意：其他方法（AttachLeft, SetEqualWidth 等）保持为公共方法，但不强制在接口中定义
 		// 这些方法可以通过实例直接调用

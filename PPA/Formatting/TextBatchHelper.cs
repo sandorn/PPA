@@ -43,42 +43,7 @@ namespace PPA.Formatting
 
 		#endregion
 
-		#region 向后兼容的静态入口
-
-		public static void Bt502_Click(NETOP.Application app, ITextFormatHelper textFormatHelper = null)
-		{
-			var batchHelper = ResolveInstance(textFormatHelper);
-			batchHelper.FormatText(app);
-		}
-
-		private static ITextBatchHelper ResolveInstance(ITextFormatHelper overrideHelper)
-		{
-			if(overrideHelper!=null)
-				return new TextBatchHelper(overrideHelper,ResolveShapeHelper());
-
-			var serviceProvider = Globals.ThisAddIn?.ServiceProvider;
-			if(serviceProvider!=null)
-			{
-				var resolved = serviceProvider.GetService(typeof(ITextBatchHelper)) as ITextBatchHelper;
-				if(resolved!=null) return resolved;
-
-				var textHelper = serviceProvider.GetService(typeof(ITextFormatHelper)) as ITextFormatHelper;
-				var shapeHelper = serviceProvider.GetService(typeof(IShapeHelper)) as IShapeHelper;
-				if(textHelper!=null&&shapeHelper!=null)
-					return new TextBatchHelper(textHelper,shapeHelper);
-			}
-
-			return new TextBatchHelper(
-				new TextFormatHelper(FormattingConfig.Instance),
-				ResolveShapeHelper());
-		}
-
-		private static IShapeHelper ResolveShapeHelper()
-		{
-			var serviceProvider = Globals.ThisAddIn?.ServiceProvider;
-			var helper = serviceProvider?.GetService(typeof(IShapeHelper)) as IShapeHelper;
-			return helper ?? ShapeUtils.Default;
-		}
+		#region 内部实现
 
 		private static T SafeGet<T>(System.Func<T> getter, T @default = default)
 		{
@@ -89,17 +54,17 @@ namespace PPA.Formatting
 
 		#region 内部实现
 
-		private void FormatTextInternal(NETOP.Application app,ITextFormatHelper textFormatHelper)
+		private void FormatTextInternal(NETOP.Application netApp,ITextFormatHelper textFormatHelper)
 		{
-			PPA.Core.Profiler.LogMessage($"FormatTextInternal 开始，app类型={app?.GetType().Name ?? "null"}", "INFO");
+			PPA.Core.Profiler.LogMessage($"FormatTextInternal 开始，netApp类型={netApp?.GetType().Name ?? "null"}", "INFO");
 			if(textFormatHelper==null)
 				throw new System.InvalidOperationException("无法获取 ITextFormatHelper 服务");
 
-			UndoHelper.BeginUndoEntry(app,UndoHelper.UndoNames.FormatText);
+			UndoHelper.BeginUndoEntry(netApp,UndoHelper.UndoNames.FormatText);
 
 			ExHandler.Run(() =>
 			{
-				var selection = _shapeHelper.ValidateSelection(app);
+				var selection = _shapeHelper.ValidateSelection(netApp);
 				PPA.Core.Profiler.LogMessage($"ValidateSelection 返回: {selection?.GetType().Name ?? "null"}", "INFO");
 
 				if(selection==null)
@@ -122,7 +87,7 @@ namespace PPA.Formatting
 					if(shape.TextFrame?.HasText==MsoTriState.msoTrue)
 					{
 						PPA.Core.Profiler.LogMessage("开始包装形状", "INFO");
-						var iShape = AdapterUtils.WrapShape(app,shape);
+						var iShape = AdapterUtils.WrapShape(netApp,shape);
 						PPA.Core.Profiler.LogMessage($"WrapShape 返回: {iShape?.GetType().Name ?? "null"}", "INFO");
 						if(iShape != null)
 						{
@@ -146,7 +111,7 @@ namespace PPA.Formatting
 							if(s.TextFrame?.HasText==MsoTriState.msoTrue)
 							{
 								PPA.Core.Profiler.LogMessage($"处理形状 {s.Name}，HasText=True", "INFO");
-								var iShape = AdapterUtils.WrapShape(app,s);
+								var iShape = AdapterUtils.WrapShape(netApp,s);
 								PPA.Core.Profiler.LogMessage($"WrapShape 返回: {iShape?.GetType().Name ?? "null"}", "INFO");
 								if(iShape != null)
 								{
@@ -162,7 +127,7 @@ namespace PPA.Formatting
 					}
 					catch(System.Exception ex)
 					{
-						// NetOffice 无法枚举 WPS ShapeRange，使用 dynamic 访问
+						// NetOffice 无法枚举某些 ShapeRange，使用 dynamic 访问作为后备方案
 						PPA.Core.Profiler.LogMessage($"NetOffice 枚举失败: {ex.Message}，尝试使用 dynamic 访问", "WARN");
 						try
 						{
@@ -178,7 +143,7 @@ namespace PPA.Formatting
 									if(dynShape != null)
 									{
 										// 跳过表格内的文本（表格有自己的格式化逻辑）
-										// WPS 中 HasTable 可能不可用，需要直接检查 Table 属性
+										// 某些情况下 HasTable 可能不可用，需要直接检查 Table 属性
 										bool hasTable = false;
 										try
 										{
@@ -203,7 +168,7 @@ namespace PPA.Formatting
 											continue;
 										}
 										
-										// WPS 中 HasText 可能不可用，尝试多种方式检测
+										// 某些情况下 HasText 可能不可用，尝试多种方式检测
 										bool hasText = false;
 										try
 										{
@@ -235,7 +200,7 @@ namespace PPA.Formatting
 										if(hasText)
 										{
 											PPA.Core.Profiler.LogMessage($"处理形状 {i}，HasText=True", "INFO");
-											var iShape = AdapterUtils.WrapShape(app, dynShape);
+											var iShape = AdapterUtils.WrapShape(netApp, dynShape);
 											if(iShape != null)
 											{
 												textFormatHelper.ApplyTextFormatting(iShape);
