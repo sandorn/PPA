@@ -65,12 +65,13 @@ namespace PPA.Formatting
 
 			ExHandler.Run(() =>
 			{
-				var slide = _shapeHelper.TryGetCurrentSlide(netApp);
+				var abstractApp = ApplicationHelper.GetAbstractApplication(netApp);
+				var slide = _shapeHelper.TryGetCurrentSlide(abstractApp);
 				PPA.Core.Profiler.LogMessage($"TryGetCurrentSlide 返回: {slide?.GetType().Name ?? "null"}", "INFO");
 				if(slide==null) return;
 
 				var chartShapes = new List<NETOP.Shape>();
-				var selection = _shapeHelper.ValidateSelection(netApp);
+				var selection = _shapeHelper.ValidateSelection(abstractApp) as dynamic;
 				PPA.Core.Profiler.LogMessage($"ValidateSelection 返回: {selection?.GetType().Name ?? "null"}", "INFO");
 
 				// 动态选区兜底：当 ValidateSelection 返回 null 时，直接从 ActiveWindow.Selection 读取
@@ -338,8 +339,25 @@ namespace PPA.Formatting
 					{
 						try
 						{
+							// 从 ISlide 获取底层的 NETOP.Slide 对象
+							NETOP.Slide nativeSlide = null;
+							if(slide is IComWrapper<NETOP.Slide> typedSlide)
+							{
+								nativeSlide = typedSlide.NativeObject;
+							}
+							else if(slide is IComWrapper wrapper)
+							{
+								nativeSlide = wrapper.NativeObject as NETOP.Slide;
+							}
+
+							if(nativeSlide == null)
+							{
+								PPA.Core.Profiler.LogMessage("无法获取底层 NETOP.Slide 对象", "WARN");
+								throw new InvalidOperationException("无法获取底层 NETOP.Slide 对象");
+							}
+
 							// 尝试使用 NetOffice 枚举
-							foreach(NETOP.Shape shape in slide.Shapes)
+							foreach(NETOP.Shape shape in nativeSlide.Shapes)
 							{
 								// 检查是否是图表：先尝试 HasChart，如果失败则直接检查 Chart 属性
 								bool isChart = false;
@@ -374,17 +392,24 @@ namespace PPA.Formatting
 						PPA.Core.Profiler.LogMessage($"NetOffice 枚举失败: {ex.Message}，尝试使用 dynamic 访问", "WARN");
 						try
 						{
-							// 尝试从 slide 获取底层 COM 对象
-							dynamic dynSlide = slide;
-							if(dynSlide == null)
+							// 从 ISlide 获取底层的 NETOP.Slide 对象
+							NETOP.Slide nativeSlide = null;
+							if(slide is IComWrapper<NETOP.Slide> typedSlide)
 							{
-								// 如果 slide 是 NETOP.Slide，尝试获取底层对象
-								if(slide is IComWrapper wrapper)
-								{
-									dynSlide = wrapper.NativeObject;
-								}
+								nativeSlide = typedSlide.NativeObject;
 							}
-							
+							else if(slide is IComWrapper wrapper)
+							{
+								nativeSlide = wrapper.NativeObject as NETOP.Slide;
+							}
+
+							if(nativeSlide == null)
+							{
+								PPA.Core.Profiler.LogMessage("无法获取底层 NETOP.Slide 对象（dynamic 访问）", "WARN");
+								throw new InvalidOperationException("无法获取底层 NETOP.Slide 对象");
+							}
+
+							dynamic dynSlide = nativeSlide;
 							dynamic dynShapes = SafeGet(() => dynSlide.Shapes, null);
 							if(dynShapes != null)
 							{
@@ -395,75 +420,59 @@ namespace PPA.Formatting
 								{
 									try
 									{
-										dynamic dynShape = SafeGet(() => dynShapes[i], null);
-										if(dynShape != null)
+										object shapeObj = SafeGet(() => dynShapes[i], null);
+										if(shapeObj == null) continue;
+
+										// 尝试转换为 NETOP.Shape
+										NETOP.Shape netShape = null;
+										if(shapeObj is NETOP.Shape directShape)
 										{
-											// 某些情况下 HasChart 可能不可用，需要直接检查 Chart 属性
-											dynamic dynChart = null;
-											bool hasChart = false;
+											netShape = directShape;
+										}
+										else if(shapeObj is IComWrapper<NETOP.Shape> typedShape)
+										{
+											netShape = typedShape.NativeObject;
+										}
+										else if(shapeObj is IComWrapper wrapper)
+										{
+											netShape = wrapper.NativeObject as NETOP.Shape;
+										}
+										else
+										{
+											// 尝试强制转换
 											try
 											{
-												// 方式1：尝试通过 HasChart 属性
-												hasChart = SafeGet(() => (bool)(dynShape.HasChart ?? false), false);
-												if(hasChart)
-												{
-													dynChart = SafeGet(() => dynShape.Chart, null);
-												}
+												netShape = (NETOP.Shape)(object)shapeObj;
 											}
 											catch { }
-											
-											// 方式2：如果方式1失败，直接检查 Chart 属性
-											if(!hasChart || dynChart == null)
+										}
+
+										if(netShape == null) continue;
+
+										// 检查是否是图表
+										bool isChart = false;
+										try
+										{
+											if(netShape.HasChart == MsoTriState.msoTrue)
 											{
-												try
-												{
-													dynChart = SafeGet(() => dynShape.Chart, null);
-													hasChart = (dynChart != null);
-												}
-												catch { }
+												isChart = true;
 											}
-											
-											PPA.Core.Profiler.LogMessage($"形状 {i}: HasChart={hasChart}", "INFO");
-											if(hasChart && dynChart != null)
+										}
+										catch
+										{
+											// HasChart 不可用，尝试直接检查 Chart 属性
+											try
 											{
-												// 尝试将 dynamic shape 转换为 NETOP.Shape
-												// 如果转换失败，直接使用 dynamic 对象
-												try
-												{
-													NETOP.Shape netShape = (NETOP.Shape)(object)dynShape;
-													chartShapes.Add(netShape);
-													chartCount++;
-												}
-												catch
-												{
-													// 如果转换失败，尝试通过 AdapterUtils 包装
-													try
-													{
-														var iShape = AdapterUtils.WrapShape(netApp, dynShape);
-														if(iShape != null && iShape.HasChart)
-														{
-															// 从 IShape 获取底层 NETOP.Shape
-															if(iShape is IComWrapper wrapper)
-															{
-																var nativeShape = wrapper.NativeObject;
-																if(nativeShape is NETOP.Shape netShape2)
-																{
-																	chartShapes.Add(netShape2);
-																	chartCount++;
-																}
-																else
-																{
-																	PPA.Core.Profiler.LogMessage($"形状 {i} 的 NativeObject 不是 NETOP.Shape", "WARN");
-																}
-															}
-														}
-													}
-													catch(System.Exception ex4)
-													{
-														PPA.Core.Profiler.LogMessage($"包装形状 {i} 失败: {ex4.Message}", "WARN");
-													}
-												}
+												var chart = netShape.Chart;
+												isChart = (chart != null);
 											}
+											catch { }
+										}
+
+										if(isChart)
+										{
+											chartShapes.Add(netShape);
+											chartCount++;
 										}
 									}
 									catch(System.Exception ex3)

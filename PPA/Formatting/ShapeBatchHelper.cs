@@ -1,5 +1,8 @@
 using NetOffice.OfficeApi.Enums;
 using PPA.Core;
+using PPA.Core.Abstraction.Business;
+using PPA.Core.Abstraction.Presentation;
+using PPA.Core.Adapters;
 using PPA.Shape;
 using PPA.Utilities;
 using System.Collections.Generic;
@@ -26,9 +29,10 @@ namespace PPA.Formatting
 
 			ExHandler.Run(() =>
 			{
-				var shapeHelper = ShapeUtils.Default;
-				var sel = shapeHelper.ValidateSelection(app);
-				var currentSlide = shapeHelper.TryGetCurrentSlide(app);
+				var shapeHelper = ResolveShapeHelper();
+				var abstractApp = ApplicationHelper.GetAbstractApplication(app);
+				var sel = shapeHelper.ValidateSelection(abstractApp) as dynamic;
+				var currentSlide = shapeHelper.TryGetCurrentSlide(abstractApp);
 
 				if(currentSlide==null)
 				{
@@ -56,7 +60,9 @@ namespace PPA.Formatting
 					// 处理单个形状
 					if(sel is NETOP.Shape shape)
 					{
-						var (top, left, bottom, right)=shapeHelper.GetShapeBorderWeights(shape);
+						// 需要将 NETOP.Shape 转换为 IShape
+						var abstractShape = AdapterUtils.WrapShape(app, shape);
+						var (top, left, bottom, right) = shapeHelper.GetShapeBorderWeights(abstractShape);
 
 						// 计算矩形参数
 						float rectLeft = shape.Left - left;
@@ -65,8 +71,15 @@ namespace PPA.Formatting
 						float rectHeight = shape.Height + (top + bottom);
 
 						// 创建矩形
-						var rect = shapeHelper.AddOneShape(currentSlide, rectLeft, rectTop, rectWidth, rectHeight, shape.Rotation);
-						if(rect!=null) createdShapes.Add(rect);
+						var abstractSlide = currentSlide as IComWrapper<NETOP.Slide>;
+						if(abstractSlide != null)
+						{
+							var rect = shapeHelper.AddOneShape(currentSlide, rectLeft, rectTop, rectWidth, rectHeight, shape.Rotation);
+							if(rect is IComWrapper<NETOP.Shape> rectWrapper)
+							{
+								createdShapes.Add(rectWrapper.NativeObject);
+							}
+						}
 					}
 					// 处理形状范围
 					else if(sel is NETOP.ShapeRange shapes)
@@ -76,7 +89,9 @@ namespace PPA.Formatting
 							for(int i = 1;i<=shapes.Count;i++)
 							{
 								var currentShape = shapes[i];
-								var (top, left, bottom, right)=shapeHelper.GetShapeBorderWeights(currentShape);
+								// 需要将 NETOP.Shape 转换为 IShape
+								var abstractShape = AdapterUtils.WrapShape(app, currentShape);
+								var (top, left, bottom, right) = shapeHelper.GetShapeBorderWeights(abstractShape);
 
 								// 计算矩形参数
 								float rectLeft = currentShape.Left - left;
@@ -86,18 +101,25 @@ namespace PPA.Formatting
 
 								// 创建矩形
 								var rect = shapeHelper.AddOneShape(currentSlide, rectLeft, rectTop, rectWidth, rectHeight, currentShape.Rotation);
-
-								if(rect!=null) createdShapes.Add(rect);
+								if(rect is IComWrapper<NETOP.Shape> rectWrapper)
+								{
+									createdShapes.Add(rectWrapper.NativeObject);
+								}
 							}
 						}
 					}
 
-					if(createdShapes.Count>0)
+				if(createdShapes.Count>0)
+				{
+					var abstractSlide = currentSlide as IComWrapper<NETOP.Slide>;
+					if(abstractSlide != null)
 					{
+						var nativeSlide = abstractSlide.NativeObject;
 						var shapeNames = createdShapes.Select(s => s.Name).ToArray();
-						currentSlide.Shapes.Range(shapeNames).Select();
-						successMessage=ResourceManager.GetString("Toast_CreateBoundingBox_Shapes",createdShapes.Count);
+						nativeSlide.Shapes.Range(shapeNames).Select();
 					}
+					successMessage=ResourceManager.GetString("Toast_CreateBoundingBox_Shapes",createdShapes.Count);
+				}
 				}
 				// 2. 处理选中幻灯片 和 无选中
 				else
@@ -120,8 +142,12 @@ namespace PPA.Formatting
 						}
 					} else
 					{
-						// 无选中的情况
-						slidesToProcess.Add(currentSlide);
+						// 无选中的情况 - 需要从 ISlide 转换为 NETOP.Slide
+						var abstractSlide = currentSlide as IComWrapper<NETOP.Slide>;
+						if(abstractSlide != null)
+						{
+							slidesToProcess.Add(abstractSlide.NativeObject);
+						}
 						successMessage=ResourceManager.GetString("Toast_CreateBoundingBox_PageSize");
 					}
 
@@ -131,13 +157,16 @@ namespace PPA.Formatting
 						for(int i = 0;i<slidesToProcess.Count;i++)
 						{
 							var slide = slidesToProcess[i];
-							var rect = shapeHelper.AddOneShape(slide, 0, 0, slideWidth, slideHeight);
+							// 将 NETOP.Slide 转换为 ISlide
+							var abstractSlide = AdapterUtils.WrapSlide(app, slide);
+							var rect = shapeHelper.AddOneShape(abstractSlide, 0, 0, slideWidth, slideHeight);
 
-							if(rect!=null)
+							if(rect is IComWrapper<NETOP.Shape> rectWrapper)
 							{
-								createdShapes.Add(rect);
+								var nativeRect = rectWrapper.NativeObject;
+								createdShapes.Add(nativeRect);
 								// 如果是第一张幻灯片，则选中其上的矩形
-								if(i==0) rect.Select();
+								if(i==0) nativeRect.Select();
 							}
 						}
 					}
@@ -162,15 +191,16 @@ namespace PPA.Formatting
 		{
 			ExHandler.Run(() =>
 			{
-				var shapeHelper = ShapeUtils.Default;
-				var slide = shapeHelper.TryGetCurrentSlide(app);
+				var shapeHelper = ResolveShapeHelper();
+				var abstractApp = ApplicationHelper.GetAbstractApplication(app);
+				var slide = shapeHelper.TryGetCurrentSlide(abstractApp);
 				if(slide==null)
 				{
 					Toast.Show(ResourceManager.GetString("Toast_NoSlide"),Toast.ToastType.Warning);
 					return;
 				}
 
-				var sel = shapeHelper.ValidateSelection(app);
+				var sel = shapeHelper.ValidateSelection(abstractApp) as dynamic;
 				if(sel!=null)
 				{
 					// --- 场景1: 隐藏选中的对象 ---
@@ -195,9 +225,29 @@ namespace PPA.Formatting
 				} else
 				{
 					// --- 场景2: 显示所有对象 ---
-					ShowAllHiddenShapes(app,slide.Shapes);
+					var abstractSlide = slide as IComWrapper<NETOP.Slide>;
+					if(abstractSlide != null)
+					{
+						ShowAllHiddenShapes(app, abstractSlide.NativeObject.Shapes);
+					}
 				}
 			});
+		}
+
+		/// <summary>
+		/// 解析 IShapeHelper 服务
+		/// </summary>
+		private static IShapeHelper ResolveShapeHelper()
+		{
+			var addIn = Globals.ThisAddIn;
+			var serviceProvider = addIn?.ServiceProvider;
+			if(serviceProvider != null)
+			{
+				var helper = serviceProvider.GetService(typeof(IShapeHelper)) as IShapeHelper;
+				if(helper != null) return helper;
+			}
+			// 如果无法从 DI 获取，创建新实例
+			return new ShapeUtils();
 		}
 
 		/// <summary>

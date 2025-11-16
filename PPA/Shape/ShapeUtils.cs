@@ -16,76 +16,74 @@ namespace PPA.Shape
 	/// </summary>
 	public class ShapeUtils : IShapeHelper
 	{
-		/// <summary>
-		/// 静态实例，用于向后兼容（当无法从 DI 容器获取服务时使用）
-		/// </summary>
-		private static readonly ShapeUtils _defaultInstance = new ShapeUtils();
+		#region IShapeHelper 实现
 
 		/// <summary>
-		/// 获取默认实例（用于向后兼容）
+		/// 创建单个矩形
 		/// </summary>
-		public static ShapeUtils Default => _defaultInstance;
-
-		#region Public Methods
-
-		/// <summary>
-		/// 创建单个矩形的辅助函数
-		/// </summary>
-		public NETOP.Shape AddOneShape(NETOP.Slide slide,float left,float top,float width,float height,float rotation = 0)
+		public IShape AddOneShape(ISlide slide, float left, float top, float width, float height, float rotation = 0)
 		{
 			if(slide==null) throw new ArgumentNullException(nameof(slide));
-			if(width<=0||height<=0)
+
+			// 转换为具体类型
+			NETOP.Slide netSlide = null;
+			NETOP.Application netApp = null;
+
+			if(slide is IComWrapper<NETOP.Slide> typedSlide)
 			{
-				Profiler.LogMessage($"[添加形状]无效尺寸: width={width}, height={height}");
-				return null;
+				netSlide = typedSlide.NativeObject;
+				if(slide.Application is IComWrapper<NETOP.Application> typedApp)
+				{
+					netApp = typedApp.NativeObject;
+				}
 			}
-			// 添加日志记录实际参数
-			Profiler.LogMessage($"[添加形状]创建矩形: L={left}, T={top}, W={width}, H={height}");
-
-			return ExHandler.Run(() =>
+			else if(slide is IComWrapper wrapper)
 			{
-				var rect = slide.Shapes.AddShape(MsoAutoShapeType.msoShapeRectangle, left, top, width, height);
-				// 隐藏矩形边框，确保无任何线条显示
-				rect.Line.DashStyle=MsoLineDashStyle.msoLineSolid; // 实线，防止虚线样式影响
-				rect.Line.Style=MsoLineStyle.msoLineSingle; // 确保线条样式为单线
-				rect.Line.Weight=0;
-				rect.Line.Transparency=1.0f; // 线条完全透明
-				rect.Line.Visible=MsoTriState.msoFalse; // 确保线条不可见
-				rect.Fill.Visible=MsoTriState.msoFalse; // 无填充
-				rect.Top=top; rect.Left=left;//调整到合适位置
+				if(wrapper.NativeObject is NETOP.Slide slideObj)
+				{
+					netSlide = slideObj;
+					if(slide.Application is IComWrapper appWrapper && appWrapper.NativeObject is NETOP.Application appObj)
+					{
+						netApp = appObj;
+					}
+				}
+			}
 
-				rect.Rotation=rotation; // 如果需要旋转，可以设置角度
-				return rect;
-			},"[添加形状] 创建矩形");
+			if(netSlide==null || netApp==null) return null;
+
+			var netShape = AddOneShapeInternal(netSlide, left, top, width, height, rotation);
+			if(netShape!=null)
+			{
+				return AdapterUtils.WrapShape(netApp, netShape);
+			}
+			return null;
 		}
 
 		/// <summary>
 		/// 获取形状的边框宽度
 		/// </summary>
-		public (float top, float left, float right, float bottom) GetShapeBorderWeights(NETOP.Shape shape)
+		public (float top, float left, float right, float bottom) GetShapeBorderWeights(IShape shape)
 		{
-			float top = 0, left = 0, right = 0, bottom = 0;
+			if(shape==null) return (0, 0, 0, 0);
 
-			ExHandler.Run(() =>
+			// 转换为具体类型
+			NETOP.Shape netShape = null;
+
+			if(shape is IComWrapper<NETOP.Shape> typed)
 			{
-				if(shape.HasTable==MsoTriState.msoTrue)
+				netShape = typed.NativeObject;
+			}
+			else if(shape is IComWrapper wrapper)
+			{
+				if(wrapper.NativeObject is NETOP.Shape shapeObj)
 				{
-					var table = shape.Table;
-					int rows = table.Rows.Count;
-					int cols = table.Columns.Count;
-
-					// 获取表格四个角的边框宽度
-					top=(float) Math.Max(0,table.Cell(1,1).Borders[NETOP.Enums.PpBorderType.ppBorderTop].Weight);
-					left=(float) Math.Max(0,table.Cell(1,1).Borders[NETOP.Enums.PpBorderType.ppBorderLeft].Weight);
-					right=(float) Math.Max(0,table.Cell(rows,cols).Borders[NETOP.Enums.PpBorderType.ppBorderRight].Weight);
-					bottom=(float) Math.Max(0,table.Cell(rows,cols).Borders[NETOP.Enums.PpBorderType.ppBorderBottom].Weight);
-				} else if(shape.Line.Visible==MsoTriState.msoTrue)
-				{
-					// 普通形状使用统一的边框宽度
-					top=left=right=bottom=(float) shape.Line.Weight;
+					netShape = shapeObj;
 				}
-			},"获取形状的边框宽度");
-			return (top, left, right, bottom);
+			}
+
+			if(netShape==null) return (0, 0, 0, 0);
+
+			return GetShapeBorderWeightsInternal(netShape);
 		}
 
 		public bool IsInvalidComObject(object comObj)
@@ -140,29 +138,150 @@ namespace PPA.Shape
 		}
 
 		/// <summary>
-		/// 安全获取当前幻灯片：通过 Interop 读取 SlideIndex，再通过 NetOffice 获取，避免直接访问 View.Slide 导致的本地化类名包装失败
+		/// 尝试获取当前幻灯片
 		/// </summary>
-		/// <param name="app"> PowerPoint 应用程序实例 </param>
-		/// <returns> 当前幻灯片对象，如果获取失败则返回 null </returns>
-		public NETOP.Slide TryGetCurrentSlide(NETOP.Application app)
+		public ISlide TryGetCurrentSlide(IApplication app)
 		{
 			if(app==null) return null;
+
+			// 转换为具体类型
+			NETOP.Application netApp = null;
+
+			if(app is IComWrapper<NETOP.Application> typed)
+			{
+				netApp = typed.NativeObject;
+			}
+			else if(app is IComWrapper wrapper)
+			{
+				if(wrapper.NativeObject is NETOP.Application appObj)
+				{
+					netApp = appObj;
+				}
+			}
+
+			if(netApp==null) return null;
+
+			var netSlide = TryGetCurrentSlideInternal(netApp);
+			if(netSlide!=null)
+			{
+				return AdapterUtils.WrapSlide(netApp, netSlide);
+			}
+			return null;
+		}
+
+		/// <summary>
+		/// 验证并返回当前选择的对象
+		/// </summary>
+		public object ValidateSelection(IApplication app, bool requireMultipleShapes = false)
+		{
+			if(app==null) return null;
+
+			// 转换为具体类型
+			NETOP.Application netApp = null;
+
+			if(app is IComWrapper<NETOP.Application> typed)
+			{
+				netApp = typed.NativeObject;
+			}
+			else if(app is IComWrapper wrapper)
+			{
+				if(wrapper.NativeObject is NETOP.Application appObj)
+				{
+					netApp = appObj;
+				}
+			}
+
+			if(netApp==null) return null;
+
+			return ValidateSelectionInternal(netApp, requireMultipleShapes);
+		}
+
+		#endregion
+
+		#region 内部实现方法（使用具体类型）
+
+		/// <summary>
+		/// 创建单个矩形的内部实现
+		/// </summary>
+		private NETOP.Shape AddOneShapeInternal(NETOP.Slide slide, float left, float top, float width, float height, float rotation = 0)
+		{
+			if(slide==null) throw new ArgumentNullException(nameof(slide));
+			if(width<=0||height<=0)
+			{
+				Profiler.LogMessage($"[添加形状]无效尺寸: width={width}, height={height}");
+				return null;
+			}
+			// 添加日志记录实际参数
+			Profiler.LogMessage($"[添加形状]创建矩形: L={left}, T={top}, W={width}, H={height}");
+
+			return ExHandler.Run(() =>
+			{
+				var rect = slide.Shapes.AddShape(MsoAutoShapeType.msoShapeRectangle, left, top, width, height);
+				// 隐藏矩形边框，确保无任何线条显示
+				rect.Line.DashStyle=MsoLineDashStyle.msoLineSolid; // 实线，防止虚线样式影响
+				rect.Line.Style=MsoLineStyle.msoLineSingle; // 确保线条样式为单线
+				rect.Line.Weight=0;
+				rect.Line.Transparency=1.0f; // 线条完全透明
+				rect.Line.Visible=MsoTriState.msoFalse; // 确保线条不可见
+				rect.Fill.Visible=MsoTriState.msoFalse; // 无填充
+				rect.Top=top; rect.Left=left;//调整到合适位置
+
+				rect.Rotation=rotation; // 如果需要旋转，可以设置角度
+				return rect;
+			},"[添加形状] 创建矩形");
+		}
+
+		/// <summary>
+		/// 获取形状的边框宽度的内部实现
+		/// </summary>
+		private (float top, float left, float right, float bottom) GetShapeBorderWeightsInternal(NETOP.Shape shape)
+		{
+			float top = 0, left = 0, right = 0, bottom = 0;
+
+			ExHandler.Run(() =>
+			{
+				if(shape.HasTable==MsoTriState.msoTrue)
+				{
+					var table = shape.Table;
+					int rows = table.Rows.Count;
+					int cols = table.Columns.Count;
+
+					// 获取表格四个角的边框宽度
+					top=(float) Math.Max(0,table.Cell(1,1).Borders[NETOP.Enums.PpBorderType.ppBorderTop].Weight);
+					left=(float) Math.Max(0,table.Cell(1,1).Borders[NETOP.Enums.PpBorderType.ppBorderLeft].Weight);
+					right=(float) Math.Max(0,table.Cell(rows,cols).Borders[NETOP.Enums.PpBorderType.ppBorderRight].Weight);
+					bottom=(float) Math.Max(0,table.Cell(rows,cols).Borders[NETOP.Enums.PpBorderType.ppBorderBottom].Weight);
+				} else if(shape.Line.Visible==MsoTriState.msoTrue)
+				{
+					// 普通形状使用统一的边框宽度
+					top=left=right=bottom=(float) shape.Line.Weight;
+				}
+			},"获取形状的边框宽度");
+			return (top, left, right, bottom);
+		}
+
+		/// <summary>
+		/// 安全获取当前幻灯片的内部实现：通过 Interop 读取 SlideIndex，再通过 NetOffice 获取，避免直接访问 View.Slide 导致的本地化类名包装失败
+		/// </summary>
+		private NETOP.Slide TryGetCurrentSlideInternal(NETOP.Application netApp)
+		{
+			if(netApp==null) return null;
 			try
 			{
 				// 优先通过 Interop 取索引，避免 NetOffice 包装本地化类名
-				var underlying = (app as NetOffice.ICOMObject)?.UnderlyingObject as Microsoft.Office.Interop.PowerPoint.Application;
+				var nativeApp = ApplicationHelper.GetNativeComApplication(netApp);
 				int slideIndex = 0;
-				try { slideIndex=underlying?.ActiveWindow?.View?.Slide?.SlideIndex??0; } catch(Exception ex) { Profiler.LogMessage($"TryGetCurrentSlide interop读取异常: {ex.Message}"); }
+				try { slideIndex=nativeApp.ActiveWindow.View.Slide.SlideIndex; } catch(Exception ex) { Profiler.LogMessage($"TryGetCurrentSlide interop读取异常: {ex.Message}"); }
 
 				if(slideIndex>0)
 				{
-					try { return app?.ActivePresentation?.Slides[slideIndex]; } catch(Exception ex) { Profiler.LogMessage($"TryGetCurrentSlide netoffice索引获取异常: {ex.Message}"); }
+					try { return netApp.ActivePresentation.Slides[slideIndex]; } catch(Exception ex) { Profiler.LogMessage($"TryGetCurrentSlide netoffice索引获取异常: {ex.Message}"); }
 				}
 
 				// 备选1：Selection.SlideRange
 				try
 				{
-					var sel = app?.ActiveWindow?.Selection;
+					var sel = netApp.ActiveWindow.Selection;
 					var sr = sel?.SlideRange;
 					if(sr!=null&&sr.Count>=1)
 					{
@@ -174,17 +293,9 @@ namespace PPA.Shape
 		}
 
 		/// <summary>
-		/// 验证并返回当前选择的对象。
+		/// 验证并返回当前选择对象的内部实现
 		/// </summary>
-		/// <param name="app"> PowerPoint 应用程序实例。 </param>
-		/// <param name="requireMultipleShapes"> 是否要求必须选择多个形状。 </param>
-		/// <returns>
-		/// 返回一个动态对象，可能是：
-		/// - ShapeRange (当选择多个形状时)
-		/// - Shape (当选择单个形状、文本框或光标在表格内时)
-		/// - null (如果选择无效或不满足条件)
-		/// </returns>
-		public dynamic ValidateSelection(NETOP.Application app,bool requireMultipleShapes = false)
+		private dynamic ValidateSelectionInternal(NETOP.Application app, bool requireMultipleShapes = false)
 		{
 			// --- 安全检查 ---
 			if(app?.ActiveWindow?.Selection==null)
@@ -220,62 +331,6 @@ namespace PPA.Shape
 			return null;
 		}
 
-		/// <summary>
-		/// 抽象接口版本：获取当前幻灯片
-		/// </summary>
-		/// <param name="app">抽象应用实例</param>
-		public ISlide TryGetCurrentSlide(IApplication app)
-		{
-			if(app==null) return null;
-
-			if(app is IComWrapper<NETOP.Application> typed)
-			{
-				var native = TryGetCurrentSlide(typed.NativeObject);
-				if(native!=null)
-				{
-					return AdapterUtils.WrapSlide(typed.NativeObject,native);
-				}
-			}
-
-			if(app is IComWrapper wrapper)
-			{
-				if(wrapper.NativeObject is NETOP.Application netApp)
-				{
-					var native = TryGetCurrentSlide(netApp);
-					if(native!=null)
-					{
-						return AdapterUtils.WrapSlide(netApp,native);
-					}
-				}
-			}
-
-			return null;
-		}
-
-		/// <summary>
-		/// 抽象接口版本：验证当前选择
-		/// </summary>
-		public object ValidateSelection(IApplication app,bool requireMultipleShapes = false)
-		{
-			if(app==null) return null;
-
-			if(app is IComWrapper<NETOP.Application> typed)
-			{
-				return ValidateSelection(typed.NativeObject,requireMultipleShapes);
-			}
-
-			if(app is IComWrapper wrapper)
-			{
-				if(wrapper.NativeObject is NETOP.Application netApp)
-				{
-					return ValidateSelection(netApp,requireMultipleShapes);
-				}
-			}
-
-			return null;
-		}
-
-
-		#endregion Public Methods
+		#endregion
 	}
 }

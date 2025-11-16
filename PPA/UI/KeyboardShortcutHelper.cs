@@ -276,7 +276,8 @@ namespace PPA.UI
 		{
 			serviceProvider ??= Globals.ThisAddIn?.ServiceProvider;
 			var helper = serviceProvider?.GetService<IShapeHelper>();
-			return helper ?? ShapeUtils.Default;
+			// 如果无法从 DI 获取，创建新实例
+			return helper ?? new ShapeUtils();
 		}
 
 		/// <summary>

@@ -1,11 +1,10 @@
 using PPA.Core.Abstraction.Presentation;
-using NETOP = NetOffice.PowerPointApi;
 
 namespace PPA.Core.Abstraction.Business
 {
 	/// <summary>
 	/// 形状工具辅助接口
-	/// 注意：当前使用 NetOffice 类型，后续阶段将改为使用平台抽象接口
+	/// 使用抽象接口类型，实现类内部转换为具体类型进行底层 COM 操作
 	/// </summary>
 	public interface IShapeHelper
 	{
@@ -19,14 +18,14 @@ namespace PPA.Core.Abstraction.Business
 		/// <param name="height">高度</param>
 		/// <param name="rotation">旋转角度（可选）</param>
 		/// <returns>创建的形状对象</returns>
-		NETOP.Shape AddOneShape(NETOP.Slide slide, float left, float top, float width, float height, float rotation = 0);
+		IShape AddOneShape(ISlide slide, float left, float top, float width, float height, float rotation = 0);
 
 		/// <summary>
 		/// 获取形状的边框宽度
 		/// </summary>
 		/// <param name="shape">形状对象</param>
 		/// <returns>边框宽度（上、左、右、下）</returns>
-		(float top, float left, float right, float bottom) GetShapeBorderWeights(NETOP.Shape shape);
+		(float top, float left, float right, float bottom) GetShapeBorderWeights(IShape shape);
 
 		/// <summary>
 		/// 检查 COM 对象是否无效
@@ -38,26 +37,16 @@ namespace PPA.Core.Abstraction.Business
 		/// <summary>
 		/// 尝试获取当前幻灯片
 		/// </summary>
-		/// <param name="app">PowerPoint 应用程序实例</param>
+		/// <param name="app">应用程序实例</param>
 		/// <returns>当前幻灯片对象，如果获取失败则返回 null</returns>
-		NETOP.Slide TryGetCurrentSlide(NETOP.Application app);
+		ISlide TryGetCurrentSlide(IApplication app);
 
 		/// <summary>
 		/// 验证并返回当前选择的对象
 		/// </summary>
-		/// <param name="app">PowerPoint 应用程序实例</param>
+		/// <param name="app">应用程序实例</param>
 		/// <param name="requireMultipleShapes">是否要求必须选择多个形状</param>
 		/// <returns>选择的对象（ShapeRange、Shape 或 null）</returns>
-		dynamic ValidateSelection(NETOP.Application app, bool requireMultipleShapes = false);
-
-		/// <summary>
-		/// 尝试获取当前幻灯片（抽象接口版本）
-		/// </summary>
-		ISlide TryGetCurrentSlide(IApplication app);
-
-		/// <summary>
-		/// 验证并返回当前选择的对象（抽象接口版本）
-		/// </summary>
 		object ValidateSelection(IApplication app, bool requireMultipleShapes = false);
 	}
 }

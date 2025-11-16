@@ -51,12 +51,13 @@ namespace PPA.Formatting
 
 			UndoHelper.BeginUndoEntry(netApp,UndoHelper.UndoNames.FormatTables);
 
-			var slide = _shapeHelper.TryGetCurrentSlide(netApp);
+			var abstractApp = ApplicationHelper.GetAbstractApplication(netApp);
+			var slide = _shapeHelper.TryGetCurrentSlide(abstractApp);
 			Profiler.LogMessage($"TryGetCurrentSlide 返回: {slide?.GetType().Name ?? "null"}", "INFO");
 
 			ExHandler.Run(() =>
 			{
-				var sel = _shapeHelper.ValidateSelection(netApp);
+				var sel = _shapeHelper.ValidateSelection(abstractApp) as dynamic;
 				Profiler.LogMessage($"ValidateSelection 返回: {sel?.GetType().Name ?? "null"}", "INFO");
 				int tableCount = 0;
 				var processedKeys = new List<object>();
@@ -316,8 +317,25 @@ namespace PPA.Formatting
 						Profiler.LogMessage($"处理幻灯片所有形状，slide类型={slide.GetType().Name}", "INFO");
 						try
 						{
+							// 从 ISlide 获取底层的 NETOP.Slide 对象
+							NETOP.Slide nativeSlide = null;
+							if(slide is IComWrapper<NETOP.Slide> typedSlide)
+							{
+								nativeSlide = typedSlide.NativeObject;
+							}
+							else if(slide is IComWrapper wrapper)
+							{
+								nativeSlide = wrapper.NativeObject as NETOP.Slide;
+							}
+
+							if(nativeSlide == null)
+							{
+								Profiler.LogMessage("无法获取底层 NETOP.Slide 对象", "WARN");
+								throw new InvalidOperationException("无法获取底层 NETOP.Slide 对象");
+							}
+
 							// 尝试使用 NetOffice 枚举
-							foreach(NETOP.Shape shape in slide.Shapes)
+							foreach(NETOP.Shape shape in nativeSlide.Shapes)
 							{
 								// 检查是否是表格：先尝试 HasTable，如果失败则直接检查 Table 属性
 								bool isTable = false;
@@ -365,15 +383,24 @@ namespace PPA.Formatting
 							Profiler.LogMessage($"NetOffice 枚举失败: {ex.Message}，尝试使用 dynamic 访问", "WARN");
 							try
 							{
-								dynamic dynSlide = slide;
-								if(dynSlide == null)
+								// 从 ISlide 获取底层的 NETOP.Slide 对象
+								NETOP.Slide nativeSlide = null;
+								if(slide is IComWrapper<NETOP.Slide> typedSlide)
 								{
-									if(slide is IComWrapper wrapper)
-									{
-										dynSlide = wrapper.NativeObject;
-									}
+									nativeSlide = typedSlide.NativeObject;
 								}
-								
+								else if(slide is IComWrapper wrapper)
+								{
+									nativeSlide = wrapper.NativeObject as NETOP.Slide;
+								}
+
+								if(nativeSlide == null)
+								{
+									Profiler.LogMessage("无法获取底层 NETOP.Slide 对象（dynamic 访问）", "WARN");
+									throw new InvalidOperationException("无法获取底层 NETOP.Slide 对象");
+								}
+
+								dynamic dynSlide = nativeSlide;
 								dynamic dynShapes = SafeGet(() => dynSlide.Shapes, null);
 								if(dynShapes != null)
 								{
@@ -383,47 +410,69 @@ namespace PPA.Formatting
 									{
 										try
 										{
-											dynamic dynShape = SafeGet(() => dynShapes[i], null);
-											if(dynShape != null)
+											object shapeObj = SafeGet(() => dynShapes[i], null);
+											if(shapeObj == null) continue;
+
+											// 尝试转换为 NETOP.Shape
+											NETOP.Shape netShape = null;
+											if(shapeObj is NETOP.Shape directShape)
 											{
-												// 某些情况下 HasTable 可能不可用，直接检查 Table 属性是否存在
-												dynamic dynTable = null;
-												bool hasTable = false;
+												netShape = directShape;
+											}
+											else if(shapeObj is IComWrapper<NETOP.Shape> typedShape)
+											{
+												netShape = typedShape.NativeObject;
+											}
+											else if(shapeObj is IComWrapper wrapper)
+											{
+												netShape = wrapper.NativeObject as NETOP.Shape;
+											}
+											else
+											{
+												// 尝试强制转换
 												try
 												{
-													// 方式1：尝试通过 HasTable 属性
-													hasTable = SafeGet(() => (bool)(dynShape.HasTable ?? false), false);
-													if(hasTable)
-													{
-														dynTable = SafeGet(() => dynShape.Table, null);
-													}
+													netShape = (NETOP.Shape)(object)shapeObj;
 												}
 												catch { }
-												
-												// 方式2：如果方式1失败，直接检查 Table 属性
-												if(!hasTable || dynTable == null)
+											}
+
+											if(netShape == null) continue;
+
+											// 检查是否是表格
+											bool isTable = false;
+											dynamic dynTable = null;
+											try
+											{
+												if(netShape.HasTable == MsoTriState.msoTrue)
 												{
-													try
-													{
-														dynTable = SafeGet(() => dynShape.Table, null);
-														hasTable = (dynTable != null);
-													}
-													catch { }
+													isTable = true;
+													dynTable = netShape.Table;
 												}
-												
-												if(hasTable && dynTable != null)
+											}
+											catch
+											{
+												// HasTable 不可用，尝试直接检查 Table 属性
+												try
 												{
-													Profiler.LogMessage($"发现表格形状 {i}，Table 属性存在", "INFO");
-													var iTable = AdapterUtils.WrapTable(netApp, dynShape, dynTable);
-													if(iTable != null)
-													{
-														tableFormatHelper.FormatTables(iTable);
-														tableCount++;
-													}
-													else
-													{
-														Profiler.LogMessage($"形状 {i} WrapTable 返回 null", "WARN");
-													}
+													dynTable = netShape.Table;
+													isTable = (dynTable != null);
+												}
+												catch { }
+											}
+
+											if(isTable && dynTable != null)
+											{
+												Profiler.LogMessage($"发现表格形状 {i}: {netShape.Name}", "INFO");
+												var iTable = AdapterUtils.WrapTable(netApp, netShape, dynTable);
+												if(iTable != null)
+												{
+													tableFormatHelper.FormatTables(iTable);
+													tableCount++;
+												}
+												else
+												{
+													Profiler.LogMessage($"形状 {i} WrapTable 返回 null", "WARN");
 												}
 											}
 										}
@@ -462,9 +511,10 @@ namespace PPA.Formatting
 			{
 				await UndoHelper.BeginUndoEntryAsync(netApp,UndoHelper.UndoNames.FormatTables);
 
+				var abstractAppForSlide = ApplicationHelper.GetAbstractApplication(netApp);
 				var slide = await AsyncOperationHelper.RunOnUIThread(() =>
 				{
-					return _shapeHelper.TryGetCurrentSlide(netApp);
+					return _shapeHelper.TryGetCurrentSlide(abstractAppForSlide);
 				});
 
 				if(slide==null)
@@ -475,7 +525,7 @@ namespace PPA.Formatting
 
 				var tables = await AsyncOperationHelper.RunOnUIThread(() =>
 				{
-					var sel = _shapeHelper.ValidateSelection(netApp);
+					var sel = _shapeHelper.ValidateSelection(abstractAppForSlide) as dynamic;
 					var result = new List<(NETOP.Shape shape, NETOP.Table table)>();
 
 					if(sel!=null)
@@ -590,7 +640,24 @@ namespace PPA.Formatting
 					{
 						try
 						{
-							foreach(NETOP.Shape shape2 in slide.Shapes)
+							// 从 ISlide 获取底层的 NETOP.Slide 对象
+							NETOP.Slide nativeSlide = null;
+							if(slide is IComWrapper<NETOP.Slide> typedSlide)
+							{
+								nativeSlide = typedSlide.NativeObject;
+							}
+							else if(slide is IComWrapper wrapper)
+							{
+								nativeSlide = wrapper.NativeObject as NETOP.Slide;
+							}
+
+							if(nativeSlide == null)
+							{
+								Profiler.LogMessage("无法获取底层 NETOP.Slide 对象（异步方法）", "WARN");
+								throw new InvalidOperationException("无法获取底层 NETOP.Slide 对象");
+							}
+
+							foreach(NETOP.Shape shape2 in nativeSlide.Shapes)
 							{
 								if(shape2.HasTable==MsoTriState.msoTrue)
 								{
@@ -604,53 +671,82 @@ namespace PPA.Formatting
 							Profiler.LogMessage($"NetOffice 枚举 Shapes 失败: {ex.Message}，尝试使用 dynamic 访问", "WARN");
 							try
 							{
-								dynamic dynSlide = slide;
-								if(dynSlide == null)
+								// 从 ISlide 获取底层的 NETOP.Slide 对象
+								NETOP.Slide nativeSlide = null;
+								if(slide is IComWrapper<NETOP.Slide> typedSlide)
 								{
-									if(slide is IComWrapper wrapper)
-									{
-										dynSlide = wrapper.NativeObject;
-									}
+									nativeSlide = typedSlide.NativeObject;
 								}
-								
+								else if(slide is IComWrapper wrapper)
+								{
+									nativeSlide = wrapper.NativeObject as NETOP.Slide;
+								}
+
+								if(nativeSlide == null)
+								{
+									Profiler.LogMessage("无法获取底层 NETOP.Slide 对象（异步方法 dynamic 访问）", "WARN");
+									throw new InvalidOperationException("无法获取底层 NETOP.Slide 对象");
+								}
+
+								dynamic dynSlide = nativeSlide;
 								dynamic dynShapes = SafeGet(() => dynSlide.Shapes, null);
 								if(dynShapes != null)
 								{
 									int count = SafeGet(() => (int)dynShapes.Count, 0);
 									for(int i = 1; i <= count; i++)
 									{
-										dynamic dynShape = SafeGet(() => dynShapes[i], null);
-										if(dynShape != null)
+										object shapeObj = SafeGet(() => dynShapes[i], null);
+										if(shapeObj == null) continue;
+
+										// 尝试转换为 NETOP.Shape
+										NETOP.Shape netShape = null;
+										if(shapeObj is NETOP.Shape directShape)
 										{
-											// 某些情况下 HasTable 可能不可用，直接检查 Table 属性
-											dynamic dynTable3 = null;
-											bool hasTable = false;
+											netShape = directShape;
+										}
+										else if(shapeObj is IComWrapper<NETOP.Shape> typedShape)
+										{
+											netShape = typedShape.NativeObject;
+										}
+										else if(shapeObj is IComWrapper wrapper)
+										{
+											netShape = wrapper.NativeObject as NETOP.Shape;
+										}
+										else
+										{
 											try
 											{
-												// 方式1：尝试通过 HasTable 属性
-												hasTable = SafeGet(() => (bool)(dynShape.HasTable ?? false), false);
-												if(hasTable)
-												{
-													dynTable3 = SafeGet(() => dynShape.Table, null);
-												}
+												netShape = (NETOP.Shape)(object)shapeObj;
 											}
 											catch { }
-											
-											// 方式2：如果方式1失败，直接检查 Table 属性
-											if(!hasTable || dynTable3 == null)
+										}
+
+										if(netShape == null) continue;
+
+										// 检查是否是表格
+										bool hasTable = false;
+										NETOP.Table netTable = null;
+										try
+										{
+											if(netShape.HasTable == MsoTriState.msoTrue)
 											{
-												try
-												{
-													dynTable3 = SafeGet(() => dynShape.Table, null);
-													hasTable = (dynTable3 != null);
-												}
-												catch { }
+												hasTable = true;
+												netTable = netShape.Table;
 											}
-											
-											if(hasTable && dynTable3 != null)
+										}
+										catch
+										{
+											try
 											{
-												result.Add(((NETOP.Shape)(object)dynShape, (NETOP.Table)(object)dynTable3));
+												netTable = netShape.Table;
+												hasTable = (netTable != null);
 											}
+											catch { }
+										}
+
+										if(hasTable && netTable != null)
+										{
+											result.Add((netShape, netTable));
 										}
 									}
 								}
@@ -668,9 +764,10 @@ namespace PPA.Formatting
 
 				if(total==0)
 				{
+					var abstractAppForCheck = ApplicationHelper.GetAbstractApplication(netApp);
 					var hasSelection = await AsyncOperationHelper.RunOnUIThread(() =>
 					{
-						return _shapeHelper.ValidateSelection(netApp)!=null;
+						return _shapeHelper.ValidateSelection(abstractAppForCheck)!=null;
 					});
 					Toast.Show(hasSelection ? ResourceManager.GetString("Toast_FormatTables_NoSelection","选中的对象中没有表格") : ResourceManager.GetString("Toast_FormatTables_NoTables","当前幻灯片上没有表格"),Toast.ToastType.Info);
 					return;

@@ -64,7 +64,8 @@ namespace PPA.Formatting
 
 			ExHandler.Run(() =>
 			{
-				var selection = _shapeHelper.ValidateSelection(netApp);
+				var abstractApp = ApplicationHelper.GetAbstractApplication(netApp);
+				var selection = _shapeHelper.ValidateSelection(abstractApp) as dynamic;
 				PPA.Core.Profiler.LogMessage($"ValidateSelection 返回: {selection?.GetType().Name ?? "null"}", "INFO");
 
 				if(selection==null)
