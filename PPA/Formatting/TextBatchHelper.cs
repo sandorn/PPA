@@ -1,64 +1,51 @@
-using System;
-using System.Threading.Tasks;
 using NetOffice.OfficeApi.Enums;
 using PPA.Core;
 using PPA.Core.Abstraction.Business;
-using PPA.Core.Abstraction.Presentation;
+using PPA.Core.Abstraction.Infrastructure;
 using PPA.Core.Adapters;
-using PPA.Shape;
+using PPA.Core.Logging;
+using PPA.Formatting.Selection;
 using PPA.Utilities;
+using System;
 using NETOP = NetOffice.PowerPointApi;
 
 namespace PPA.Formatting
 {
 	/// <summary>
-	/// 文本批量操作辅助类
+	/// 文本批量操作辅助类 提供文本批量格式化功能
 	/// </summary>
-	internal class TextBatchHelper : ITextBatchHelper
+	internal class TextBatchHelper(ITextFormatHelper textFormatHelper,IShapeHelper shapeHelper,ILogger logger = null):ITextBatchHelper
 	{
-		private readonly ITextFormatHelper _textFormatHelper;
-		private readonly IShapeHelper _shapeHelper;
-
-		public TextBatchHelper(ITextFormatHelper textFormatHelper, IShapeHelper shapeHelper)
-		{
-			_textFormatHelper = textFormatHelper ?? throw new ArgumentNullException(nameof(textFormatHelper));
-			_shapeHelper = shapeHelper ?? throw new ArgumentNullException(nameof(shapeHelper));
-		}
+		private readonly ITextFormatHelper _textFormatHelper = textFormatHelper??throw new ArgumentNullException(nameof(textFormatHelper));
+		private readonly IShapeHelper _shapeHelper = shapeHelper??throw new ArgumentNullException(nameof(shapeHelper));
+		private readonly ILogger _logger = logger??LoggerProvider.GetLogger();
 
 		#region ITextBatchHelper 实现
 
-		public void FormatText(NETOP.Application app)
+		/// <summary>
+		/// 格式化文本（同步方法）
+		/// </summary>
+		/// <param name="netApp"> PowerPoint 应用程序对象 </param>
+		public void FormatText(NETOP.Application netApp)
 		{
-			if(app==null) throw new ArgumentNullException(nameof(app));
-			FormatTextInternal(app,_textFormatHelper);
+			if(netApp==null) throw new ArgumentNullException(nameof(netApp));
+			FormatTextInternal(netApp,_textFormatHelper);
 		}
 
-		public Task FormatTextAsync(NETOP.Application app, IProgress<AsyncProgress> progress = null)
-		{
-			// 当前无异步实现，保持同步调用，可在未来扩展
-			FormatText(app);
-			progress?.Report(new AsyncProgress(100,ResourceManager.GetString("Progress_FormatText_Complete","文本美化完成"),1,1));
-			return Task.CompletedTask;
-		}
-
-		#endregion
+		#endregion ITextBatchHelper 实现
 
 		#region 内部实现
 
-		private static T SafeGet<T>(System.Func<T> getter, T @default = default)
-		{
-			try { return getter(); } catch { return @default; }
-		}
-
-		#endregion
-
-		#region 内部实现
-
+		/// <summary>
+		/// 格式化文本的内部实现（同步）
+		/// </summary>
+		/// <param name="netApp"> PowerPoint 应用程序对象 </param>
+		/// <param name="textFormatHelper"> 文本格式化辅助类 </param>
 		private void FormatTextInternal(NETOP.Application netApp,ITextFormatHelper textFormatHelper)
 		{
-			PPA.Core.Profiler.LogMessage($"FormatTextInternal 开始，netApp类型={netApp?.GetType().Name ?? "null"}", "INFO");
+			_logger.LogInformation($"启动，netApp类型={netApp?.GetType().Name??"null"}");
 			if(textFormatHelper==null)
-				throw new System.InvalidOperationException("无法获取 ITextFormatHelper 服务");
+				throw new InvalidOperationException("无法获取 ITextFormatHelper 服务");
 
 			UndoHelper.BeginUndoEntry(netApp,UndoHelper.UndoNames.FormatText);
 
@@ -66,174 +53,38 @@ namespace PPA.Formatting
 			{
 				var abstractApp = ApplicationHelper.GetAbstractApplication(netApp);
 				var selection = _shapeHelper.ValidateSelection(abstractApp) as dynamic;
-				PPA.Core.Profiler.LogMessage($"ValidateSelection 返回: {selection?.GetType().Name ?? "null"}", "INFO");
 
+				// 调试：记录选中对象信息
 				if(selection==null)
 				{
+					_logger.LogWarning("ValidateSelection 返回 null，没有选中对象");
 					Toast.Show(ResourceManager.GetString("Toast_FormatText_NoSelection"),Toast.ToastType.Warning);
 					return;
 				}
 
-				bool hasFormatted = false;
-
-				if(selection is NETOP.Shape shape)
+				// 调试：记录选中对象的数量和类型
+				try
 				{
-					PPA.Core.Profiler.LogMessage($"选中单个形状，HasText={shape.TextFrame?.HasText}, HasTable={shape.HasTable}", "INFO");
-					// 跳过表格内的文本（表格有自己的格式化逻辑）
-					if(shape.HasTable==MsoTriState.msoTrue)
+					if(selection is NETOP.ShapeRange shapeRange)
 					{
-						PPA.Core.Profiler.LogMessage("形状包含表格，跳过文本格式化", "INFO");
-						return;
-					}
-					if(shape.TextFrame?.HasText==MsoTriState.msoTrue)
+						int count = ExHandler.SafeGet(() => shapeRange.Count, defaultValue: 0);
+						_logger.LogInformation($"选中对象类型=ShapeRange, 数量={count}");
+					} else if(selection is NETOP.Shape shape)
 					{
-						PPA.Core.Profiler.LogMessage("开始包装形状", "INFO");
-						var iShape = AdapterUtils.WrapShape(netApp,shape);
-						PPA.Core.Profiler.LogMessage($"WrapShape 返回: {iShape?.GetType().Name ?? "null"}", "INFO");
-						if(iShape != null)
-						{
-							textFormatHelper.ApplyTextFormatting(iShape);
-							hasFormatted=true;
-						}
-						else
-						{
-							PPA.Core.Profiler.LogMessage("WrapShape 返回 null，无法格式化", "ERROR");
-						}
+						_logger.LogInformation("选中对象类型=Shape, 数量=1");
+					} else
+					{
+						_logger.LogInformation($"选中对象类型={selection?.GetType().Name??"null"}");
 					}
-				}
-				else if(selection is NETOP.ShapeRange shapeRange)
+				} catch(Exception ex)
 				{
-					PPA.Core.Profiler.LogMessage($"选中多个形状，Count={shapeRange.Count}", "INFO");
-					try
-					{
-						// 尝试使用 NetOffice 枚举
-						foreach(NETOP.Shape s in shapeRange)
-						{
-							if(s.TextFrame?.HasText==MsoTriState.msoTrue)
-							{
-								PPA.Core.Profiler.LogMessage($"处理形状 {s.Name}，HasText=True", "INFO");
-								var iShape = AdapterUtils.WrapShape(netApp,s);
-								PPA.Core.Profiler.LogMessage($"WrapShape 返回: {iShape?.GetType().Name ?? "null"}", "INFO");
-								if(iShape != null)
-								{
-									textFormatHelper.ApplyTextFormatting(iShape);
-									hasFormatted=true;
-								}
-								else
-								{
-									PPA.Core.Profiler.LogMessage("WrapShape 返回 null，无法格式化", "ERROR");
-								}
-							}
-						}
-					}
-					catch(System.Exception ex)
-					{
-						// NetOffice 无法枚举某些 ShapeRange，使用 dynamic 访问作为后备方案
-						PPA.Core.Profiler.LogMessage($"NetOffice 枚举失败: {ex.Message}，尝试使用 dynamic 访问", "WARN");
-						try
-						{
-							dynamic dynShapeRange = shapeRange;
-							int count = SafeGet(() => (int)dynShapeRange.Count, 0);
-							PPA.Core.Profiler.LogMessage($"使用 dynamic 访问，Count={count}", "INFO");
-							int processedCount = 0;
-							for(int i = 1; i <= count; i++)
-							{
-								try
-								{
-									dynamic dynShape = SafeGet(() => dynShapeRange[i], null);
-									if(dynShape != null)
-									{
-										// 跳过表格内的文本（表格有自己的格式化逻辑）
-										// 某些情况下 HasTable 可能不可用，需要直接检查 Table 属性
-										bool hasTable = false;
-										try
-										{
-											hasTable = SafeGet(() => (bool)(dynShape.HasTable ?? false), false);
-										}
-										catch { }
-										
-										if(!hasTable)
-										{
-											// 如果 HasTable 不可用，直接检查 Table 属性
-											try
-											{
-												dynamic dynTable = SafeGet(() => dynShape.Table, null);
-												hasTable = (dynTable != null);
-											}
-											catch { }
-										}
-										
-										if(hasTable)
-										{
-											PPA.Core.Profiler.LogMessage($"形状 {i} 包含表格，跳过文本格式化", "INFO");
-											continue;
-										}
-										
-										// 某些情况下 HasText 可能不可用，尝试多种方式检测
-										bool hasText = false;
-										try
-										{
-											// 方式1：尝试 HasText 属性
-											hasText = SafeGet(() => (bool)(dynShape.TextFrame?.HasText ?? false), false);
-										}
-										catch { }
-										
-										if(!hasText)
-										{
-											// 方式2：检查 TextFrame 是否存在且有文本
-											try
-											{
-												dynamic textFrame = SafeGet(() => dynShape.TextFrame, null);
-												if(textFrame != null)
-												{
-													dynamic textRange = SafeGet(() => textFrame.TextRange, null);
-													if(textRange != null)
-													{
-														string text = SafeGet(() => (string)textRange.Text, null);
-														hasText = !string.IsNullOrWhiteSpace(text);
-													}
-												}
-											}
-											catch { }
-										}
-										
-										PPA.Core.Profiler.LogMessage($"形状 {i}: HasText={hasText}", "INFO");
-										if(hasText)
-										{
-											PPA.Core.Profiler.LogMessage($"处理形状 {i}，HasText=True", "INFO");
-											var iShape = AdapterUtils.WrapShape(netApp, dynShape);
-											if(iShape != null)
-											{
-												textFormatHelper.ApplyTextFormatting(iShape);
-												hasFormatted=true;
-												processedCount++;
-											}
-											else
-											{
-												PPA.Core.Profiler.LogMessage($"形状 {i} WrapShape 返回 null", "WARN");
-											}
-										}
-									}
-									else
-									{
-										PPA.Core.Profiler.LogMessage($"形状 {i} 获取失败", "WARN");
-									}
-								}
-								catch(System.Exception ex3)
-								{
-									PPA.Core.Profiler.LogMessage($"处理形状 {i} 时出错: {ex3.Message}", "WARN");
-								}
-							}
-							PPA.Core.Profiler.LogMessage($"dynamic 访问完成，共处理 {processedCount} 个形状", "INFO");
-						}
-						catch(System.Exception ex2)
-						{
-							PPA.Core.Profiler.LogMessage($"dynamic 访问也失败: {ex2.Message}", "ERROR");
-							PPA.Core.Profiler.LogMessage($"堆栈跟踪: {ex2.StackTrace}", "ERROR");
-						}
-					}
+					_logger.LogWarning($"获取选中对象信息失败: {ex.Message}");
 				}
 
+				// 处理选中的形状
+				bool hasFormatted = ProcessTextShapesFromSelection(selection, netApp, textFormatHelper);
+
+				// 显示结果
 				if(hasFormatted)
 				{
 					Toast.Show(ResourceManager.GetString("Toast_FormatText_Success"),Toast.ToastType.Success);
@@ -241,11 +92,115 @@ namespace PPA.Formatting
 				{
 					Toast.Show(ResourceManager.GetString("Toast_FormatText_NoText"),Toast.ToastType.Warning);
 				}
-			});
+			},enableTiming: true);
 		}
 
-		// 适配包装逻辑已提取到 Core/Adapters/AdapterUtils.cs
+		/// <summary>
+		/// 检查形状是否包含表格
+		/// </summary>
+		/// <param name="shape"> 形状对象 </param>
+		/// <returns> 如果包含表格返回 true，否则返回 false </returns>
+		private bool HasTable(NETOP.Shape shape)
+		{
+			if(shape==null) return false;
 
-		#endregion
+			bool hasTable = ExHandler.SafeGet(() => shape.HasTable == MsoTriState.msoTrue, defaultValue: false);
+			if(hasTable) return true;
+
+			var table = ExHandler.SafeGet(() => shape.Table, defaultValue: (NETOP.Table)null);
+			return table!=null;
+		}
+
+		/// <summary>
+		/// 检查形状是否包含文本
+		/// </summary>
+		/// <param name="shape"> 形状对象 </param>
+		/// <returns> 如果包含文本返回 true，否则返回 false </returns>
+		private bool HasText(NETOP.Shape shape)
+		{
+			if(shape==null) return false;
+
+			// 方式1：尝试通过 TextFrame.HasText 属性
+			bool hasText = ExHandler.SafeGet(() => shape.TextFrame?.HasText == MsoTriState.msoTrue, defaultValue: false);
+			if(hasText) return true;
+
+			// 方式2：检查 TextFrame 是否存在且有文本内容
+			var textFrame = ExHandler.SafeGet(() => shape.TextFrame, defaultValue: (NETOP.TextFrame)null);
+			if(textFrame!=null)
+			{
+				var textRange = ExHandler.SafeGet(() => textFrame.TextRange, defaultValue: (NETOP.TextRange)null);
+				if(textRange!=null)
+				{
+					string text = ExHandler.SafeGet(() => textRange.Text, defaultValue: null);
+					return !string.IsNullOrWhiteSpace(text);
+				}
+			}
+
+			return false;
+		}
+
+		/// <summary>
+		/// 处理单个文本形状
+		/// </summary>
+		/// <param name="shape"> 形状对象 </param>
+		/// <param name="netApp"> PowerPoint 应用程序对象 </param>
+		/// <param name="textFormatHelper"> 文本格式化辅助类 </param>
+		/// <returns> 如果成功格式化返回 true，否则返回 false </returns>
+		private bool ProcessTextShape(NETOP.Shape shape,NETOP.Application netApp,ITextFormatHelper textFormatHelper)
+		{
+			if(shape==null) return false;
+
+			// 跳过表格内的文本（表格有自己的格式化逻辑）
+			if(HasTable(shape))
+			{
+				return false;
+			}
+
+			// 检查是否有文本
+			if(!HasText(shape))
+			{
+				return false;
+			}
+
+			// 包装并格式化
+			var iShape = AdapterUtils.WrapShape(netApp, shape);
+			if(iShape!=null)
+			{
+				textFormatHelper.ApplyTextFormatting(iShape);
+				return true;
+			}
+
+			return false;
+		}
+
+		/// <summary>
+		/// 从选区处理文本形状
+		/// </summary>
+		/// <param name="selection"> 选区对象 </param>
+		/// <param name="netApp"> PowerPoint 应用程序对象 </param>
+		/// <param name="textFormatHelper"> 文本格式化辅助类 </param>
+		/// <returns> 如果至少格式化了一个形状返回 true，否则返回 false </returns>
+		private bool ProcessTextShapesFromSelection(object selection,NETOP.Application netApp,ITextFormatHelper textFormatHelper)
+		{
+			var shapeSelection = ShapeSelectionFactory.Create(selection);
+			if(shapeSelection==null)
+			{
+				_logger.LogWarning("无法识别的选区类型，跳过处理");
+				return false;
+			}
+
+			bool hasFormatted = false;
+			foreach(var shape in shapeSelection)
+			{
+				if(ProcessTextShape(shape,netApp,textFormatHelper))
+				{
+					hasFormatted=true;
+				}
+			}
+
+			return hasFormatted;
+		}
+
+		#endregion 内部实现
 	}
 }

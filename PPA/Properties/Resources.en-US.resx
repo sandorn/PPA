@@ -562,7 +562,7 @@ Supports multi-language interface and customizable formatting parameters.</value
     <value>Number of decimal places for number formatting.</value>
   </data>
   <data name="ConfigDesc_Attr_Table_NegativeTextColor" xml:space="preserve">
-    <value>Negative number text color (integer RGB, -65536 represents red).</value>
+    <value>Negative number text color (OLE integer RGB, 255 represents red).</value>
   </data>
   <data name="ConfigDesc_Attr_TableSettings_FirstRow" xml:space="preserve">
     <value>Enable "Header Row" format (true/false).</value>

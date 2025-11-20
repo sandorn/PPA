@@ -204,7 +204,7 @@ namespace PPA.Utilities
 			//Profiler.LogMessage($"类型: {_type}, 消息: {message ?? "(null)"}");
 			AddContentToPanel(contentPanel,message);
 
-			_timer=new System.Windows.Forms.Timer { Interval=duration };
+			_timer=new System.Windows.Forms.Timer { Interval=_duration };
 			_timer.Tick+=Timer_Tick;
 
 			SetFixedPosition();
@@ -490,14 +490,12 @@ namespace PPA.Utilities
 	}
 
 	/// <summary>
-	/// 双缓冲面板类
-	/// 继承自Panel，启用双缓冲以减少绘制时的闪烁
+	/// 双缓冲面板类 继承自Panel，启用双缓冲以减少绘制时的闪烁
 	/// </summary>
 	internal class DoubleBufferedPanel:Panel
 	{
 		/// <summary>
-		/// 构造函数
-		/// 初始化面板并启用双缓冲功能
+		/// 构造函数 初始化面板并启用双缓冲功能
 		/// </summary>
 		public DoubleBufferedPanel()
 		{

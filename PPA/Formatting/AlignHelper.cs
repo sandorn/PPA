@@ -1,136 +1,130 @@
 using NetOffice.OfficeApi.Enums;
 using PPA.Core;
 using PPA.Core.Abstraction.Business;
+using PPA.Core.Abstraction.Infrastructure;
+using PPA.Core.Abstraction.Presentation;
+using PPA.Core.Logging;
 using PPA.Shape;
 using PPA.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using PPA.Core.Abstraction.Presentation;
-using PPA.Core.Adapters.PowerPoint;
+using static PPA.Core.Abstraction.Business.OfficeCommands;
 using AlignmentType = PPA.Core.Abstraction.Business.AlignmentType;
 using NETOP = NetOffice.PowerPointApi;
-using static PPA.Core.Abstraction.Business.OfficeCommands;
-using System.Diagnostics;
 
 namespace PPA.Formatting
 {
 	/// <summary>
 	/// 提供PowerPoint形状对齐、拉伸、吸附等相关操作的辅助方法。
 	/// </summary>
-	public class AlignHelper : IAlignHelper
+	public class AlignHelper:IAlignHelper
 	{
 		private readonly IShapeHelper _shapeHelper;
 		private readonly ICommandExecutor _commandExecutor;
+		private readonly ILogger _logger;
 
 		// 缓存适配器对象，避免重复转换，提升性能
 		private IApplication _cachedAbstractApp; // 缓存的抽象接口
+
 		private NETOP.Application _cachedNetApp; // 缓存的 NetOffice 对象
 
 		/// <summary>
 		/// 构造函数，通过依赖注入获取服务
 		/// </summary>
-		/// <param name="shapeHelper">形状工具服务（可选，如果为 null 则创建新实例）</param>
-		/// <param name="commandExecutor">命令执行器（可选，如果为 null 则从 DI 容器获取）</param>
-		public AlignHelper(IShapeHelper shapeHelper = null, ICommandExecutor commandExecutor = null)
+		/// <param name="shapeHelper"> 形状工具服务（可选，如果为 null 则创建新实例） </param>
+		/// <param name="commandExecutor"> 命令执行器（可选，如果为 null 则从 DI 容器获取） </param>
+		/// <param name="logger"> 日志记录器（可选，如果为 null 则使用默认日志记录器） </param>
+		public AlignHelper(IShapeHelper shapeHelper = null,ICommandExecutor commandExecutor = null,ILogger logger = null)
 		{
-			// 如果未注入服务，尝试从 DI 容器获取
-			if (shapeHelper == null)
-			{
-				var addIn = Globals.ThisAddIn;
-				if (addIn != null && addIn.ServiceProvider != null)
-				{
-					shapeHelper = addIn.ServiceProvider.GetService(typeof(IShapeHelper)) as IShapeHelper;
-				}
-			}
+			var provider = ApplicationProvider.Current;
 
-			// 如果仍然为 null，创建新实例（向后兼容）
-			_shapeHelper = shapeHelper ?? new ShapeUtils();
-
-			// 获取命令执行器
-			if (commandExecutor == null)
+			if(shapeHelper==null)
 			{
-				var addIn = Globals.ThisAddIn;
-				if (addIn != null && addIn.ServiceProvider != null)
-				{
-					commandExecutor = addIn.ServiceProvider.GetService(typeof(ICommandExecutor)) as ICommandExecutor;
-				}
+				shapeHelper=provider?.ServiceProvider?.GetService(typeof(IShapeHelper)) as IShapeHelper;
 			}
-			_commandExecutor = commandExecutor;
+			_shapeHelper=shapeHelper??new ShapeUtils();
+
+			if(commandExecutor==null)
+			{
+				commandExecutor=provider?.ServiceProvider?.GetService(typeof(ICommandExecutor)) as ICommandExecutor;
+			}
+			_commandExecutor=commandExecutor;
+
+			_logger=logger??LoggerProvider.GetLogger();
 		}
 
-		public void GuidesStretchHeight(IApplication abstractApp) => InvokeWithNative(abstractApp, GuidesStretchHeight);
+		public void GuidesStretchHeight(IApplication abstractApp) => InvokeWithNative(abstractApp,GuidesStretchHeight);
 
-		public void GuideAlignBottom(IApplication abstractApp) => InvokeWithNative(abstractApp, GuideAlignBottom);
+		public void GuideAlignBottom(IApplication abstractApp) => InvokeWithNative(abstractApp,GuideAlignBottom);
 
-		public void StretchBottom(IApplication abstractApp) => InvokeWithNative(abstractApp, StretchBottom);
+		public void StretchBottom(IApplication abstractApp) => InvokeWithNative(abstractApp,StretchBottom);
 
-		public void SwapSize(IApplication abstractApp) => InvokeWithNative(abstractApp, SwapSize);
+		public void SwapSize(IApplication abstractApp) => InvokeWithNative(abstractApp,SwapSize);
 
-		public void SetEqualHeight(IApplication abstractApp) => InvokeWithNative(abstractApp, SetEqualHeight);
+		public void SetEqualHeight(IApplication abstractApp) => InvokeWithNative(abstractApp,SetEqualHeight);
 
-		public void GuidesStretchSize(IApplication abstractApp) => InvokeWithNative(abstractApp, GuidesStretchSize);
+		public void GuidesStretchSize(IApplication abstractApp) => InvokeWithNative(abstractApp,GuidesStretchSize);
 
-		public void GuideAlignHCenter(IApplication abstractApp) => InvokeWithNative(abstractApp, GuideAlignHCenter);
+		public void GuideAlignHCenter(IApplication abstractApp) => InvokeWithNative(abstractApp,GuideAlignHCenter);
 
-		public void StretchLeft(IApplication abstractApp) => InvokeWithNative(abstractApp, StretchLeft);
+		public void StretchLeft(IApplication abstractApp) => InvokeWithNative(abstractApp,StretchLeft);
 
 		/// <summary>
 		/// 将抽象接口转换为 NetOffice 对象，带缓存优化
 		/// </summary>
-		/// <param name="abstractApp">抽象应用程序接口</param>
-		/// <param name="action">需要执行的操作</param>
-		private void InvokeWithNative(IApplication abstractApp, Action<NETOP.Application> action)
+		/// <param name="abstractApp"> 抽象应用程序接口 </param>
+		/// <param name="action"> 需要执行的操作 </param>
+		private void InvokeWithNative(IApplication abstractApp,Action<NETOP.Application> action)
 		{
-			if(action == null) return;
-			
+			if(action==null) return;
+
 			// 使用缓存避免重复转换
 			NETOP.Application netApp;
-			if(_cachedAbstractApp == abstractApp && _cachedNetApp != null)
+			if(_cachedAbstractApp==abstractApp&&_cachedNetApp!=null)
 			{
-				netApp = _cachedNetApp;
-			}
-			else
+				netApp=_cachedNetApp;
+			} else
 			{
-				netApp = ApplicationHelper.GetNetOfficeApplication(abstractApp);
-				if(netApp != null)
+				netApp=ApplicationHelper.GetNetOfficeApplication(abstractApp);
+				if(netApp!=null)
 				{
-					_cachedAbstractApp = abstractApp;
-					_cachedNetApp = netApp;
+					_cachedAbstractApp=abstractApp;
+					_cachedNetApp=netApp;
 				}
 			}
-			
-			if(netApp == null) return;
+
+			if(netApp==null) return;
 			action(netApp);
 		}
 
 		/// <summary>
 		/// 将 NetOffice Application 转换为抽象接口，带缓存优化
 		/// </summary>
-		/// <param name="netApp">NetOffice 应用程序对象</param>
-		/// <returns>抽象接口对象</returns>
+		/// <param name="netApp"> NetOffice 应用程序对象 </param>
+		/// <returns> 抽象接口对象 </returns>
 		private IApplication GetAbstractApp(NETOP.Application netApp)
 		{
-			if(netApp == null) return null;
+			if(netApp==null) return null;
 
 			// 如果缓存的 NetOffice 对象匹配，直接返回缓存的抽象接口
-			if(_cachedNetApp == netApp && _cachedAbstractApp != null)
+			if(_cachedNetApp==netApp&&_cachedAbstractApp!=null)
 			{
 				return _cachedAbstractApp;
 			}
 
 			// 使用 ApplicationHelper 进行转换（统一管理转换逻辑）
 			var abstractApp = ApplicationHelper.GetAbstractApplication(netApp);
-			_cachedNetApp = netApp;
-			_cachedAbstractApp = abstractApp;
+			_cachedNetApp=netApp;
+			_cachedAbstractApp=abstractApp;
 			return abstractApp;
 		}
 
-		public void GuidesStretchWidth(IApplication abstractApp) => InvokeWithNative(abstractApp, GuidesStretchWidth);
+		public void GuidesStretchWidth(IApplication abstractApp) => InvokeWithNative(abstractApp,GuidesStretchWidth);
 
-		public void GuideAlignLeft(IApplication abstractApp) => InvokeWithNative(abstractApp, GuideAlignLeft);
+		public void GuideAlignLeft(IApplication abstractApp) => InvokeWithNative(abstractApp,GuideAlignLeft);
 
-		public void StretchRight(IApplication abstractApp) => InvokeWithNative(abstractApp, StretchRight);
+		public void StretchRight(IApplication abstractApp) => InvokeWithNative(abstractApp,StretchRight);
 
 		#region Public Methods
 
@@ -153,11 +147,11 @@ namespace PPA.Formatting
 			});
 		}
 
-		public void GuideAlignRight(IApplication abstractApp) => InvokeWithNative(abstractApp, GuideAlignRight);
+		public void GuideAlignRight(IApplication abstractApp) => InvokeWithNative(abstractApp,GuideAlignRight);
 
-		public void StretchTop(IApplication abstractApp) => InvokeWithNative(abstractApp, StretchTop);
+		public void StretchTop(IApplication abstractApp) => InvokeWithNative(abstractApp,StretchTop);
 
-		public void AttachBottom(IApplication abstractApp) => InvokeWithNative(abstractApp, AttachBottom);
+		public void AttachBottom(IApplication abstractApp) => InvokeWithNative(abstractApp,AttachBottom);
 
 		// 左吸附：将第二个形状的左边与第一个形状的右边对齐，只移动第二个形状且只水平移动
 		public void AttachLeft(NETOP.Application netApp)
@@ -178,9 +172,9 @@ namespace PPA.Formatting
 			});
 		}
 
-		public void GuideAlignTop(IApplication abstractApp) => InvokeWithNative(abstractApp, GuideAlignTop);
+		public void GuideAlignTop(IApplication abstractApp) => InvokeWithNative(abstractApp,GuideAlignTop);
 
-		public void AttachLeft(IApplication abstractApp) => InvokeWithNative(abstractApp, AttachLeft);
+		public void AttachLeft(IApplication abstractApp) => InvokeWithNative(abstractApp,AttachLeft);
 
 		// 右吸附：将第二个形状的右边与第一个形状的左边对齐，只移动第二个形状且只水平移动
 		public void AttachRight(NETOP.Application netApp)
@@ -201,9 +195,9 @@ namespace PPA.Formatting
 			});
 		}
 
-		public void GuideAlignVCenter(IApplication abstractApp) => InvokeWithNative(abstractApp, GuideAlignVCenter);
+		public void GuideAlignVCenter(IApplication abstractApp) => InvokeWithNative(abstractApp,GuideAlignVCenter);
 
-		public void AttachRight(IApplication abstractApp) => InvokeWithNative(abstractApp, AttachRight);
+		public void AttachRight(IApplication abstractApp) => InvokeWithNative(abstractApp,AttachRight);
 
 		// 上吸附：将第二个形状的上边与第一个形状的下边对齐，只移动第二个形状且只垂直移动
 		public void AttachTop(NETOP.Application netApp)
@@ -224,7 +218,7 @@ namespace PPA.Formatting
 			});
 		}
 
-		public void AttachTop(IApplication abstractApp) => InvokeWithNative(abstractApp, AttachTop);
+		public void AttachTop(IApplication abstractApp) => InvokeWithNative(abstractApp,AttachTop);
 
 		// 底对齐到下方最近的水平参考线
 		public void GuideAlignBottom(NETOP.Application netApp)
@@ -855,7 +849,7 @@ namespace PPA.Formatting
 			});
 		}
 
-		public void SetEqualSize(IApplication abstractApp) => InvokeWithNative(abstractApp, netApp => SetEqualSize(netApp));
+		public void SetEqualSize(IApplication abstractApp) => InvokeWithNative(abstractApp,netApp => SetEqualSize(netApp));
 
 		// 设置选中对象等宽
 		public void SetEqualWidth(NETOP.Application netApp)
@@ -873,7 +867,7 @@ namespace PPA.Formatting
 			});
 		}
 
-		public void SetEqualWidth(IApplication abstractApp) => InvokeWithNative(abstractApp, netApp => SetEqualWidth(netApp));
+		public void SetEqualWidth(IApplication abstractApp) => InvokeWithNative(abstractApp,netApp => SetEqualWidth(netApp));
 
 		// 下延伸：下边对齐最下侧，上边位置保持不变（高度变大，上边不动）
 		public void StretchBottom(NETOP.Application netApp)
@@ -1067,7 +1061,7 @@ namespace PPA.Formatting
 		/// <param name="netApp"> NetOffice PowerPoint 应用程序实例 </param>
 		/// <param name="alignment"> 对齐类型 </param>
 		/// <param name="alignToSlideMode"> 是否对齐到幻灯片（true：对齐到幻灯片，false：对齐到形状） </param>
-		public void ExecuteAlignment(NETOP.Application netApp, AlignmentType alignment, bool alignToSlideMode)
+		public void ExecuteAlignment(NETOP.Application netApp,AlignmentType alignment,bool alignToSlideMode)
 		{
 			UndoHelper.BeginUndoEntry(netApp,UndoHelper.UndoNames.AlignShapes);
 			ExHandler.Run(() =>
@@ -1079,7 +1073,6 @@ namespace PPA.Formatting
 					Toast.Show(ResourceManager.GetString("Toast_NoSelection"),Toast.ToastType.Warning);
 					return;
 				}
-
 
 				NETOP.ShapeRange shapes;
 				// 尝试直接转换为 ShapeRange
@@ -1104,39 +1097,35 @@ namespace PPA.Formatting
 
 				bool TryExecuteMso(string commandName)
 				{
-					if(string.IsNullOrWhiteSpace(commandName) || _commandExecutor == null)
+					if(string.IsNullOrWhiteSpace(commandName)||_commandExecutor==null)
 					{
 						return false;
 					}
 
-					Profiler.LogMessage($"ExecuteAlignment: 尝试 MSO 命令 '{commandName}'","DEBUG");
+					_logger.LogDebug($"尝试 MSO 命令 '{commandName}'");
 					var success = _commandExecutor.ExecuteMso(commandName);
 					if(success)
 					{
-						Profiler.LogMessage($"ExecuteAlignment: MSO 命令 '{commandName}' 执行成功","INFO");
-					}
-					else
+						_logger.LogInformation($"MSO 命令 '{commandName}' 执行成功");
+					} else
 					{
-						Profiler.LogMessage($"ExecuteAlignment: MSO 命令 '{commandName}' 执行失败","DEBUG");
+						_logger.LogDebug($"MSO 命令 '{commandName}' 执行失败");
 					}
 					return success;
 				}
 
-				// 注意：对齐基准已经在切换按钮（Tb101）点击时通过 MSO 命令设置
-				// ObjectsAlignRelativeToContainerSmart 或 ObjectsAlignSelectedSmart
-				// 因此这里不需要再次设置基准
+				// 注意：对齐基准已经在切换按钮（Tb101）点击时通过 MSO 命令设置 ObjectsAlignRelativeToContainerSmart 或
+				// ObjectsAlignSelectedSmart 因此这里不需要再次设置基准
 
 				// 执行对齐操作
 				switch(alignment)
 				{
 					case AlignmentType.Left:
-						// _commandExecutor.ExecuteMenuPath("文件|另存为");
-						// _commandExecutor.ExecuteCommandById(748);
+						// _commandExecutor.ExecuteMenuPath("文件|另存为"); _commandExecutor.ExecuteCommandById(748);
 						if(TryExecuteMso(ObjectsAlignLeftSmart))
 						{
 							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
-						}
-						else
+						} else
 						{
 							shapes.Align(MsoAlignCmd.msoAlignLefts,alignToSlide);
 							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
@@ -1147,8 +1136,7 @@ namespace PPA.Formatting
 						if(TryExecuteMso(ObjectsAlignRightSmart))
 						{
 							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
-						}
-						else
+						} else
 						{
 							shapes.Align(MsoAlignCmd.msoAlignRights,alignToSlide);
 							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
@@ -1159,8 +1147,7 @@ namespace PPA.Formatting
 						if(TryExecuteMso(ObjectsAlignTopSmart))
 						{
 							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
-						}
-						else
+						} else
 						{
 							shapes.Align(MsoAlignCmd.msoAlignTops,alignToSlide);
 							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
@@ -1171,8 +1158,7 @@ namespace PPA.Formatting
 						if(TryExecuteMso(ObjectsAlignBottomSmart))
 						{
 							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
-						}
-						else
+						} else
 						{
 							shapes.Align(MsoAlignCmd.msoAlignBottoms,alignToSlide);
 							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
@@ -1183,8 +1169,7 @@ namespace PPA.Formatting
 						if(TryExecuteMso(ObjectsAlignCenterHorizontalSmart))
 						{
 							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
-						}
-						else
+						} else
 						{
 							shapes.Align(MsoAlignCmd.msoAlignCenters,alignToSlide);
 							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
@@ -1195,8 +1180,7 @@ namespace PPA.Formatting
 						if(TryExecuteMso(ObjectsAlignMiddleVerticalSmart))
 						{
 							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
-						}
-						else
+						} else
 						{
 							shapes.Align(MsoAlignCmd.msoAlignMiddles,alignToSlide);
 							Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
@@ -1212,8 +1196,7 @@ namespace PPA.Formatting
 							if(TryExecuteMso(AlignDistributeHorizontally))
 							{
 								Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
-							}
-							else
+							} else
 							{
 								shapes.Distribute(MsoDistributeCmd.msoDistributeHorizontally,alignToSlide);
 								Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
@@ -1237,8 +1220,7 @@ namespace PPA.Formatting
 							if(TryExecuteMso(AlignDistributeVertically))
 							{
 								Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
-							}
-							else
+							} else
 							{
 								shapes.Distribute(MsoDistributeCmd.msoDistributeVertically,alignToSlide);
 								Toast.Show(ResourceManager.GetString("Toast_AlignSuccess"),Toast.ToastType.Success);
@@ -1266,17 +1248,17 @@ namespace PPA.Formatting
 		/// <param name="abstractApp"> 抽象应用程序实例 </param>
 		/// <param name="alignment"> 对齐类型 </param>
 		/// <param name="alignToSlideMode"> 是否对齐到幻灯片 </param>
-		public void ExecuteAlignment(IApplication abstractApp, AlignmentType alignment, bool alignToSlideMode)
+		public void ExecuteAlignment(IApplication abstractApp,AlignmentType alignment,bool alignToSlideMode)
 		{
 			// 使用统一的 ApplicationHelper 获取 NetOffice Application 对象
 			var netApp = ApplicationHelper.GetNetOfficeApplication(abstractApp);
-			if(netApp == null)
+			if(netApp==null)
 			{
-				Profiler.LogMessage("ExecuteAlignment: 无法获取 NetOffice Application 对象", "ERROR");
+				_logger.LogError("无法获取 NetOffice Application 对象");
 				return;
 			}
 
-			ExecuteAlignment(netApp, alignment, alignToSlideMode);
+			ExecuteAlignment(netApp,alignment,alignToSlideMode);
 		}
 
 		#endregion Public Methods

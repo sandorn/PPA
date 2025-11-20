@@ -39,7 +39,7 @@
     <PublishUrl>publish\</PublishUrl>
     <InstallUrl />
     <TargetCulture>zh-chs</TargetCulture>
-    <ApplicationVersion>1.1.1.0</ApplicationVersion>
+    <ApplicationVersion>1.2.0.0</ApplicationVersion>
     <AutoIncrementApplicationRevision>true</AutoIncrementApplicationRevision>
     <UpdateEnabled>true</UpdateEnabled>
     <UpdateInterval>7</UpdateInterval>
@@ -231,6 +231,9 @@
     can be found.
   -->
   <ItemGroup>
+    <Compile Include="Core\ApplicationProvider.cs" />
+    <Compile Include="Core\Logging\ProfilerLoggerAdapter.cs" />
+    <Compile Include="Core\Logging\LoggerProvider.cs" />
     <Compile Include="Core\ExHandler.cs" />
     <Compile Include="Core\Profiler.cs" />
     <Compile Include="Core\ResourceManager.cs" />
@@ -241,6 +244,9 @@
     <Compile Include="Core\Abstraction\Business\IChartFormatHelper.cs" />
     <Compile Include="Core\Abstraction\Business\ITableBatchHelper.cs" />
     <Compile Include="Core\Abstraction\Business\ITextBatchHelper.cs" />
+    <Compile Include="Core\Abstraction\Infrastructure\IApplicationProvider.cs" />
+    <Compile Include="Core\Abstraction\Infrastructure\ILogger.cs" />
+    <Compile Include="Core\Abstraction\Infrastructure\LogLevel.cs" />
     <Compile Include="Core\Abstraction\Presentation\ApplicationType.cs" />
     <Compile Include="Core\Abstraction\Presentation\FeatureSupportLevel.cs" />
     <Compile Include="Core\Abstraction\Presentation\IApplication.cs" />
@@ -253,8 +259,12 @@
     <Compile Include="Core\Abstraction\Presentation\ITableCell.cs" />
     <Compile Include="Core\Abstraction\Presentation\ITextRange.cs" />
     <Compile Include="Core\Abstraction\Presentation\IApplicationFactory.cs" />
+    <Compile Include="Core\Abstraction\Presentation\IRibbonXmlProvider.cs" />
+    <Compile Include="Core\Abstraction\Presentation\IRibbonIconProvider.cs" />
+    <Compile Include="Core\Abstraction\Presentation\IRibbonCommandRouter.cs" />
     <Compile Include="Core\Abstraction\Business\IChartBatchHelper.cs" />
     <Compile Include="Core\Abstraction\Business\IAlignHelper.cs" />
+    <Compile Include="Core\Abstraction\Business\IShapeBatchHelper.cs" />
     <Compile Include="Core\Abstraction\Business\IShapeHelper.cs" />
     <Compile Include="Core\Abstraction\Business\ICommandExecutor.cs" />
     <Compile Include="Core\Abstraction\Business\OfficeCommands.cs" />
@@ -279,6 +289,7 @@
     <Compile Include="Formatting\ChartFormatHelper.cs" />
     <Compile Include="Formatting\TableBatchHelper.cs" />
     <Compile Include="Formatting\TextBatchHelper.cs" />
+    <Compile Include="Formatting\Selection\ShapeSelectionFactory.cs" />
     <Compile Include="Formatting\ChartBatchHelper.cs" />
     <Compile Include="Formatting\ShapeBatchHelper.cs" />
     <Compile Include="Formatting\FormattingConfig.cs" />
@@ -289,6 +300,9 @@
     <Compile Include="Shape\MSOICrop.cs" />
     <Compile Include="UI\CustomRibbon.cs" />
     <Compile Include="UI\KeyboardShortcutHelper.cs" />
+    <Compile Include="UI\Providers\EmbeddedRibbonXmlProvider.cs" />
+    <Compile Include="UI\Providers\RibbonIconProvider.cs" />
+    <Compile Include="UI\Providers\RibbonCommandRouter.cs" />
     <Compile Include="UI\Forms\SettingsForm.cs">
       <SubType>Form</SubType>
     </Compile>

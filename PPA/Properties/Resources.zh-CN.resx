@@ -561,7 +561,7 @@
     <value>数字格式化保留的小数位数。</value>
   </data>
   <data name="ConfigDesc_Attr_Table_NegativeTextColor" xml:space="preserve">
-    <value>负数文本颜色（整数 RGB，-65536 表示红色）。</value>
+    <value>负数文本颜色（OLE 整数 RGB，255 表示红色）。</value>
   </data>
   <data name="ConfigDesc_Attr_TableSettings_FirstRow" xml:space="preserve">
     <value>启用"标题行"格式（true/false）。</value>

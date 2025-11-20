@@ -1,22 +1,24 @@
 using NetOffice.OfficeApi.Enums;
 using PPA.Core;
 using PPA.Core.Abstraction.Business;
-using NETOP = NetOffice.PowerPointApi;
+using PPA.Core.Abstraction.Infrastructure;
 using PPA.Core.Abstraction.Presentation;
-using PPA.Core.Adapters.PowerPoint;
+using PPA.Core.Adapters;
+using PPA.Core.Logging;
+using NETOP = NetOffice.PowerPointApi;
 
 namespace PPA.Formatting
 {
 	/// <summary>
 	/// 文本格式化辅助类 提供文本形状的格式化功能
 	/// </summary>
-	/// <remarks>
-	/// 构造函数，通过依赖注入获取配置
-	/// </remarks>
-	/// <param name="config">格式化配置</param>
-	internal class TextFormatHelper(IFormattingConfig config) : ITextFormatHelper
+	/// <remarks> 构造函数，通过依赖注入获取配置 </remarks>
+	/// <param name="config"> 格式化配置 </param>
+	/// <param name="logger"> 日志记录器（可选） </param>
+	internal class TextFormatHelper(IFormattingConfig config,ILogger logger = null):ITextFormatHelper
 	{
-		private readonly IFormattingConfig _config = config ?? throw new System.ArgumentNullException(nameof(config));
+		private readonly IFormattingConfig _config = config??throw new System.ArgumentNullException(nameof(config));
+		private readonly ILogger _logger = logger??LoggerProvider.GetLogger();
 
 		/// <summary>
 		/// 应用文本格式化到指定形状
@@ -78,49 +80,23 @@ namespace PPA.Formatting
 		/// <param name="shape"> 抽象形状对象 </param>
 		public void ApplyTextFormatting(IShape shape)
 		{
-			PPA.Core.Profiler.LogMessage($"ApplyTextFormatting(IShape) 被调用，shape={shape?.GetType().Name ?? "null"}", "INFO");
+			_logger.LogInformation($"启动，shape={shape?.GetType().Name??"null"}");
 			if(shape==null)
 			{
-				PPA.Core.Profiler.LogMessage("ApplyTextFormatting: shape 为 null，返回", "WARN");
+				_logger.LogWarning("shape 为 null，返回");
 				return;
 			}
 
-			// 检查 PowerPoint 适配器
-			if(shape is PowerPointShape pptShape)
-			{
-				PPA.Core.Profiler.LogMessage("ApplyTextFormatting: 检测到 PowerPointShape，使用 PowerPoint 格式化", "INFO");
-				ApplyTextFormatting(pptShape.NativeObject);
-				return;
-			}
-
-			// 尝试从 IComWrapper 获取底层对象
-			if(shape is IComWrapper<NETOP.Shape> typed)
-			{
-				PPA.Core.Profiler.LogMessage("ApplyTextFormatting: 检测到 IComWrapper<NETOP.Shape>，使用 PowerPoint 格式化", "INFO");
-				ApplyTextFormatting(typed.NativeObject);
-				return;
-			}
-
-			var native = (shape as IComWrapper)?.NativeObject as NETOP.Shape;
+			// 使用 AdapterUtils 统一转换
+			var native = AdapterUtils.UnwrapShape(shape);
 			if(native!=null)
 			{
-				PPA.Core.Profiler.LogMessage("ApplyTextFormatting: 检测到 NetOffice.Shape，使用 PowerPoint 格式化", "INFO");
+				_logger.LogInformation("成功获取 NetOffice.Shape，使用 PowerPoint 格式化");
 				ApplyTextFormatting(native);
 				return;
 			}
 
-			PPA.Core.Profiler.LogMessage($"ApplyTextFormatting: 未知的形状类型 {shape.GetType().FullName}，无法格式化", "ERROR");
-		}
-
-
-		private static T SafeGet<T>(System.Func<T> getter, T @default = default)
-		{
-			try { return getter(); } catch { return @default; }
-		}
-
-		private static void SafeSet(System.Action action)
-		{
-			try { action(); } catch { }
+			_logger.LogError($"未知的形状类型 {shape.GetType().FullName}，无法格式化");
 		}
 	}
 }

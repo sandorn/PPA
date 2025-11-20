@@ -1,14 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using NetOffice.OfficeApi.Enums;
 using PPA.Core;
 using PPA.Core.Abstraction.Business;
+using PPA.Core.Abstraction.Infrastructure;
 using PPA.Core.Abstraction.Presentation;
-using PPA.Core.Adapters;
-using PPA.Shape;
+using PPA.Core.Logging;
+using PPA.Formatting.Selection;
 using PPA.Utilities;
+using System;
 using NETOP = NetOffice.PowerPointApi;
 
 namespace PPA.Formatting
@@ -16,16 +14,11 @@ namespace PPA.Formatting
 	/// <summary>
 	/// 图表批量操作辅助类
 	/// </summary>
-	internal class ChartBatchHelper : IChartBatchHelper
+	internal class ChartBatchHelper(IChartFormatHelper chartFormatHelper,IShapeHelper shapeHelper,ILogger logger = null):IChartBatchHelper
 	{
-		private readonly IChartFormatHelper _chartFormatHelper;
-		private readonly IShapeHelper _shapeHelper;
-
-		public ChartBatchHelper(IChartFormatHelper chartFormatHelper, IShapeHelper shapeHelper)
-		{
-			_chartFormatHelper = chartFormatHelper ?? throw new ArgumentNullException(nameof(chartFormatHelper));
-			_shapeHelper = shapeHelper ?? throw new ArgumentNullException(nameof(shapeHelper));
-		}
+		private readonly IChartFormatHelper _chartFormatHelper = chartFormatHelper??throw new ArgumentNullException(nameof(chartFormatHelper));
+		private readonly IShapeHelper _shapeHelper = shapeHelper??throw new ArgumentNullException(nameof(shapeHelper));
+		private readonly ILogger _logger = logger??LoggerProvider.GetLogger();
 
 		#region IChartBatchHelper 实现
 
@@ -35,516 +28,141 @@ namespace PPA.Formatting
 			FormatChartsInternal(netApp,_chartFormatHelper);
 		}
 
-		public Task FormatChartsAsync(NETOP.Application netApp, IProgress<AsyncProgress> progress = null)
-		{
-			FormatCharts(netApp);
-			progress?.Report(new AsyncProgress(100,ResourceManager.GetString("Progress_FormatCharts_Complete","图表美化完成"),1,1));
-			return Task.CompletedTask;
-		}
-
-		#endregion
+		#endregion IChartBatchHelper 实现
 
 		#region 内部实现
 
-		private static T SafeGet<T>(System.Func<T> getter, T @default = default)
+		private void FormatChartsInternal(NETOP.Application netApp,IChartFormatHelper chartFormatHelper)
 		{
-			try { return getter(); } catch { return @default; }
-		}
-
-		#endregion
-
-		#region 内部实现
-
-		private void FormatChartsInternal(NETOP.Application netApp, IChartFormatHelper chartFormatHelper)
-		{
-			PPA.Core.Profiler.LogMessage($"FormatChartsInternal 开始，netApp类型={netApp?.GetType().Name ?? "null"}", "INFO");
+			_logger.LogInformation($"启动，netApp类型={netApp?.GetType().Name??"null"}");
 			if(chartFormatHelper==null)
 				throw new InvalidOperationException("无法获取 IChartFormatHelper 服务");
 
-			UndoHelper.BeginUndoEntry(netApp,UndoHelper.UndoNames.FormatCharts);
-
 			ExHandler.Run(() =>
 			{
-				var abstractApp = ApplicationHelper.GetAbstractApplication(netApp);
-				var slide = _shapeHelper.TryGetCurrentSlide(abstractApp);
-				PPA.Core.Profiler.LogMessage($"TryGetCurrentSlide 返回: {slide?.GetType().Name ?? "null"}", "INFO");
-				if(slide==null) return;
-
-				var chartShapes = new List<NETOP.Shape>();
-				var selection = _shapeHelper.ValidateSelection(abstractApp) as dynamic;
-				PPA.Core.Profiler.LogMessage($"ValidateSelection 返回: {selection?.GetType().Name ?? "null"}", "INFO");
-
-				// 动态选区兜底：当 ValidateSelection 返回 null 时，直接从 ActiveWindow.Selection 读取
-				if(selection == null)
+				var currentApp = netApp;
+				if(!TryRefreshContext(ref currentApp,out var abstractApp))
 				{
-					try
-					{
-						dynamic dynApp = netApp;
-						dynamic activeWindow = SafeGet(() => dynApp.ActiveWindow, null);
-						if(activeWindow != null)
-						{
-							dynamic dynSelection = SafeGet(() => activeWindow.Selection, null);
-							if(dynSelection != null)
-							{
-								// 尝试获取 ShapeRange
-								dynamic shapeRange = SafeGet(() => dynSelection.ShapeRange, null);
-								if(shapeRange != null)
-								{
-									int rangeCount = SafeGet(() => (int)shapeRange.Count, 0);
-									if(rangeCount > 0)
-									{
-										PPA.Core.Profiler.LogMessage($"动态选区兜底：从 ActiveWindow.Selection.ShapeRange 获取到 {rangeCount} 个形状", "INFO");
-										for(int i = 1; i <= rangeCount; i++)
-										{
-											dynamic dynShape = SafeGet(() => shapeRange[i], null);
-											if(dynShape != null)
-											{
-												dynamic dynChart = SafeGet(() => dynShape.Chart, null);
-												bool hasChart = SafeGet(() => (bool)(dynShape.HasChart ?? false), false) || (dynChart != null);
-												if(hasChart && dynChart != null)
-												{
-													try
-													{
-														chartShapes.Add((NETOP.Shape)(object)dynShape);
-													}
-													catch { }
-												}
-											}
-										}
-									}
-								}
-								
-								// 如果 ShapeRange 为空，尝试获取单个 Shape
-								if(chartShapes.Count == 0)
-								{
-									dynamic singleShape = SafeGet(() => dynSelection.Shape, null);
-									if(singleShape != null)
-									{
-										dynamic dynChart = SafeGet(() => singleShape.Chart, null);
-										bool hasChart = SafeGet(() => (bool)(singleShape.HasChart ?? false), false) || (dynChart != null);
-										if(hasChart && dynChart != null)
-										{
-											PPA.Core.Profiler.LogMessage("动态选区兜底：从 ActiveWindow.Selection.Shape 获取到单个图表形状", "INFO");
-											try
-											{
-												chartShapes.Add((NETOP.Shape)(object)singleShape);
-											}
-											catch { }
-										}
-									}
-								}
-							}
-						}
-					}
-					catch(System.Exception ex)
-					{
-						PPA.Core.Profiler.LogMessage($"动态选区兜底失败: {ex.Message}", "WARN");
-					}
+					Toast.Show(ResourceManager.GetString("Toast_NoSlide"),Toast.ToastType.Warning);
+					return;
 				}
 
+				var selection = GetSelectionWithRetry(ref currentApp, ref abstractApp);
 
-				if(selection!=null)
+				// 调试：记录选中对象信息
+				if(selection==null)
 				{
-					if(selection is NETOP.Shape shape)
-					{
-						// 检查是否是图表：先尝试 HasChart，如果失败或返回 false，则直接检查 Chart 属性
-						bool isChart = false;
-						dynamic dynChart = null;
-						try
-						{
-							if(shape.HasChart == MsoTriState.msoTrue)
-							{
-								isChart = true;
-								dynChart = shape.Chart;
-							}
-						}
-						catch { }
-						
-						// 如果 HasChart 不可用或返回 false，直接检查 Chart 属性
-						if(!isChart || dynChart == null)
-						{
-							try
-							{
-								dynamic dynShape = shape;
-								dynChart = SafeGet(() => dynShape.Chart, null);
-								isChart = (dynChart != null);
-								PPA.Core.Profiler.LogMessage($"单选形状，HasChart 检查失败，直接检查 Chart 属性: isChart={isChart}", "INFO");
-							}
-							catch(System.Exception ex)
-							{
-								PPA.Core.Profiler.LogMessage($"检查 Chart 属性失败: {ex.Message}", "WARN");
-							}
-						}
-						
-						if(isChart && dynChart != null)
-						{
-							PPA.Core.Profiler.LogMessage($"单选形状检测到图表，添加到列表", "INFO");
-							chartShapes.Add(shape);
-						}
-						else
-						{
-							PPA.Core.Profiler.LogMessage($"单选形状不是图表: isChart={isChart}, dynChart={dynChart != null}", "INFO");
-						}
-					}
-					else if(selection is NETOP.ShapeRange shapeRange)
-					{
-						try
-						{
-							foreach(NETOP.Shape s in shapeRange)
-							{
-								// 检查是否是图表：先尝试 HasChart，如果失败则直接检查 Chart 属性
-								bool isChart = false;
-								try
-								{
-									if(s.HasChart == MsoTriState.msoTrue)
-									{
-										isChart = true;
-									}
-								}
-								catch
-								{
-									// HasChart 不可用，尝试直接检查 Chart 属性
-									try
-									{
-										dynamic dynShape = s;
-										var dynChart = SafeGet(() => dynShape.Chart, null);
-										isChart = (dynChart != null);
-									}
-									catch { }
-								}
-								
-								if(isChart)
-								{
-									chartShapes.Add(s);
-								}
-							}
-						}
-						catch(System.Exception ex)
-						{
-							// NetOffice 无法枚举某些 ShapeRange，使用 dynamic 访问作为后备方案
-							PPA.Core.Profiler.LogMessage($"NetOffice 枚举 ShapeRange 失败: {ex.Message}，尝试使用 dynamic 访问", "WARN");
-							try
-							{
-								dynamic dynShapeRange = shapeRange;
-								int rangeCount = SafeGet(() => (int)dynShapeRange.Count, 0);
-								PPA.Core.Profiler.LogMessage($"使用 dynamic 访问 ShapeRange，Count={rangeCount}", "INFO");
-								for(int i = 1; i <= rangeCount; i++)
-								{
-									dynamic dynShape = SafeGet(() => dynShapeRange[i], null);
-									if(dynShape != null)
-									{
-										// 某些情况下 HasChart 可能不可用，直接检查 Chart 属性是否存在
-										dynamic dynChart = null;
-										bool hasChart = false;
-										try
-										{
-											// 方式1：尝试通过 HasChart 属性
-											hasChart = SafeGet(() => (bool)(dynShape.HasChart ?? false), false);
-											if(hasChart)
-											{
-												dynChart = SafeGet(() => dynShape.Chart, null);
-											}
-										}
-										catch { }
-										
-										// 方式2：如果方式1失败，直接检查 Chart 属性
-										if(!hasChart || dynChart == null)
-										{
-											try
-											{
-												dynChart = SafeGet(() => dynShape.Chart, null);
-												hasChart = (dynChart != null);
-											}
-											catch { }
-										}
-										
-										if(hasChart && dynChart != null)
-										{
-											try
-											{
-												chartShapes.Add((NETOP.Shape)(object)dynShape);
-											}
-											catch
-											{
-												// 转换失败，尝试通过 AdapterUtils 包装
-												try
-												{
-													var iShape = AdapterUtils.WrapShape(netApp, dynShape);
-													if(iShape != null && iShape.HasChart)
-													{
-														if(iShape is IComWrapper wrapper)
-														{
-															var nativeShape = wrapper.NativeObject;
-															if(nativeShape is NETOP.Shape netShape2)
-															{
-																chartShapes.Add(netShape2);
-															}
-														}
-													}
-												}
-												catch { }
-											}
-										}
-									}
-								}
-							}
-							catch(System.Exception ex2)
-							{
-								PPA.Core.Profiler.LogMessage($"dynamic 访问 ShapeRange 也失败: {ex2.Message}", "ERROR");
-							}
-						}
-					}
-					else if(selection is IShape abstractShapeSelection)
-					{
-						// 尝试从抽象形状获取 PowerPoint Shape
-						if(abstractShapeSelection is IComWrapper<NETOP.Shape> typedShape)
-						{
-							var pptShape = typedShape.NativeObject;
-							if(pptShape.HasChart == MsoTriState.msoTrue)
-							{
-								chartShapes.Add(pptShape);
-							}
-						}
-					}
-					else if(selection is IEnumerable<IShape> abstractShapeEnumerable)
-					{
-						foreach(var abstractShape in abstractShapeEnumerable)
-						{
-							// 尝试从抽象形状获取 PowerPoint Shape
-							if(abstractShape is IComWrapper<NETOP.Shape> typedShape)
-							{
-								var pptShape = typedShape.NativeObject;
-								if(pptShape.HasChart == MsoTriState.msoTrue)
-								{
-									chartShapes.Add(pptShape);
-								}
-							}
-						}
-					}
-				}
-				else
-				{
-					// 如果从动态选区兜底获取到图表，只处理这些图表并立即返回
-					if(chartShapes.Count > 0)
-					{
-						PPA.Core.Profiler.LogMessage($"动态选区兜底获取到 {chartShapes.Count} 个图表，只处理这些图表", "INFO");
-					}
-
-					// 如果已有选中的图表，只处理这些，不再处理整页
-					if(chartShapes.Count > 0)
-					{
-						// 跳过整页枚举，直接处理已选中的图表
-					}
-					else
-					{
-						try
-						{
-							// 从 ISlide 获取底层的 NETOP.Slide 对象
-							NETOP.Slide nativeSlide = null;
-							if(slide is IComWrapper<NETOP.Slide> typedSlide)
-							{
-								nativeSlide = typedSlide.NativeObject;
-							}
-							else if(slide is IComWrapper wrapper)
-							{
-								nativeSlide = wrapper.NativeObject as NETOP.Slide;
-							}
-
-							if(nativeSlide == null)
-							{
-								PPA.Core.Profiler.LogMessage("无法获取底层 NETOP.Slide 对象", "WARN");
-								throw new InvalidOperationException("无法获取底层 NETOP.Slide 对象");
-							}
-
-							// 尝试使用 NetOffice 枚举
-							foreach(NETOP.Shape shape in nativeSlide.Shapes)
-							{
-								// 检查是否是图表：先尝试 HasChart，如果失败则直接检查 Chart 属性
-								bool isChart = false;
-								try
-								{
-									if(shape.HasChart == MsoTriState.msoTrue)
-									{
-										isChart = true;
-									}
-								}
-								catch
-								{
-									// HasChart 不可用，尝试直接检查 Chart 属性
-									try
-									{
-										dynamic dynShape = shape;
-										var dynChart = SafeGet(() => dynShape.Chart, null);
-										isChart = (dynChart != null);
-									}
-									catch { }
-								}
-								
-								if(isChart)
-								{
-									chartShapes.Add(shape);
-								}
-							}
-						}
-					catch(System.Exception ex)
-					{
-						// NetOffice 无法枚举某些 Shapes，使用 dynamic 访问作为后备方案
-						PPA.Core.Profiler.LogMessage($"NetOffice 枚举失败: {ex.Message}，尝试使用 dynamic 访问", "WARN");
-						try
-						{
-							// 从 ISlide 获取底层的 NETOP.Slide 对象
-							NETOP.Slide nativeSlide = null;
-							if(slide is IComWrapper<NETOP.Slide> typedSlide)
-							{
-								nativeSlide = typedSlide.NativeObject;
-							}
-							else if(slide is IComWrapper wrapper)
-							{
-								nativeSlide = wrapper.NativeObject as NETOP.Slide;
-							}
-
-							if(nativeSlide == null)
-							{
-								PPA.Core.Profiler.LogMessage("无法获取底层 NETOP.Slide 对象（dynamic 访问）", "WARN");
-								throw new InvalidOperationException("无法获取底层 NETOP.Slide 对象");
-							}
-
-							dynamic dynSlide = nativeSlide;
-							dynamic dynShapes = SafeGet(() => dynSlide.Shapes, null);
-							if(dynShapes != null)
-							{
-								int count = SafeGet(() => (int)dynShapes.Count, 0);
-								PPA.Core.Profiler.LogMessage($"使用 dynamic 访问，Shapes Count={count}", "INFO");
-								int chartCount = 0;
-								for(int i = 1; i <= count; i++)
-								{
-									try
-									{
-										object shapeObj = SafeGet(() => dynShapes[i], null);
-										if(shapeObj == null) continue;
-
-										// 尝试转换为 NETOP.Shape
-										NETOP.Shape netShape = null;
-										if(shapeObj is NETOP.Shape directShape)
-										{
-											netShape = directShape;
-										}
-										else if(shapeObj is IComWrapper<NETOP.Shape> typedShape)
-										{
-											netShape = typedShape.NativeObject;
-										}
-										else if(shapeObj is IComWrapper wrapper)
-										{
-											netShape = wrapper.NativeObject as NETOP.Shape;
-										}
-										else
-										{
-											// 尝试强制转换
-											try
-											{
-												netShape = (NETOP.Shape)(object)shapeObj;
-											}
-											catch { }
-										}
-
-										if(netShape == null) continue;
-
-										// 检查是否是图表
-										bool isChart = false;
-										try
-										{
-											if(netShape.HasChart == MsoTriState.msoTrue)
-											{
-												isChart = true;
-											}
-										}
-										catch
-										{
-											// HasChart 不可用，尝试直接检查 Chart 属性
-											try
-											{
-												var chart = netShape.Chart;
-												isChart = (chart != null);
-											}
-											catch { }
-										}
-
-										if(isChart)
-										{
-											chartShapes.Add(netShape);
-											chartCount++;
-										}
-									}
-									catch(System.Exception ex3)
-									{
-										PPA.Core.Profiler.LogMessage($"处理形状 {i} 时出错: {ex3.Message}", "WARN");
-									}
-								}
-								PPA.Core.Profiler.LogMessage($"dynamic 访问完成，找到 {chartCount} 个图表", "INFO");
-							}
-							else
-							{
-								PPA.Core.Profiler.LogMessage("无法获取 Shapes 集合", "ERROR");
-							}
-						}
-						catch(System.Exception ex2)
-						{
-							PPA.Core.Profiler.LogMessage($"dynamic 访问也失败: {ex2.Message}", "ERROR");
-							PPA.Core.Profiler.LogMessage($"堆栈跟踪: {ex2.StackTrace}", "ERROR");
-						}
-					}
-					}
+					_logger.LogWarning("ValidateSelection 返回 null，没有选中对象");
+					Toast.Show(ResourceManager.GetString("Toast_FormatCharts_NoSelection"),Toast.ToastType.Warning);
+					return;
 				}
 
-				var totalCharts = chartShapes.Count;
-				PPA.Core.Profiler.LogMessage($"找到 {totalCharts} 个图表形状（selection={selection?.GetType().Name ?? "null"}）", "INFO");
-				if(totalCharts == 0)
+				UndoHelper.BeginUndoEntry(currentApp,UndoHelper.UndoNames.FormatCharts);
+
+				// 调试：记录选中对象的数量和类型
+				try
 				{
-					PPA.Core.Profiler.LogMessage("没有找到图表，直接返回", "INFO");
-					if(selection!=null)
+					if(selection is NETOP.ShapeRange shapeRange)
 					{
-						Toast.Show(ResourceManager.GetString("Toast_FormatCharts_NoSelection"),Toast.ToastType.Info);
-					}
-					else
+						int count = ExHandler.SafeGet(() => shapeRange.Count, defaultValue: 0);
+						_logger.LogInformation($"选中对象类型=ShapeRange, 数量={count}");
+					} else if(selection is NETOP.Shape shape)
 					{
-						Toast.Show(ResourceManager.GetString("Toast_FormatCharts_NoCharts"),Toast.ToastType.Info);
+						_logger.LogInformation("选中对象类型=Shape, 数量=1");
+					} else
+					{
+						_logger.LogInformation($"选中对象类型={selection?.GetType().Name??"null"}");
 					}
-					return; // 没有图表，直接返回
-				}
-				foreach(var shape in chartShapes)
+				} catch(Exception ex)
 				{
-					PPA.Core.Profiler.LogMessage($"处理图表形状: {shape.Name}", "INFO");
-					var iShape = AdapterUtils.WrapShape(netApp,shape);
-					PPA.Core.Profiler.LogMessage($"WrapShape 返回: {iShape?.GetType().Name ?? "null"}", "INFO");
-					if(iShape != null)
-					{
-						chartFormatHelper.FormatChartText(iShape);
-					}
-					else
-					{
-						PPA.Core.Profiler.LogMessage("WrapShape 返回 null，无法格式化", "ERROR");
-					}
+					_logger.LogWarning($"获取选中对象信息失败: {ex.Message}");
 				}
 
-
-				if(totalCharts>0)
-				{
-					Toast.Show(ResourceManager.GetString("Toast_FormatCharts_Success",totalCharts),Toast.ToastType.Success);
-				}
-				else
-				{
-					var message = selection!=null
-						? ResourceManager.GetString("Toast_FormatCharts_NoSelection")
-						: ResourceManager.GetString("Toast_FormatCharts_NoCharts");
-					Toast.Show(message,Toast.ToastType.Info);
-				}
-			});
+				// 直接处理选中的图表形状，避免 COM 对象生命周期问题（与美化文本保持一致）
+				ProcessChartsFromSelection(selection,currentApp,chartFormatHelper);
+			},enableTiming: true);
 		}
 
+		/// <summary>
+		/// 检查形状是否是图表
+		/// </summary>
+		private bool IsChartShape(NETOP.Shape shape)
+		{
+			if(shape==null) return false;
 
-		#endregion
+			bool hasChart = ExHandler.SafeGet(() => shape.HasChart == MsoTriState.msoTrue, defaultValue: false);
+			if(hasChart) return true;
 
-		// 适配包装逻辑已提取到 Core/Adapters/AdapterUtils.cs
+			var chart = ExHandler.SafeGet(() => shape.Chart, defaultValue: (NETOP.Chart)null);
+			return chart!=null;
+		}
+
+		/// <summary>
+		/// 从选区处理图表形状（与美化文本的处理方式保持一致，避免 COM 对象生命周期问题）
+		/// </summary>
+		private void ProcessChartsFromSelection(object selection,NETOP.Application netApp,IChartFormatHelper chartFormatHelper)
+		{
+			var shapeSelection = ShapeSelectionFactory.Create(selection);
+			if(shapeSelection==null)
+			{
+				Toast.Show(ResourceManager.GetString("Toast_FormatCharts_NoSelection"),Toast.ToastType.Warning);
+				return;
+			}
+
+			int count = 0;
+			foreach(var shape in shapeSelection)
+			{
+				if(IsChartShape(shape))
+				{
+					chartFormatHelper.FormatChartText(shape);
+					count++;
+				}
+			}
+
+			if(count>0)
+			{
+				Toast.Show(ResourceManager.GetString("Toast_FormatCharts_Success",count),Toast.ToastType.Success);
+			} else
+			{
+				Toast.Show(ResourceManager.GetString("Toast_FormatCharts_NoSelection"),Toast.ToastType.Warning);
+			}
+		}
+
+		private bool TryRefreshContext(ref NETOP.Application netApp,out IApplication abstractApp)
+		{
+			netApp=ApplicationHelper.EnsureValidNetApplication(netApp);
+			if(netApp==null)
+			{
+				abstractApp=null;
+				return false;
+			}
+
+			abstractApp=ApplicationHelper.GetAbstractApplication(netApp);
+			if(abstractApp==null)
+			{
+				_logger.LogWarning("无法获取抽象 Application");
+				return false;
+			}
+			return true;
+		}
+
+		private dynamic GetSelectionWithRetry(ref NETOP.Application netApp,ref IApplication abstractApp)
+		{
+			var selection = _shapeHelper.ValidateSelection(abstractApp, showWarningWhenInvalid: false);
+			if(selection!=null)
+			{
+				return selection;
+			}
+
+			_logger.LogWarning("返回 null，尝试刷新 Application 后重试");
+			if(!TryRefreshContext(ref netApp,out abstractApp))
+			{
+				return null;
+			}
+
+			return _shapeHelper.ValidateSelection(abstractApp,showWarningWhenInvalid: false);
+		}
+
+		#endregion 内部实现
 	}
 }
-

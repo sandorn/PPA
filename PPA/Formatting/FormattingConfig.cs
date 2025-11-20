@@ -1,6 +1,6 @@
-using System.Drawing;
 using NetOffice.OfficeApi.Enums;
-using PPA.Core;
+using PPA.Core.Abstraction.Infrastructure;
+using PPA.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,8 +17,10 @@ namespace PPA.Formatting
 	/// PPA 配置类 用于管理表格、文本、图表的格式化样式配置和快捷键配置
 	/// </summary>
 	[XmlRoot("PPAConfig")]
-	public class FormattingConfig : PPA.Core.Abstraction.Business.IFormattingConfig
+	public class FormattingConfig:PPA.Core.Abstraction.Business.IFormattingConfig
 	{
+		private static ILogger Logger => LoggerProvider.GetLogger();
+
 		#region Singleton
 
 		private static FormattingConfig _instance;
@@ -42,7 +44,6 @@ namespace PPA.Formatting
 				return _instance;
 			}
 		}
-
 
 		/// <summary>
 		/// 获取配置文件路径
@@ -71,7 +72,7 @@ namespace PPA.Formatting
 						Directory.CreateDirectory(ppaConfigDir);
 					} catch(Exception ex)
 					{
-						Profiler.LogMessage($"创建配置目录失败: {ex.Message}，使用用户目录");
+						Logger.LogWarning($"创建配置目录失败: {ex.Message}，使用用户目录");
 						ppaConfigDir=appDataDir;
 					}
 				}
@@ -101,7 +102,7 @@ namespace PPA.Formatting
 				}
 			} catch(Exception ex)
 			{
-				Profiler.LogMessage($"加载配置文件失败: {ex.Message}，使用默认配置");
+				Logger.LogError($"加载配置文件失败: {ex.Message}，使用默认配置",ex);
 			}
 
 			// 如果加载失败或文件不存在，返回默认配置
@@ -122,11 +123,11 @@ namespace PPA.Formatting
 				var serializer = new XmlSerializer(typeof(FormattingConfig));
 				using var reader = new StreamReader(filePath, Encoding.UTF8);
 				var config = (FormattingConfig)serializer.Deserialize(reader);
-				Profiler.LogMessage($"已加载配置文件: {filePath}");
+				Logger.LogInformation($"已加载配置文件: {filePath}");
 				return config;
 			} catch(Exception ex)
 			{
-				Profiler.LogMessage($"从文件加载配置失败: {ex.Message}");
+				Logger.LogError($"从文件加载配置失败: {ex.Message}",ex);
 				return null;
 			}
 		}
@@ -167,10 +168,10 @@ namespace PPA.Formatting
 				// 写入文件
 				File.WriteAllText(configPath,xmlContent,Encoding.UTF8);
 
-				Profiler.LogMessage($"配置文件已保存: {configPath}");
+				Logger.LogInformation($"配置文件已保存: {configPath}");
 			} catch(Exception ex)
 			{
-				Profiler.LogMessage($"保存配置文件失败: {ex.Message}");
+				Logger.LogError($"保存配置文件失败: {ex.Message}",ex);
 			}
 		}
 
@@ -265,7 +266,6 @@ namespace PPA.Formatting
 		}
 
 		#endregion Singleton
-
 
 		#region Table Formatting Configuration
 
@@ -384,10 +384,10 @@ namespace PPA.Formatting
 		public int DecimalPlaces { get; set; } = 0;
 
 		/// <summary>
-		/// 负数文本颜色（RGB 值）
+		/// 负数文本颜色（OLE RGB 值，255 表示红色）
 		/// </summary>
 		[XmlAttribute("NegativeTextColor")]
-		public int NegativeTextColor { get; set; } = -65536; // 红色
+		public int NegativeTextColor { get; set; } = 255; // 红色 (BGR)
 
 		/// <summary>
 		/// 表格全局设置
@@ -666,34 +666,6 @@ namespace PPA.Formatting
 				"followedhyperlink" => MsoThemeColorIndex.msoThemeColorFollowedHyperlink,
 				_ => MsoThemeColorIndex.msoThemeColorDark1
 			};
-		}
-
-		/// <summary>
-		/// 将主题颜色名称转换为 RGB 颜色（0xRRGGBB）
-		/// </summary>
-		public static int GetThemeColorRgb(string themeColorName)
-		{
-			if(string.IsNullOrEmpty(themeColorName))
-				return ColorTranslator.ToOle(Color.Black);
-
-			Color color = themeColorName.ToLower() switch
-			{
-				"dark1" => Color.Black,
-				"dark2" => ColorTranslator.FromHtml("#1F4E79"),
-				"light1" => Color.White,
-				"light2" => ColorTranslator.FromHtml("#F2F2F2"),
-				"accent1" => ColorTranslator.FromHtml("#4472C4"),
-				"accent2" => ColorTranslator.FromHtml("#ED7D31"),
-				"accent3" => ColorTranslator.FromHtml("#A5A5A5"),
-				"accent4" => ColorTranslator.FromHtml("#FFC000"),
-				"accent5" => ColorTranslator.FromHtml("#5B9BD5"),
-				"accent6" => ColorTranslator.FromHtml("#70AD47"),
-				"hyperlink" => ColorTranslator.FromHtml("#0563C1"),
-				"followedhyperlink" => ColorTranslator.FromHtml("#954F72"),
-				_ => Color.Black
-			};
-
-			return ColorTranslator.ToOle(color);
 		}
 
 		/// <summary>

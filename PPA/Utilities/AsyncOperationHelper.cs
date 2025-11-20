@@ -1,4 +1,6 @@
 using PPA.Core;
+using PPA.Core.Abstraction.Infrastructure;
+using PPA.Core.Logging;
 using System;
 using System.Diagnostics;
 using System.Threading;
@@ -12,6 +14,8 @@ namespace PPA.Utilities
 	/// </summary>
 	public static class AsyncOperationHelper
 	{
+		private static readonly ILogger _logger = LoggerProvider.GetLogger();
+
 		/// <summary>
 		/// 获取 UI 线程的 SynchronizationContext
 		/// </summary>
@@ -33,11 +37,11 @@ namespace PPA.Utilities
 					{
 						context=new WindowsFormsSynchronizationContext();
 						SynchronizationContext.SetSynchronizationContext(context);
-						Profiler.LogMessage("[AsyncOperationHelper] 创建新的 SynchronizationContext");
+						_logger.LogInformation("创建新的 SynchronizationContext");
 					}
 				} catch(Exception ex)
 				{
-					Profiler.LogMessage($"[AsyncOperationHelper] 获取 SynchronizationContext 失败: {ex.Message}");
+					_logger.LogWarning($"获取 SynchronizationContext 失败: {ex.Message}");
 					// 如果创建失败，使用默认的上下文
 					context=new WindowsFormsSynchronizationContext();
 				}
@@ -196,21 +200,20 @@ namespace PPA.Utilities
 			{
 				await operation();
 				sw.Stop();
-				Profiler.LogMessage(
+				_logger.LogInformation(
 					message: $"执行耗时: {sw.Elapsed.TotalMilliseconds:F3} ms",
-					logLevel: "性能监控",
 					callerMethod: opName,
-					filePath: string.Empty);
+					callerFile: string.Empty);
 			} catch(OperationCanceledException)
 			{
 				sw.Stop();
 				// 用户取消，静默处理
-				Profiler.LogMessage($"{opName}已取消 ({sw.Elapsed.TotalMilliseconds:F0}ms)","INFO");
+				_logger.LogInformation($"{opName}已取消 ({sw.Elapsed.TotalMilliseconds:F0}ms)");
 			} catch(Exception ex)
 			{
 				sw.Stop();
 				// 异常时记录详细信息并交由 ExHandler 处理
-				Profiler.LogMessage($"{opName}失败 ({sw.Elapsed.TotalMilliseconds:F0}ms): {ex.GetType().Name}","ERROR");
+				_logger.LogError($"{opName}失败 ({sw.Elapsed.TotalMilliseconds:F0}ms): {ex.GetType().Name}");
 				ExHandler.Run(() => throw ex,$"{opName}执行失败");
 			}
 		}
@@ -288,8 +291,6 @@ namespace PPA.Utilities
 
 						Toast.Show(message,Toast.ToastType.Info,duration: 1000);
 					}
-					// 记录详细进度
-					Profiler.LogMessage($"[进度] {_operationName} - {value}");
 				}
 			}
 		}

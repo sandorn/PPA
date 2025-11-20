@@ -1,10 +1,12 @@
 using NetOffice.OfficeApi.Enums;
 using PPA.Core;
 using PPA.Core.Abstraction.Business;
+using PPA.Core.Abstraction.Infrastructure;
 using PPA.Core.Abstraction.Presentation;
 using PPA.Core.Adapters;
-using PPA.Shape;
+using PPA.Core.Logging;
 using PPA.Utilities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using NETOP = NetOffice.PowerPointApi;
@@ -14,8 +16,17 @@ namespace PPA.Formatting
 	/// <summary>
 	/// 形状批量操作辅助类
 	/// </summary>
-	public static class ShapeBatchHelper
+	internal class ShapeBatchHelper:IShapeBatchHelper
 	{
+		private readonly IShapeHelper _shapeHelper;
+		private readonly ILogger _logger;
+
+		public ShapeBatchHelper(IShapeHelper shapeHelper,ILogger logger = null)
+		{
+			_shapeHelper=shapeHelper??throw new ArgumentNullException(nameof(shapeHelper));
+			_logger=logger??LoggerProvider.GetLogger();
+		}
+
 		/// <summary>
 		/// 根据选中对象创建矩形外框：
 		/// 1. 选中形状时：为每个形状创建包围框并考虑边框宽度
@@ -23,25 +34,36 @@ namespace PPA.Formatting
 		/// 3. 无选中时：在当前幻灯片创建页面大小的矩形
 		/// </summary>
 		/// <param name="app"> PowerPoint 应用程序实例 </param>
-		public static void Bt601_Click(NETOP.Application app)
+		public void CreateBoundingBox(NETOP.Application app)
 		{
-			UndoHelper.BeginUndoEntry(app,UndoHelper.UndoNames.CreateBoundingBox);
+			var netApp = app;
 
 			ExHandler.Run(() =>
 			{
-				var shapeHelper = ResolveShapeHelper();
-				var abstractApp = ApplicationHelper.GetAbstractApplication(app);
-				var sel = shapeHelper.ValidateSelection(abstractApp) as dynamic;
-				var currentSlide = shapeHelper.TryGetCurrentSlide(abstractApp);
+				if(!TryRefreshContext(ref netApp,out var abstractApp))
+				{
+					Toast.Show(ResourceManager.GetString("Toast_NoSlide"),Toast.ToastType.Warning);
+					return;
+				}
 
+				var sel = GetSelectionWithRetry(ref netApp, ref abstractApp);
+				if(sel==null)
+				{
+					Toast.Show(ResourceManager.GetString("Toast_NoValidSelection"),Toast.ToastType.Warning);
+					return;
+				}
+
+				var currentSlide = GetSlideWithRetry(ref netApp, ref abstractApp);
 				if(currentSlide==null)
 				{
 					Toast.Show(ResourceManager.GetString("Toast_NoSlide"),Toast.ToastType.Warning);
 					return;
 				}
 
+				UndoHelper.BeginUndoEntry(netApp,UndoHelper.UndoNames.CreateBoundingBox);
+
 				// 获取幻灯片尺寸
-				var pageSetup = app.ActivePresentation?.PageSetup;
+				var pageSetup = netApp.ActivePresentation?.PageSetup;
 				float slideWidth = pageSetup?.SlideWidth ?? 0;
 				float slideHeight = pageSetup?.SlideHeight ?? 0;
 
@@ -51,7 +73,7 @@ namespace PPA.Formatting
 					return;
 				}
 
-				List<NETOP.Shape> createdShapes = [];
+				List<NETOP.Shape> createdShapes = new List<NETOP.Shape>();
 				string successMessage = "";
 
 				// 1. 处理选中形状
@@ -61,8 +83,8 @@ namespace PPA.Formatting
 					if(sel is NETOP.Shape shape)
 					{
 						// 需要将 NETOP.Shape 转换为 IShape
-						var abstractShape = AdapterUtils.WrapShape(app, shape);
-						var (top, left, bottom, right) = shapeHelper.GetShapeBorderWeights(abstractShape);
+						var abstractShape = AdapterUtils.WrapShape(netApp, shape);
+						var (top, left, bottom, right)=_shapeHelper.GetShapeBorderWeights(abstractShape);
 
 						// 计算矩形参数
 						float rectLeft = shape.Left - left;
@@ -72,9 +94,9 @@ namespace PPA.Formatting
 
 						// 创建矩形
 						var abstractSlide = currentSlide as IComWrapper<NETOP.Slide>;
-						if(abstractSlide != null)
+						if(abstractSlide!=null)
 						{
-							var rect = shapeHelper.AddOneShape(currentSlide, rectLeft, rectTop, rectWidth, rectHeight, shape.Rotation);
+							var rect = _shapeHelper.AddOneShape(currentSlide, rectLeft, rectTop, rectWidth, rectHeight, shape.Rotation);
 							if(rect is IComWrapper<NETOP.Shape> rectWrapper)
 							{
 								createdShapes.Add(rectWrapper.NativeObject);
@@ -90,8 +112,8 @@ namespace PPA.Formatting
 							{
 								var currentShape = shapes[i];
 								// 需要将 NETOP.Shape 转换为 IShape
-								var abstractShape = AdapterUtils.WrapShape(app, currentShape);
-								var (top, left, bottom, right) = shapeHelper.GetShapeBorderWeights(abstractShape);
+								var abstractShape = AdapterUtils.WrapShape(netApp, currentShape);
+								var (top, left, bottom, right)=_shapeHelper.GetShapeBorderWeights(abstractShape);
 
 								// 计算矩形参数
 								float rectLeft = currentShape.Left - left;
@@ -100,7 +122,7 @@ namespace PPA.Formatting
 								float rectHeight = currentShape.Height + (top + bottom);
 
 								// 创建矩形
-								var rect = shapeHelper.AddOneShape(currentSlide, rectLeft, rectTop, rectWidth, rectHeight, currentShape.Rotation);
+								var rect = _shapeHelper.AddOneShape(currentSlide, rectLeft, rectTop, rectWidth, rectHeight, currentShape.Rotation);
 								if(rect is IComWrapper<NETOP.Shape> rectWrapper)
 								{
 									createdShapes.Add(rectWrapper.NativeObject);
@@ -109,23 +131,23 @@ namespace PPA.Formatting
 						}
 					}
 
-				if(createdShapes.Count>0)
-				{
-					var abstractSlide = currentSlide as IComWrapper<NETOP.Slide>;
-					if(abstractSlide != null)
+					if(createdShapes.Count>0)
 					{
-						var nativeSlide = abstractSlide.NativeObject;
-						var shapeNames = createdShapes.Select(s => s.Name).ToArray();
-						nativeSlide.Shapes.Range(shapeNames).Select();
+						var abstractSlide = currentSlide as IComWrapper<NETOP.Slide>;
+						if(abstractSlide!=null)
+						{
+							var nativeSlide = abstractSlide.NativeObject;
+							var shapeNames = createdShapes.Select(s => s.Name).ToArray();
+							nativeSlide.Shapes.Range(shapeNames).Select();
+						}
+						successMessage=string.Format(ResourceManager.GetString("Toast_CreateBoundingBox_Shapes"),createdShapes.Count);
 					}
-					successMessage=ResourceManager.GetString("Toast_CreateBoundingBox_Shapes",createdShapes.Count);
-				}
 				}
 				// 2. 处理选中幻灯片 和 无选中
 				else
 				{
 					// 创建要处理的幻灯片列表
-					List<NETOP.Slide> slidesToProcess = [];
+					List<NETOP.Slide> slidesToProcess = new List<NETOP.Slide>();
 					// 检查是否选中了幻灯片
 					var window = app.ActiveWindow;
 					if(window!=null&&window.Selection?.Type==NETOP.Enums.PpSelectionType.ppSelectionSlides)
@@ -138,13 +160,13 @@ namespace PPA.Formatting
 							{
 								slidesToProcess.Add(slideRange[i]);
 							}
-							successMessage=ResourceManager.GetString("Toast_CreateBoundingBox_Slides",slideRange.Count);
+							successMessage=string.Format(ResourceManager.GetString("Toast_CreateBoundingBox_Slides"),slideRange.Count);
 						}
 					} else
 					{
 						// 无选中的情况 - 需要从 ISlide 转换为 NETOP.Slide
 						var abstractSlide = currentSlide as IComWrapper<NETOP.Slide>;
-						if(abstractSlide != null)
+						if(abstractSlide!=null)
 						{
 							slidesToProcess.Add(abstractSlide.NativeObject);
 						}
@@ -158,8 +180,8 @@ namespace PPA.Formatting
 						{
 							var slide = slidesToProcess[i];
 							// 将 NETOP.Slide 转换为 ISlide
-							var abstractSlide = AdapterUtils.WrapSlide(app, slide);
-							var rect = shapeHelper.AddOneShape(abstractSlide, 0, 0, slideWidth, slideHeight);
+							var abstractSlide = AdapterUtils.WrapSlide(netApp, slide);
+							var rect = _shapeHelper.AddOneShape(abstractSlide, 0, 0, slideWidth, slideHeight);
 
 							if(rect is IComWrapper<NETOP.Shape> rectWrapper)
 							{
@@ -186,106 +208,72 @@ namespace PPA.Formatting
 		/// <summary>
 		/// 隐藏/显示对象：选中对象时隐藏选中对象，无选中对象时显示所有对象。
 		/// </summary>
-		/// <param name="app"> PowerPoint 应用程序实例。 </param>
-		public static void ToggleShapeVisibility(NETOP.Application app)
+		/// <param name="netApp"> PowerPoint 应用程序实例。 </param>
+		public void ToggleShapeVisibility(NETOP.Application netApp)
 		{
+			var currentApp = netApp;
+
 			ExHandler.Run(() =>
 			{
-				var shapeHelper = ResolveShapeHelper();
-				var abstractApp = ApplicationHelper.GetAbstractApplication(app);
-				var slide = shapeHelper.TryGetCurrentSlide(abstractApp);
+				if(!TryRefreshContext(ref currentApp,out var abstractApp))
+				{
+					Toast.Show(ResourceManager.GetString("Toast_NoSlide"),Toast.ToastType.Warning);
+					return;
+				}
+
+				var slide = GetSlideWithRetry(ref currentApp, ref abstractApp);
 				if(slide==null)
 				{
 					Toast.Show(ResourceManager.GetString("Toast_NoSlide"),Toast.ToastType.Warning);
 					return;
 				}
 
-				var sel = shapeHelper.ValidateSelection(abstractApp) as dynamic;
+				var selectionObj = GetSelectionWithRetry(ref currentApp, ref abstractApp);
+				dynamic sel = selectionObj;
 				if(sel!=null)
 				{
-					// --- 场景1: 隐藏选中的对象 ---
-					if(sel is NETOP.Shape shape)
+					var shapesToHide = (sel switch
 					{
-						// 单个形状的情况，创建临时ShapeRange
-						List<NETOP.Shape> shapeList = [shape];
-						UndoHelper.BeginUndoEntry(app,UndoHelper.UndoNames.HideShapes);
-						try
+						NETOP.ShapeRange range => range.Cast<NETOP.Shape>(),
+						NETOP.Shape shape => new[] { shape },
+						_ => Enumerable.Empty<NETOP.Shape>()
+					}).ToList();
+
+					if(shapesToHide.Count==0)
+						return;
+
+					UndoHelper.BeginUndoEntry(currentApp,UndoHelper.UndoNames.HideShapes);
+
+					try
+					{
+						foreach(var shape in shapesToHide)
 						{
 							shape.Visible=MsoTriState.msoFalse;
-							Toast.Show(ResourceManager.GetString("Toast_HideShapes_Single"),Toast.ToastType.Success);
-						} finally
-						{
-							shapeList.DisposeAll();
 						}
-					} else if(sel is NETOP.ShapeRange shapeRange)
+
+						var message = shapesToHide.Count == 1
+							? ResourceManager.GetString("Toast_HideShapes_Single")
+							: string.Format(ResourceManager.GetString("Toast_HideShapes_Multiple"), shapesToHide.Count);
+						Toast.Show(message,Toast.ToastType.Success);
+					} finally
 					{
-						// 多个形状的情况
-						HideSelectedShapes(app,shapeRange);
+						shapesToHide.DisposeAll();
 					}
-				} else
+				} else if(slide is IComWrapper<NETOP.Slide> { NativeObject: var nativeSlide })
 				{
-					// --- 场景2: 显示所有对象 ---
-					var abstractSlide = slide as IComWrapper<NETOP.Slide>;
-					if(abstractSlide != null)
-					{
-						ShowAllHiddenShapes(app, abstractSlide.NativeObject.Shapes);
-					}
+					ShowAllHiddenShapes(currentApp,nativeSlide.Shapes);
 				}
 			});
 		}
 
 		/// <summary>
-		/// 解析 IShapeHelper 服务
-		/// </summary>
-		private static IShapeHelper ResolveShapeHelper()
-		{
-			var addIn = Globals.ThisAddIn;
-			var serviceProvider = addIn?.ServiceProvider;
-			if(serviceProvider != null)
-			{
-				var helper = serviceProvider.GetService(typeof(IShapeHelper)) as IShapeHelper;
-				if(helper != null) return helper;
-			}
-			// 如果无法从 DI 获取，创建新实例
-			return new ShapeUtils();
-		}
-
-		/// <summary>
-		/// 隐藏指定形状范围内的所有形状。
-		/// </summary>
-		/// <param name="app"> PowerPoint 应用程序实例 </param>
-		/// <param name="shapeRange"> 要隐藏的形状范围。 </param>
-		private static void HideSelectedShapes(NETOP.Application app,NETOP.ShapeRange shapeRange)
-		{
-			// 使用目标类型 new() 和集合表达式 [] (C# 9.0+ & C# 12.0)
-			List<NETOP.Shape> shapesToHide = new(shapeRange.Count);
-			for(int i = 1;i<=shapeRange.Count;i++)
-			{
-				shapesToHide.Add(shapeRange[i]);
-			}
-
-			UndoHelper.BeginUndoEntry(app,UndoHelper.UndoNames.HideShapes);
-			try
-			{
-				foreach(var shape in shapesToHide)
-				{
-					shape.Visible=MsoTriState.msoFalse;
-				}
-				Toast.Show(ResourceManager.GetString("Toast_HideShapes_Multiple",shapesToHide.Count),Toast.ToastType.Success);
-			} finally
-			{
-				shapesToHide.DisposeAll();
-			}
-		}
-
-		/// <summary>
 		/// 显示幻灯片上所有被隐藏的形状。
 		/// </summary>
-		/// <param name="app"> PowerPoint 应用程序实例 </param>
+		/// <param name="netApp"> PowerPoint 应用程序实例 </param>
 		/// <param name="shapes"> 幻灯片的形状集合。 </param>
-		private static void ShowAllHiddenShapes(NETOP.Application app,NETOP.Shapes shapes)
+		private void ShowAllHiddenShapes(NETOP.Application netApp,NETOP.Shapes shapes)
 		{
-			List<NETOP.Shape> shapesToShow = [];
+			List<NETOP.Shape> shapesToShow = new List<NETOP.Shape>();
 
 			// 1. 找出所有需要显示的对象
 			for(int i = 1;i<=shapes.Count;i++)
@@ -300,14 +288,14 @@ namespace PPA.Formatting
 			// 2. 根据列表内容执行操作和反馈
 			if(shapesToShow.Count>0)
 			{
-				UndoHelper.BeginUndoEntry(app,UndoHelper.UndoNames.ShowShapes);
+				UndoHelper.BeginUndoEntry(netApp,UndoHelper.UndoNames.ShowShapes);
 				try
 				{
 					foreach(var shape in shapesToShow)
 					{
 						shape.Visible=MsoTriState.msoTrue;
 					}
-					Toast.Show(ResourceManager.GetString("Toast_ShowShapes_Multiple",shapesToShow.Count),Toast.ToastType.Success);
+					Toast.Show(string.Format(ResourceManager.GetString("Toast_ShowShapes_Multiple"),shapesToShow.Count),Toast.ToastType.Success);
 				} finally
 				{
 					shapesToShow.DisposeAll();
@@ -316,6 +304,59 @@ namespace PPA.Formatting
 			{
 				Toast.Show(ResourceManager.GetString("Toast_ShowShapes_None"),Toast.ToastType.Info);
 			}
+		}
+
+		private bool TryRefreshContext(ref NETOP.Application netApp,out IApplication abstractApp)
+		{
+			netApp=ApplicationHelper.EnsureValidNetApplication(netApp);
+			if(netApp==null)
+			{
+				abstractApp=null;
+				return false;
+			}
+
+			abstractApp=ApplicationHelper.GetAbstractApplication(netApp);
+			if(abstractApp==null)
+			{
+				_logger.LogWarning("无法获取抽象 Application");
+				return false;
+			}
+
+			return true;
+		}
+
+		private dynamic GetSelectionWithRetry(ref NETOP.Application netApp,ref IApplication abstractApp)
+		{
+			var selection = _shapeHelper.ValidateSelection(abstractApp, showWarningWhenInvalid: false);
+			if(selection!=null)
+			{
+				return selection;
+			}
+
+			_logger.LogWarning("返回 null，尝试刷新 Application 后重试");
+			if(!TryRefreshContext(ref netApp,out abstractApp))
+			{
+				return null;
+			}
+
+			return _shapeHelper.ValidateSelection(abstractApp,showWarningWhenInvalid: false);
+		}
+
+		private ISlide GetSlideWithRetry(ref NETOP.Application netApp,ref IApplication abstractApp)
+		{
+			var slide = _shapeHelper.TryGetCurrentSlide(abstractApp);
+			if(slide!=null)
+			{
+				return slide;
+			}
+
+			_logger.LogWarning("返回 null，尝试刷新 Application 后重试");
+			if(!TryRefreshContext(ref netApp,out abstractApp))
+			{
+				return null;
+			}
+
+			return _shapeHelper.TryGetCurrentSlide(abstractApp);
 		}
 	}
 }

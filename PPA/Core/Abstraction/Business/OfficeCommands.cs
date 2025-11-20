@@ -1,10 +1,7 @@
-using System;
-
 namespace PPA.Core.Abstraction.Business
 {
 	/// <summary>
-	/// Office 常用命令常量
-	/// 提供常用的 MSO 命令名称和命令 ID
+	/// Office 常用命令常量 提供常用的 MSO 命令名称和命令 ID
 	/// </summary>
 	public static class OfficeCommands
 	{
@@ -30,7 +27,7 @@ namespace PPA.Core.Abstraction.Business
 		/// </summary>
 		public const string PasteSpecial = "PasteSpecial";
 
-		#endregion
+		#endregion 剪贴板命令
 
 		#region 格式命令
 
@@ -59,7 +56,7 @@ namespace PPA.Core.Abstraction.Business
 		/// </summary>
 		public const string FontSizeDecrease = "FontSizeDecrease";
 
-		#endregion
+		#endregion 格式命令
 
 		#region 幻灯片命令
 
@@ -88,7 +85,7 @@ namespace PPA.Core.Abstraction.Business
 		/// </summary>
 		public const string SlideShowFromCurrent = "SlideShowFromCurrent";
 
-		#endregion
+		#endregion 幻灯片命令
 
 		#region 文件命令
 
@@ -112,7 +109,7 @@ namespace PPA.Core.Abstraction.Business
 		/// </summary>
 		public const string FileNew = "FileNew";
 
-		#endregion
+		#endregion 文件命令
 
 		#region 编辑命令
 
@@ -141,7 +138,7 @@ namespace PPA.Core.Abstraction.Business
 		/// </summary>
 		public const string Replace = "Replace";
 
-		#endregion
+		#endregion 编辑命令
 
 		#region 形状对齐命令
 
@@ -195,7 +192,31 @@ namespace PPA.Core.Abstraction.Business
 		/// </summary>
 		public const string ObjectsAlignRelativeToContainerSmart = "ObjectsAlignRelativeToContainerSmart";
 
-		#endregion
+		#endregion 形状对齐命令
+
+		#region 形状布尔运算命令
+
+		/// <summary>
+		/// 形状相交（Intersect）
+		/// </summary>
+		public const string ShapesIntersect = "ShapesIntersect";
+
+		/// <summary>
+		/// 形状联合（Union）
+		/// </summary>
+		public const string ShapesUnion = "ShapesUnion";
+
+		/// <summary>
+		/// 形状组合（Combine）
+		/// </summary>
+		public const string ShapesCombine = "ShapesCombine";
+
+		/// <summary>
+		/// 形状剪除（Subtract）
+		/// </summary>
+		public const string ShapesSubtract = "ShapesSubtract";
+
+		#endregion 形状布尔运算命令
 
 		#region PowerPoint 特定命令 ID
 
@@ -204,17 +225,6 @@ namespace PPA.Core.Abstraction.Business
 		/// </summary>
 		public const int PpFileSaveAs = 748;
 
-		/// <summary>
-		/// 从开始放映命令 ID
-		/// </summary>
-		public const int PpSlideShowFromBeginning = 12629;
-
-		/// <summary>
-		/// 从当前幻灯片放映命令 ID
-		/// </summary>
-		public const int PpSlideShowFromCurrent = 11521;
-
-		#endregion
+		#endregion PowerPoint 特定命令 ID
 	}
 }
-

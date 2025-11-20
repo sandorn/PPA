@@ -1,8 +1,6 @@
+using PPA.Core.Abstraction.Presentation;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using NetOffice.OfficeApi.Enums;
-using PPA.Core.Abstraction.Presentation;
 using NETOP = NetOffice.PowerPointApi;
 
 namespace PPA.Core.Adapters.PowerPoint
@@ -10,7 +8,7 @@ namespace PPA.Core.Adapters.PowerPoint
 	/// <summary>
 	/// PowerPoint 应用程序适配器
 	/// </summary>
-	public sealed class PowerPointApplication : IApplication, IComWrapper<NETOP.Application>
+	public sealed class PowerPointApplication:IApplication, IComWrapper<NETOP.Application>
 	{
 		public NETOP.Application NativeObject { get; }
 		object IComWrapper.NativeObject => NativeObject;
@@ -19,7 +17,7 @@ namespace PPA.Core.Adapters.PowerPoint
 
 		public PowerPointApplication(NETOP.Application app)
 		{
-			NativeObject = app ?? throw new ArgumentNullException(nameof(app));
+			NativeObject=app??throw new ArgumentNullException(nameof(app));
 		}
 
 		public IPresentation GetActivePresentation()
@@ -27,7 +25,7 @@ namespace PPA.Core.Adapters.PowerPoint
 			try
 			{
 				var p = NativeObject?.ActivePresentation;
-				return p != null ? new PowerPointPresentation(this,p) : null;
+				return p!=null ? new PowerPointPresentation(this,p) : null;
 			} catch
 			{
 				return null;
@@ -40,7 +38,7 @@ namespace PPA.Core.Adapters.PowerPoint
 			{
 				var view = NativeObject?.ActiveWindow?.View;
 				var slide = view?.Slide as NETOP.Slide;
-				return slide != null ? new PowerPointSlide(this, GetActivePresentationInternal(slide), slide) : null;
+				return slide!=null ? new PowerPointSlide(this,GetActivePresentationInternal(slide),slide) : null;
 			} catch
 			{
 				return null;
@@ -52,32 +50,32 @@ namespace PPA.Core.Adapters.PowerPoint
 			try
 			{
 				var selection = NativeObject?.ActiveWindow?.Selection;
-				if(selection == null) return Array.Empty<IShape>();
+				if(selection==null) return Array.Empty<IShape>();
 
 				// 选中单个形状
-				if(selection.Type == NETOP.Enums.PpSelectionType.ppSelectionShapes)
+				if(selection.Type==NETOP.Enums.PpSelectionType.ppSelectionShapes)
 				{
 					var range = selection.ShapeRange;
-					if(range == null) return Array.Empty<IShape>();
+					if(range==null) return Array.Empty<IShape>();
 					var presentation = GetActivePresentation();
 					var slide = GetActiveSlide();
 					var list = new List<IShape>();
 					foreach(NETOP.Shape s in range)
 					{
-						list.Add(new PowerPointShape(this, presentation, slide, s));
+						list.Add(new PowerPointShape(this,presentation,slide,s));
 					}
 					return list;
 				}
 
 				// 选中文本
-				if(selection.Type == NETOP.Enums.PpSelectionType.ppSelectionText)
+				if(selection.Type==NETOP.Enums.PpSelectionType.ppSelectionText)
 				{
 					var shape = selection.TextRange?.Parent as NETOP.Shape;
-					if(shape != null)
+					if(shape!=null)
 					{
 						var presentation = GetActivePresentation();
 						var slide = GetActiveSlide();
-						return new[] { new PowerPointShape(this, presentation, slide, shape) };
+						return new[] { new PowerPointShape(this,presentation,slide,shape) };
 					}
 				}
 
@@ -112,5 +110,3 @@ namespace PPA.Core.Adapters.PowerPoint
 		}
 	}
 }
-
-

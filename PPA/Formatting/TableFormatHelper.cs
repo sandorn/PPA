@@ -1,29 +1,25 @@
-using System;
 using NetOffice.OfficeApi.Enums;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Globalization;
-using System.Linq;
-using Microsoft.Extensions.DependencyInjection;
-using PPA.Core;
 using PPA.Core.Abstraction.Business;
-using NETOP = NetOffice.PowerPointApi;
+using PPA.Core.Abstraction.Infrastructure;
 using PPA.Core.Abstraction.Presentation;
-using PPA.Core.Adapters.PowerPoint;
+using PPA.Core.Adapters;
+using PPA.Core.Logging;
+using System.Collections.Generic;
+using System.Globalization;
+using NETOP = NetOffice.PowerPointApi;
 
 namespace PPA.Formatting
 {
 	/// <summary>
 	/// 表格格式化辅助类 提供表格的高性能格式化功能
 	/// </summary>
-	/// <remarks>
-	/// 构造函数，通过依赖注入获取配置
-	/// </remarks>
-	/// <param name="config">格式化配置</param>
-	internal class TableFormatHelper(IFormattingConfig config): ITableFormatHelper
+	/// <remarks> 构造函数，通过依赖注入获取配置 </remarks>
+	/// <param name="config"> 格式化配置 </param>
+	/// <param name="logger"> 日志记录器（可选） </param>
+	internal class TableFormatHelper(IFormattingConfig config,ILogger logger = null):ITableFormatHelper
 	{
-		private static readonly int NegativeTextColor = ColorTranslator.ToOle(Color.Red);
-		private readonly IFormattingConfig _config = config ?? throw new System.ArgumentNullException(nameof(config));
+		private readonly IFormattingConfig _config = config??throw new System.ArgumentNullException(nameof(config));
+		private readonly ILogger _logger = logger??LoggerProvider.GetLogger();
 
 		/// <summary>
 		/// 对表格进行高性能格式化。
@@ -102,108 +98,23 @@ namespace PPA.Formatting
 		/// <param name="tbl"> 要格式化的抽象表格对象。 </param>
 		public void FormatTables(ITable tbl)
 		{
-			PPA.Core.Profiler.LogMessage($"FormatTables(ITable) 被调用，tbl={tbl?.GetType().Name ?? "null"}", "INFO");
+			_logger.LogInformation($"启动，tbl={tbl?.GetType().Name??"null"}");
 			if(tbl==null)
 			{
-				PPA.Core.Profiler.LogMessage("FormatTables: tbl 为 null，返回", "WARN");
+				_logger.LogWarning("tbl 为 null，返回");
 				return;
 			}
 
-			// 检查 PowerPoint 适配器
-			if(tbl is PowerPointTable pptTable)
+			// 使用 AdapterUtils 统一转换
+			var native = AdapterUtils.UnwrapTable(tbl);
+			if(native!=null)
 			{
-				PPA.Core.Profiler.LogMessage("FormatTables: 检测到 PowerPointTable，使用 PowerPoint 格式化", "INFO");
-				// PowerPointTable 包装了 NETOP.Table，需要获取它
-				var native = (pptTable as IComWrapper)?.NativeObject as NETOP.Table;
-				if(native != null)
-				{
-					FormatTables(native);
-					return;
-				}
-			}
-
-			// 尝试从抽象表格中获取底层 NetOffice 对象
-			var nativeTable = (tbl as IComWrapper)?.NativeObject as NETOP.Table;
-			if(nativeTable!=null)
-			{
-				PPA.Core.Profiler.LogMessage("FormatTables: 检测到 NetOffice.Table，使用 PowerPoint 格式化", "INFO");
-				FormatTables(nativeTable);
+				_logger.LogInformation("成功获取 NetOffice.Table，使用 PowerPoint 格式化");
+				FormatTables(native);
 				return;
 			}
 
-			// 兜底：尝试已知的强类型包装
-			if(tbl is IComWrapper<NETOP.Table> typed)
-			{
-				PPA.Core.Profiler.LogMessage("FormatTables: 检测到 IComWrapper<NETOP.Table>，使用 PowerPoint 格式化", "INFO");
-				FormatTables(typed.NativeObject);
-				return;
-			}
-
-			PPA.Core.Profiler.LogMessage($"FormatTables: 未知的表格类型 {tbl.GetType().FullName}，无法格式化", "ERROR");
-		}
-
-
-		private static T SafeGet<T>(System.Func<T> getter, T @default = default)
-		{
-			try { return getter(); } catch { return @default; }
-		}
-
-		private static int AdjustColorBrightness(int oleColor, double factor)
-		{
-			factor = Math.Max(-1.0, Math.Min(1.0, factor));
-
-			Color baseColor = ColorTranslator.FromOle(oleColor);
-			double r = baseColor.R;
-			double g = baseColor.G;
-			double b = baseColor.B;
-
-			if(factor >= 0)
-			{
-				r = r + ((255 - r) * factor);
-				g = g + ((255 - g) * factor);
-				b = b + ((255 - b) * factor);
-			}
-			else
-			{
-				double scale = 1 + factor;
-				r *= scale;
-				g *= scale;
-				b *= scale;
-			}
-
-			var adjusted = Color.FromArgb(
-				(int)Math.Round(Math.Max(0, Math.Min(255, r))),
-				(int)Math.Round(Math.Max(0, Math.Min(255, g))),
-				(int)Math.Round(Math.Max(0, Math.Min(255, b))));
-
-			return ColorTranslator.ToOle(adjusted);
-		}
-
-		private static bool TryFormatNumericValue(string text, TableFormattingConfig config, out string formatted, out bool isNegative)
-		{
-			formatted = text;
-			isNegative = false;
-
-			if(string.IsNullOrWhiteSpace(text))
-				return false;
-
-			string trimmed = text.Trim();
-
-			if(double.TryParse(trimmed, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.CurrentCulture, out double value) ||
-				double.TryParse(trimmed, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out value))
-			{
-				isNegative = value < 0;
-				string formatSpecifier = config.DecimalPlaces > 0 ? $"N{config.DecimalPlaces}" : "N0";
-				formatted = value.ToString(formatSpecifier, CultureInfo.CurrentCulture);
-				return true;
-			}
-
-			return false;
-		}
-
-		private static void SafeSet(System.Action action)
-		{
-			try { action(); } catch { }
+			_logger.LogError($"未知的表格类型 {tbl.GetType().FullName}，无法格式化");
 		}
 
 		/// <summary>
@@ -345,18 +256,17 @@ namespace PPA.Formatting
 			{
 				border.Weight=setWeight;
 				border.Visible=MsoTriState.msoTrue;
-				
+
 				// WPS 不支持 Transparency，需要安全设置
 				try
 				{
 					border.Transparency=transparency;
-				}
-				catch(System.Exception ex)
+				} catch(System.Exception ex)
 				{
 					// WPS 可能不支持 Transparency，忽略错误
-					PPA.Core.Profiler.LogMessage($"设置边框透明度失败（可能是不支持的属性）: {ex.Message}", "WARN");
+					_logger.LogError($"设置边框透明度失败（可能是不支持的属性）: {ex.Message}",ex);
 				}
-				
+
 				// 使用模式匹配简化颜色逻辑
 				if(tcolor is MsoThemeColorIndex themeColor) border.ForeColor.ObjectThemeColor=themeColor;
 				else if(tcolor is int rgbColor) border.ForeColor.RGB=rgbColor;

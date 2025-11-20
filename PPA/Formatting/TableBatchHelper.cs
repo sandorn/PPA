@@ -1,819 +1,311 @@
-using Microsoft.Extensions.DependencyInjection;
 using NetOffice.OfficeApi.Enums;
 using PPA.Core;
 using PPA.Core.Abstraction.Business;
-using PPA.Shape;
+using PPA.Core.Abstraction.Infrastructure;
+using PPA.Core.Abstraction.Presentation;
+using PPA.Core.Adapters;
+using PPA.Core.Logging;
+using PPA.Formatting.Selection;
 using PPA.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using PPA.Core.Abstraction.Presentation;
-using PPA.Core.Adapters;
 using NETOP = NetOffice.PowerPointApi;
 
 namespace PPA.Formatting
 {
 	/// <summary>
-	/// 表格批量操作辅助类
+	/// 表格批量操作辅助类 提供表格批量格式化功能，支持同步和异步操作
 	/// </summary>
-	internal class TableBatchHelper(ITableFormatHelper tableFormatHelper,IShapeHelper shapeHelper): ITableBatchHelper
+	internal class TableBatchHelper(ITableFormatHelper tableFormatHelper,IShapeHelper shapeHelper,ILogger logger = null):ITableBatchHelper
 	{
-		private readonly ITableFormatHelper _tableFormatHelper = tableFormatHelper ?? throw new ArgumentNullException(nameof(tableFormatHelper));
-		private readonly IShapeHelper _shapeHelper = shapeHelper ?? throw new ArgumentNullException(nameof(shapeHelper));
+		private readonly ITableFormatHelper _tableFormatHelper = tableFormatHelper??throw new ArgumentNullException(nameof(tableFormatHelper));
+		private readonly IShapeHelper _shapeHelper = shapeHelper??throw new ArgumentNullException(nameof(shapeHelper));
+		private readonly ILogger _logger = logger??LoggerProvider.GetLogger();
 
 		#region ITableBatchHelper 实现
 
+		/// <summary>
+		/// 格式化表格（同步方法）
+		/// </summary>
+		/// <param name="netApp"> PowerPoint 应用程序对象 </param>
 		public void FormatTables(NETOP.Application netApp)
 		{
 			if(netApp==null) throw new ArgumentNullException(nameof(netApp));
 			FormatTablesInternal(netApp,_tableFormatHelper);
 		}
 
-		public Task FormatTablesAsync(
-			NETOP.Application netApp,
-			IProgress<AsyncProgress> progress = null,
-			CancellationToken cancellationToken = default)
-		{
-			if(netApp==null) throw new ArgumentNullException(nameof(netApp));
-			return FormatTablesInternalAsync(netApp,progress,cancellationToken,_tableFormatHelper);
-		}
-
-		#endregion
+		#endregion ITableBatchHelper 实现
 
 		#region 内部实现
 
+		/// <summary>
+		/// 格式化表格的内部实现（同步）
+		/// </summary>
 		private void FormatTablesInternal(NETOP.Application netApp,ITableFormatHelper tableFormatHelper)
 		{
-			Profiler.LogMessage($"FormatTablesInternal 开始，netApp类型={netApp?.GetType().Name ?? "null"}", "INFO");
+			_logger.LogInformation($"启动，netApp类型={netApp?.GetType().Name??"null"}");
 			if(tableFormatHelper==null)
 				throw new InvalidOperationException("无法获取 ITableFormatHelper 服务");
-
-			UndoHelper.BeginUndoEntry(netApp,UndoHelper.UndoNames.FormatTables);
-
-			var abstractApp = ApplicationHelper.GetAbstractApplication(netApp);
-			var slide = _shapeHelper.TryGetCurrentSlide(abstractApp);
-			Profiler.LogMessage($"TryGetCurrentSlide 返回: {slide?.GetType().Name ?? "null"}", "INFO");
 
 			ExHandler.Run(() =>
 			{
-				var sel = _shapeHelper.ValidateSelection(abstractApp) as dynamic;
-				Profiler.LogMessage($"ValidateSelection 返回: {sel?.GetType().Name ?? "null"}", "INFO");
-				int tableCount = 0;
-				var processedKeys = new List<object>();
-
-				bool AlreadyProcessed(object key)
-				{
-					if(key == null) return false;
-					foreach(var existing in processedKeys)
-					{
-						if(ReferenceEquals(existing, key))
-							return true;
-					}
-					processedKeys.Add(key);
-					return false;
-				}
-
-				bool ProcessAbstractShape(IShape abstractShape)
-				{
-					if(abstractShape == null) return false;
-
-					string shapeName = null;
-					try { shapeName = abstractShape.Name; } catch { }
-					Profiler.LogMessage($"处理抽象形状: {shapeName ?? "未知"}, HasTable={abstractShape.HasTable}", "INFO");
-
-					if(!abstractShape.HasTable)
-					{
-						Profiler.LogMessage($"抽象形状 {shapeName ?? "未知"} 不包含表格，跳过", "INFO");
-						return false;
-					}
-
-					var key = (abstractShape as IComWrapper)?.NativeObject ?? abstractShape;
-					if(AlreadyProcessed(key))
-					{
-						Profiler.LogMessage($"抽象形状 {shapeName ?? "未知"} 已处理，跳过", "INFO");
-						return false;
-					}
-
-					var table = abstractShape.GetTable();
-					if(table != null)
-					{
-						Profiler.LogMessage($"抽象形状 {shapeName ?? "未知"} 返回表格实例: {table.GetType().Name}", "INFO");
-						tableFormatHelper.FormatTables(table);
-						tableCount++;
-						return true;
-					}
-
-					Profiler.LogMessage($"抽象形状 {shapeName ?? "未知"} GetTable 返回 null", "WARN");
-					return false;
-				}
-
-
-				if(sel!=null)
-				{
-					// 有选中对象的情况，美化选中对象中的表格
-					if(sel is NETOP.Shape shape)
-					{
-						if(AlreadyProcessed(shape))
-						{
-							Profiler.LogMessage($"形状 {shape.Name} 已经处理，跳过", "INFO");
-						}
-						else
-						{
-						// 检查是否是表格：先尝试 HasTable，如果失败则直接检查 Table 属性
-						bool isTable = false;
-						dynamic dynTable = null;
-						try
-						{
-								Profiler.LogMessage($"选中单个形状，HasTable={shape.HasTable}", "INFO");
-							if(shape.HasTable == MsoTriState.msoTrue)
-							{
-								isTable = true;
-								dynTable = shape.Table;
-							}
-						}
-						catch
-						{
-								// HasTable 不可用，尝试直接检查 Table 属性
-								Profiler.LogMessage("HasTable 不可用，尝试直接检查 Table 属性", "INFO");
-							try
-							{
-								dynamic dynShape = shape;
-								dynTable = SafeGet(() => dynShape.Table, null);
-								isTable = (dynTable != null);
-									Profiler.LogMessage($"直接检查 Table 属性: isTable={isTable}", "INFO");
-							}
-							catch(System.Exception ex)
-							{
-									Profiler.LogMessage($"检查 Table 属性失败: {ex.Message}", "WARN");
-							}
-						}
-						
-						if(isTable && dynTable != null)
-						{
-								Profiler.LogMessage("开始包装表格", "INFO");
-							var iTable = AdapterUtils.WrapTable(netApp, shape, dynTable);
-								Profiler.LogMessage($"WrapTable 返回: {iTable?.GetType().Name ?? "null"}", "INFO");
-							if(iTable != null)
-							{
-								tableFormatHelper.FormatTables(iTable);
-								tableCount++;
-							}
-							else
-							{
-									Profiler.LogMessage("WrapTable 返回 null，无法格式化", "ERROR");
-							}
-						}
-						else
-						{
-								Profiler.LogMessage("形状不是表格或 Table 属性为 null", "INFO");
-						}
-						}
-					} else if(sel is NETOP.ShapeRange shapes)
-					{
-						Profiler.LogMessage($"选中多个形状，Count={shapes.Count}", "INFO");
-						try
-						{
-							foreach(NETOP.Shape s in shapes)
-							{
-								// 检查是否是表格：先尝试 HasTable，如果失败则直接检查 Table 属性
-								bool isTable = false;
-								dynamic dynTable = null;
-								try
-								{
-									if(s.HasTable == MsoTriState.msoTrue)
-									{
-										isTable = true;
-										dynTable = s.Table;
-									}
-								}
-								catch
-								{
-									// HasTable 不可用，尝试直接检查 Table 属性
-									try
-									{
-										dynamic dynShape = s;
-										dynTable = SafeGet(() => dynShape.Table, null);
-										isTable = (dynTable != null);
-									}
-									catch { }
-								}
-								
-								if(isTable && dynTable != null)
-								{
-									if(AlreadyProcessed(s))
-									{
-										Profiler.LogMessage($"形状 {s.Name} 已处理，跳过", "INFO");
-										continue;
-									}
-									Profiler.LogMessage($"处理形状 {s.Name}，检测到表格", "INFO");
-									var iTable = AdapterUtils.WrapTable(netApp, s, dynTable);
-									Profiler.LogMessage($"WrapTable 返回: {iTable?.GetType().Name ?? "null"}", "INFO");
-									if(iTable != null)
-									{
-										tableFormatHelper.FormatTables(iTable);
-										tableCount++;
-									}
-									else
-									{
-										Profiler.LogMessage("WrapTable 返回 null，无法格式化", "ERROR");
-									}
-								}
-							}
-						}
-						catch(System.Exception ex)
-						{
-							// NetOffice 无法枚举某些 ShapeRange，使用 dynamic 访问作为后备方案
-							Profiler.LogMessage($"NetOffice 枚举 ShapeRange 失败: {ex.Message}，尝试使用 dynamic 访问", "WARN");
-							try
-							{
-								dynamic dynShapeRange = shapes;
-								int rangeCount = SafeGet(() => (int)dynShapeRange.Count, 0);
-								Profiler.LogMessage($"使用 dynamic 访问 ShapeRange，Count={rangeCount}", "INFO");
-								for(int i = 1; i <= rangeCount; i++)
-								{
-										dynamic dynShape = SafeGet(() => dynShapeRange[i], null);
-										if(dynShape != null)
-										{
-											// 某些情况下 HasTable 可能不可用，直接检查 Table 属性
-											dynamic dynTable = null;
-											bool hasTable = false;
-											try
-											{
-												// 方式1：尝试通过 HasTable 属性
-												hasTable = SafeGet(() => (bool)(dynShape.HasTable ?? false), false);
-												if(hasTable)
-												{
-													dynTable = SafeGet(() => dynShape.Table, null);
-												}
-											}
-											catch { }
-											
-											// 方式2：如果方式1失败，直接检查 Table 属性
-											if(!hasTable || dynTable == null)
-											{
-												try
-												{
-													dynTable = SafeGet(() => dynShape.Table, null);
-													hasTable = (dynTable != null);
-												}
-												catch { }
-											}
-											
-											if(hasTable && dynTable != null)
-											{
-											if(AlreadyProcessed(dynShape))
-											{
-												Profiler.LogMessage($"dynamic 形状 {i} 已处理，跳过", "INFO");
-												continue;
-											}
-											Profiler.LogMessage($"发现表格形状 {i}", "INFO");
-												var iTable = AdapterUtils.WrapTable(netApp, dynShape, dynTable);
-												if(iTable != null)
-												{
-													tableFormatHelper.FormatTables(iTable);
-													tableCount++;
-												}
-											}
-										}
-								}
-							}
-							catch(System.Exception ex2)
-							{
-								Profiler.LogMessage($"dynamic 访问 ShapeRange 也失败: {ex2.Message}", "ERROR");
-							}
-						}
-					}
-
-					if(tableCount == 0)
-					{
-						if(sel is IShape abstractShapeSel)
-						{
-							ProcessAbstractShape(abstractShapeSel);
-						}
-						else if(sel is IEnumerable<IShape> abstractShapesSel)
-						{
-							foreach(var abstractShape in abstractShapesSel)
-							{
-								ProcessAbstractShape(abstractShape);
-							}
-						}
-					}
-
-
-					if(tableCount>0)
-					{
-						Toast.Show(ResourceManager.GetString("Toast_FormatTables_Success","成功美化 {0} 个表格",tableCount),Toast.ToastType.Success);
-						return; // 已处理选中对象，直接返回，不再处理未选中对象
-					}
-
-					Toast.Show(ResourceManager.GetString("Toast_FormatTables_NoSelection","选中的对象中没有表格"),Toast.ToastType.Info);
-					return; // 选中对象中没有表格，直接返回，不再处理未选中对象
-				} else
-				{
-					// 未选中对象的情况，美化当前幻灯片所有表格
-					if(slide!=null)
-					{
-						Profiler.LogMessage($"处理幻灯片所有形状，slide类型={slide.GetType().Name}", "INFO");
-						try
-						{
-							// 从 ISlide 获取底层的 NETOP.Slide 对象
-							NETOP.Slide nativeSlide = null;
-							if(slide is IComWrapper<NETOP.Slide> typedSlide)
-							{
-								nativeSlide = typedSlide.NativeObject;
-							}
-							else if(slide is IComWrapper wrapper)
-							{
-								nativeSlide = wrapper.NativeObject as NETOP.Slide;
-							}
-
-							if(nativeSlide == null)
-							{
-								Profiler.LogMessage("无法获取底层 NETOP.Slide 对象", "WARN");
-								throw new InvalidOperationException("无法获取底层 NETOP.Slide 对象");
-							}
-
-							// 尝试使用 NetOffice 枚举
-							foreach(NETOP.Shape shape in nativeSlide.Shapes)
-							{
-								// 检查是否是表格：先尝试 HasTable，如果失败则直接检查 Table 属性
-								bool isTable = false;
-								dynamic dynTable = null;
-								try
-								{
-									if(shape.HasTable == MsoTriState.msoTrue)
-									{
-										isTable = true;
-										dynTable = shape.Table;
-									}
-								}
-								catch
-								{
-									// HasTable 不可用，尝试直接检查 Table 属性
-									try
-									{
-										dynamic dynShape = shape;
-										dynTable = SafeGet(() => dynShape.Table, null);
-										isTable = (dynTable != null);
-									}
-									catch { }
-								}
-								
-								if(isTable && dynTable != null)
-								{
-									Profiler.LogMessage($"发现表格形状: {shape.Name}", "INFO");
-									var iTable = AdapterUtils.WrapTable(netApp, shape, dynTable);
-									Profiler.LogMessage($"WrapTable 返回: {iTable?.GetType().Name ?? "null"}", "INFO");
-									if(iTable != null)
-									{
-										tableFormatHelper.FormatTables(iTable);
-										tableCount++;
-									}
-									else
-									{
-										Profiler.LogMessage("WrapTable 返回 null，无法格式化", "ERROR");
-									}
-								}
-							}
-						}
-						catch(System.Exception ex)
-						{
-							// NetOffice 无法枚举某些 Shapes，使用 dynamic 访问作为后备方案
-							Profiler.LogMessage($"NetOffice 枚举失败: {ex.Message}，尝试使用 dynamic 访问", "WARN");
-							try
-							{
-								// 从 ISlide 获取底层的 NETOP.Slide 对象
-								NETOP.Slide nativeSlide = null;
-								if(slide is IComWrapper<NETOP.Slide> typedSlide)
-								{
-									nativeSlide = typedSlide.NativeObject;
-								}
-								else if(slide is IComWrapper wrapper)
-								{
-									nativeSlide = wrapper.NativeObject as NETOP.Slide;
-								}
-
-								if(nativeSlide == null)
-								{
-									Profiler.LogMessage("无法获取底层 NETOP.Slide 对象（dynamic 访问）", "WARN");
-									throw new InvalidOperationException("无法获取底层 NETOP.Slide 对象");
-								}
-
-								dynamic dynSlide = nativeSlide;
-								dynamic dynShapes = SafeGet(() => dynSlide.Shapes, null);
-								if(dynShapes != null)
-								{
-									int count = SafeGet(() => (int)dynShapes.Count, 0);
-									Profiler.LogMessage($"使用 dynamic 访问，Shapes Count={count}", "INFO");
-									for(int i = 1; i <= count; i++)
-									{
-										try
-										{
-											object shapeObj = SafeGet(() => dynShapes[i], null);
-											if(shapeObj == null) continue;
-
-											// 尝试转换为 NETOP.Shape
-											NETOP.Shape netShape = null;
-											if(shapeObj is NETOP.Shape directShape)
-											{
-												netShape = directShape;
-											}
-											else if(shapeObj is IComWrapper<NETOP.Shape> typedShape)
-											{
-												netShape = typedShape.NativeObject;
-											}
-											else if(shapeObj is IComWrapper wrapper)
-											{
-												netShape = wrapper.NativeObject as NETOP.Shape;
-											}
-											else
-											{
-												// 尝试强制转换
-												try
-												{
-													netShape = (NETOP.Shape)(object)shapeObj;
-												}
-												catch { }
-											}
-
-											if(netShape == null) continue;
-
-											// 检查是否是表格
-											bool isTable = false;
-											dynamic dynTable = null;
-											try
-											{
-												if(netShape.HasTable == MsoTriState.msoTrue)
-												{
-													isTable = true;
-													dynTable = netShape.Table;
-												}
-											}
-											catch
-											{
-												// HasTable 不可用，尝试直接检查 Table 属性
-												try
-												{
-													dynTable = netShape.Table;
-													isTable = (dynTable != null);
-												}
-												catch { }
-											}
-
-											if(isTable && dynTable != null)
-											{
-												Profiler.LogMessage($"发现表格形状 {i}: {netShape.Name}", "INFO");
-												var iTable = AdapterUtils.WrapTable(netApp, netShape, dynTable);
-												if(iTable != null)
-												{
-													tableFormatHelper.FormatTables(iTable);
-													tableCount++;
-												}
-												else
-												{
-													Profiler.LogMessage($"形状 {i} WrapTable 返回 null", "WARN");
-												}
-											}
-										}
-										catch(System.Exception ex3)
-										{
-											Profiler.LogMessage($"处理形状 {i} 时出错: {ex3.Message}", "WARN");
-										}
-									}
-								}
-							}
-							catch(System.Exception ex2)
-							{
-								Profiler.LogMessage($"dynamic 访问也失败: {ex2.Message}", "ERROR");
-							}
-						}
-
-						if(tableCount>0)
-							Toast.Show(ResourceManager.GetString("Toast_FormatTables_Success","成功美化 {0} 个表格",tableCount),Toast.ToastType.Success);
-						else
-							Toast.Show(ResourceManager.GetString("Toast_FormatTables_NoTables","当前幻灯片上没有表格"),Toast.ToastType.Info);
-					}
-				}
-			},enableTiming: true);
-		}
-
-		private async Task FormatTablesInternalAsync(
-			NETOP.Application netApp,
-			IProgress<AsyncProgress> progress,
-			CancellationToken cancellationToken,
-			ITableFormatHelper tableFormatHelper)
-		{
-			if(tableFormatHelper==null)
-				throw new InvalidOperationException("无法获取 ITableFormatHelper 服务");
-
-			try
-			{
-				await UndoHelper.BeginUndoEntryAsync(netApp,UndoHelper.UndoNames.FormatTables);
-
-				var abstractAppForSlide = ApplicationHelper.GetAbstractApplication(netApp);
-				var slide = await AsyncOperationHelper.RunOnUIThread(() =>
-				{
-					return _shapeHelper.TryGetCurrentSlide(abstractAppForSlide);
-				});
-
-				if(slide==null)
+				var currentApp = netApp;
+				if(!TryRefreshContext(ref currentApp,out var abstractApp))
 				{
 					Toast.Show(ResourceManager.GetString("Toast_NoSlide"),Toast.ToastType.Warning);
 					return;
 				}
 
-				var tables = await AsyncOperationHelper.RunOnUIThread(() =>
+				var selection = GetSelectionWithRetry(ref currentApp, ref abstractApp);
+
+				// 调试：记录选中对象信息
+				if(selection==null)
 				{
-					var sel = _shapeHelper.ValidateSelection(abstractAppForSlide) as dynamic;
-					var result = new List<(NETOP.Shape shape, NETOP.Table table)>();
-
-					if(sel!=null)
-					{
-						if(sel is NETOP.Shape shape)
-						{
-							// 检查是否是表格：先尝试 HasTable，如果失败则直接检查 Table 属性
-							bool isTable = false;
-							dynamic dynTable = null;
-							try
-							{
-								if(shape.HasTable == MsoTriState.msoTrue)
-								{
-									isTable = true;
-									dynTable = shape.Table;
-								}
-							}
-							catch
-							{
-								// HasTable 不可用，尝试直接检查 Table 属性
-								try
-								{
-									dynamic dynShape = shape;
-									dynTable = SafeGet(() => dynShape.Table, null);
-									isTable = (dynTable != null);
-								}
-								catch { }
-							}
-							
-							if(isTable && dynTable != null)
-							{
-								result.Add((shape, (NETOP.Table)(object)dynTable));
-								progress?.Report(new AsyncProgress(10,ResourceManager.GetString("Progress_TableFound","发现表格"),1,1));
-							}
-						}
-						else if(sel is NETOP.ShapeRange shapes)
-						{
-							try
-							{
-								int count = 0;
-								foreach(NETOP.Shape s in shapes)
-								{
-									if(s.HasTable==MsoTriState.msoTrue)
-									{
-										result.Add((s,s.Table));
-										count++;
-										progress?.Report(new AsyncProgress(
-											10,
-											ResourceManager.GetString("Progress_TableFound_Count","发现表格 {0}",count),
-											count,
-											shapes.Count));
-									}
-								}
-							}
-							catch(System.Exception ex)
-							{
-								// NetOffice 无法枚举某些 ShapeRange，使用 dynamic 访问作为后备方案
-								Profiler.LogMessage($"NetOffice 枚举 ShapeRange 失败: {ex.Message}，尝试使用 dynamic 访问", "WARN");
-								try
-								{
-									dynamic dynShapeRange = shapes;
-									int rangeCount = SafeGet(() => (int)dynShapeRange.Count, 0);
-									int count = 0;
-									for(int i = 1; i <= rangeCount; i++)
-									{
-										dynamic dynShape = SafeGet(() => dynShapeRange[i], null);
-										if(dynShape != null)
-										{
-											// 某些情况下 HasTable 可能不可用，直接检查 Table 属性
-											dynamic dynTable2 = null;
-											bool hasTable = false;
-											try
-											{
-												// 方式1：尝试通过 HasTable 属性
-												hasTable = SafeGet(() => (bool)(dynShape.HasTable ?? false), false);
-												if(hasTable)
-												{
-													dynTable2 = SafeGet(() => dynShape.Table, null);
-												}
-											}
-											catch { }
-											
-											// 方式2：如果方式1失败，直接检查 Table 属性
-											if(!hasTable || dynTable2 == null)
-											{
-												try
-												{
-													dynTable2 = SafeGet(() => dynShape.Table, null);
-													hasTable = (dynTable2 != null);
-												}
-												catch { }
-											}
-											
-											if(hasTable && dynTable2 != null)
-											{
-												result.Add(((NETOP.Shape)(object)dynShape, (NETOP.Table)(object)dynTable2));
-												count++;
-												progress?.Report(new AsyncProgress(
-													10,
-													ResourceManager.GetString("Progress_TableFound_Count","发现表格 {0}",count),
-													count,
-													rangeCount));
-											}
-										}
-									}
-								}
-								catch { }
-							}
-						}
-					}
-					else
-					{
-						try
-						{
-							// 从 ISlide 获取底层的 NETOP.Slide 对象
-							NETOP.Slide nativeSlide = null;
-							if(slide is IComWrapper<NETOP.Slide> typedSlide)
-							{
-								nativeSlide = typedSlide.NativeObject;
-							}
-							else if(slide is IComWrapper wrapper)
-							{
-								nativeSlide = wrapper.NativeObject as NETOP.Slide;
-							}
-
-							if(nativeSlide == null)
-							{
-								Profiler.LogMessage("无法获取底层 NETOP.Slide 对象（异步方法）", "WARN");
-								throw new InvalidOperationException("无法获取底层 NETOP.Slide 对象");
-							}
-
-							foreach(NETOP.Shape shape2 in nativeSlide.Shapes)
-							{
-								if(shape2.HasTable==MsoTriState.msoTrue)
-								{
-									result.Add((shape2,shape2.Table));
-								}
-							}
-						}
-						catch(System.Exception ex)
-						{
-							// NetOffice 无法枚举某些 Shapes，使用 dynamic 访问作为后备方案
-							Profiler.LogMessage($"NetOffice 枚举 Shapes 失败: {ex.Message}，尝试使用 dynamic 访问", "WARN");
-							try
-							{
-								// 从 ISlide 获取底层的 NETOP.Slide 对象
-								NETOP.Slide nativeSlide = null;
-								if(slide is IComWrapper<NETOP.Slide> typedSlide)
-								{
-									nativeSlide = typedSlide.NativeObject;
-								}
-								else if(slide is IComWrapper wrapper)
-								{
-									nativeSlide = wrapper.NativeObject as NETOP.Slide;
-								}
-
-								if(nativeSlide == null)
-								{
-									Profiler.LogMessage("无法获取底层 NETOP.Slide 对象（异步方法 dynamic 访问）", "WARN");
-									throw new InvalidOperationException("无法获取底层 NETOP.Slide 对象");
-								}
-
-								dynamic dynSlide = nativeSlide;
-								dynamic dynShapes = SafeGet(() => dynSlide.Shapes, null);
-								if(dynShapes != null)
-								{
-									int count = SafeGet(() => (int)dynShapes.Count, 0);
-									for(int i = 1; i <= count; i++)
-									{
-										object shapeObj = SafeGet(() => dynShapes[i], null);
-										if(shapeObj == null) continue;
-
-										// 尝试转换为 NETOP.Shape
-										NETOP.Shape netShape = null;
-										if(shapeObj is NETOP.Shape directShape)
-										{
-											netShape = directShape;
-										}
-										else if(shapeObj is IComWrapper<NETOP.Shape> typedShape)
-										{
-											netShape = typedShape.NativeObject;
-										}
-										else if(shapeObj is IComWrapper wrapper)
-										{
-											netShape = wrapper.NativeObject as NETOP.Shape;
-										}
-										else
-										{
-											try
-											{
-												netShape = (NETOP.Shape)(object)shapeObj;
-											}
-											catch { }
-										}
-
-										if(netShape == null) continue;
-
-										// 检查是否是表格
-										bool hasTable = false;
-										NETOP.Table netTable = null;
-										try
-										{
-											if(netShape.HasTable == MsoTriState.msoTrue)
-											{
-												hasTable = true;
-												netTable = netShape.Table;
-											}
-										}
-										catch
-										{
-											try
-											{
-												netTable = netShape.Table;
-												hasTable = (netTable != null);
-											}
-											catch { }
-										}
-
-										if(hasTable && netTable != null)
-										{
-											result.Add((netShape, netTable));
-										}
-									}
-								}
-							}
-							catch { }
-						}
-					}
-
-					return result;
-				});
-
-				cancellationToken.ThrowIfCancellationRequested();
-
-				int total = tables.Count;
-
-				if(total==0)
-				{
-					var abstractAppForCheck = ApplicationHelper.GetAbstractApplication(netApp);
-					var hasSelection = await AsyncOperationHelper.RunOnUIThread(() =>
-					{
-						return _shapeHelper.ValidateSelection(abstractAppForCheck)!=null;
-					});
-					Toast.Show(hasSelection ? ResourceManager.GetString("Toast_FormatTables_NoSelection","选中的对象中没有表格") : ResourceManager.GetString("Toast_FormatTables_NoTables","当前幻灯片上没有表格"),Toast.ToastType.Info);
+					_logger.LogWarning("ValidateSelection 返回 null，没有选中对象");
+					Toast.Show(ResourceManager.GetString("Toast_FormatTables_NoSelection"),Toast.ToastType.Warning);
 					return;
 				}
 
-				progress?.Report(new AsyncProgress(10,ResourceManager.GetString("Progress_TablesFound","发现 {0} 个表格",total),total,total));
-				progress?.Report(new AsyncProgress(20,ResourceManager.GetString("Progress_FormatTables_Start","开始美化 {0} 个表格",total),0,total));
+				UndoHelper.BeginUndoEntry(currentApp,UndoHelper.UndoNames.FormatTables);
 
-				for(int i = 0;i<total;i++)
+				// 调试：记录选中对象的数量和类型
+				try
 				{
-					cancellationToken.ThrowIfCancellationRequested();
-
-					NETOP.Shape shape = tables[i].shape;
-					NETOP.Table table = tables[i].table;
-
-					int currentProgress = 20 + (int)((i * 60.0) / total);
-					progress?.Report(new AsyncProgress(
-						currentProgress,
-						ResourceManager.GetString("Progress_FormatTable_Progress","美化表格 {0}/{1}",i+1,total),
-						i+1,
-						total));
-
-					await AsyncOperationHelper.RunOnUIThread(() =>
+					if(selection is NETOP.ShapeRange shapeRange)
 					{
-						var iTable = AdapterUtils.WrapTable(netApp,shape,table);
-						tableFormatHelper.FormatTables(iTable);
-					});
-
-					await Task.Delay(10,cancellationToken);
+						int count = ExHandler.SafeGet(() => shapeRange.Count, defaultValue: 0);
+						_logger.LogInformation($"选中对象类型=ShapeRange, 数量={count}");
+					} else if(selection is NETOP.Shape shape)
+					{
+						_logger.LogInformation("选中对象类型=Shape, 数量=1");
+					} else
+					{
+						_logger.LogInformation($"选中对象类型={selection?.GetType().Name??"null"}");
+					}
+				} catch(Exception ex)
+				{
+					_logger.LogWarning($"获取选中对象信息失败: {ex.Message}");
 				}
 
-				progress?.Report(new AsyncProgress(100,ResourceManager.GetString("Progress_FormatTables_Complete","成功美化 {0} 个表格",total),total,total));
-			} catch
+				var tableShapes = new List<(NETOP.Shape shape, NETOP.Table table)>();
+
+				// 收集表格形状（只处理选中的对象）
+				CollectTablesFromSelection(selection,currentApp,tableShapes);
+
+				// 处理收集到的表格
+				ProcessTables(tableShapes,currentApp,tableFormatHelper,selection);
+			},enableTiming: true);
+		}
+
+		/// <summary>
+		/// 检查形状是否是表格
+		/// </summary>
+		/// <param name="shape"> 要检查的形状 </param>
+		/// <returns> 如果是表格返回 true，否则返回 false </returns>
+		private bool IsTableShape(NETOP.Shape shape)
+		{
+			if(shape==null) return false;
+
+			bool hasTable = ExHandler.SafeGet(() => shape.HasTable == MsoTriState.msoTrue, defaultValue: false);
+			if(hasTable) return true;
+
+			var table = ExHandler.SafeGet(() => shape.Table, defaultValue: (NETOP.Table)null);
+			return table!=null;
+		}
+
+		/// <summary>
+		/// 从形状获取表格对象
+		/// </summary>
+		/// <param name="shape"> 形状对象 </param>
+		/// <returns> 表格对象，如果不是表格则返回 null </returns>
+		private NETOP.Table GetTableFromShape(NETOP.Shape shape)
+		{
+			if(shape==null) return null;
+
+			bool hasTable = ExHandler.SafeGet(() => shape.HasTable == MsoTriState.msoTrue, defaultValue: false);
+			if(hasTable)
 			{
-				throw;
+				return ExHandler.SafeGet(() => shape.Table,defaultValue: (NETOP.Table) null);
+			}
+
+			// HasTable 不可用，尝试直接检查 Table 属性
+			return ExHandler.SafeGet(() => shape.Table,defaultValue: (NETOP.Table) null);
+		}
+
+		/// <summary>
+		/// 如果形状是表格，则添加到列表
+		/// </summary>
+		/// <param name="shape"> 形状对象 </param>
+		/// <param name="tableShapes"> 表格形状列表 </param>
+		/// <param name="processedKeys"> 已处理的对象键列表（用于去重） </param>
+		/// <returns> 如果成功添加返回 true，否则返回 false </returns>
+		private bool AddTableShapeIfValid(NETOP.Shape shape,List<(NETOP.Shape shape, NETOP.Table table)> tableShapes,HashSet<object> processedKeys)
+		{
+			if(shape==null) return false;
+			// 检查是否已处理
+			if(processedKeys.Contains(shape)) return false;
+
+			var table = GetTableFromShape(shape);
+			if(table!=null)
+			{
+				processedKeys.Add(shape);
+				tableShapes.Add((shape, table));
+				return true;
+			}
+			return false;
+		}
+
+		/// <summary>
+		/// 从选区收集表格形状
+		/// </summary>
+		/// <param name="selection"> 选区对象 </param>
+		/// <param name="netApp"> PowerPoint 应用程序对象 </param>
+		/// <param name="tableShapes"> 表格形状列表 </param>
+		private void CollectTablesFromSelection(object selection,NETOP.Application netApp,List<(NETOP.Shape shape, NETOP.Table table)> tableShapes)
+		{
+			if(selection==null) return;
+
+			var shapeSelection = ShapeSelectionFactory.Create(selection);
+			if(shapeSelection==null)
+			{
+				_logger.LogWarning("无法识别的选区类型，跳过表格处理");
+				return;
+			}
+
+			var processedKeys = new HashSet<object>();
+			foreach(var shape in shapeSelection)
+			{
+				AddTableShapeIfValid(shape,tableShapes,processedKeys);
 			}
 		}
 
-		#endregion
-
-		// 适配包装逻辑已提取到 Core/Adapters/AdapterUtils.cs
-
-		private static T SafeGet<T>(System.Func<T> getter, T @default = default)
+		/// <summary>
+		/// 从幻灯片收集所有表格形状
+		/// </summary>
+		/// <param name="slide"> 幻灯片对象 </param>
+		/// <param name="netApp"> PowerPoint 应用程序对象 </param>
+		/// <param name="tableShapes"> 表格形状列表 </param>
+		private void CollectTablesFromSlide(ISlide slide,NETOP.Application netApp,List<(NETOP.Shape shape, NETOP.Table table)> tableShapes)
 		{
-			try { return getter(); } catch { return @default; }
+			var nativeSlide = AdapterUtils.UnwrapSlide(slide);
+			if(nativeSlide==null)
+			{
+				_logger.LogWarning("无法获取底层 NETOP.Slide 对象");
+				return;
+			}
+
+			var processedKeys = new HashSet<object>();
+
+			// 使用 NetOffice 枚举 注意：即使某些形状访问失败，我们仍然继续处理其他形状
+			using(nativeSlide)
+			{
+				try
+				{
+					var shapes = nativeSlide.Shapes;
+					foreach(NETOP.Shape shape in shapes)
+					{
+						// AddTableShapeIfValid 内部使用 SafeGet，即使单个形状失败也不会中断整个枚举
+						AddTableShapeIfValid(shape,tableShapes,processedKeys);
+					}
+				} catch(System.Exception ex)
+				{
+					_logger.LogWarning($"NetOffice 枚举失败: {ex.Message}，跳过当前幻灯片");
+					return;
+				}
+			}
 		}
 
+		/// <summary>
+		/// 从对象获取 NETOP.Shape
+		/// </summary>
+		/// <param name="shapeObj"> 形状对象 </param>
+		/// <returns> NETOP.Shape 对象，如果无法转换则返回 null </returns>
+		private NETOP.Shape GetNetShapeFromObject(object shapeObj)
+		{
+			if(shapeObj is NETOP.Shape directShape)
+				return directShape;
+
+			if(shapeObj is IShape abstractShape)
+				return AdapterUtils.UnwrapShape(abstractShape);
+
+			if(shapeObj is IComWrapper wrapper)
+				return wrapper.NativeObject as NETOP.Shape;
+
+			try
+			{
+				return (NETOP.Shape) (object) shapeObj;
+			} catch
+			{
+				return null;
+			}
+		}
+
+		/// <summary>
+		/// 处理收集到的表格
+		/// </summary>
+		/// <param name="tableShapes"> 表格形状列表 </param>
+		/// <param name="netApp"> PowerPoint 应用程序对象 </param>
+		/// <param name="tableFormatHelper"> 表格格式化辅助类 </param>
+		/// <param name="selection"> 选区对象 </param>
+		private void ProcessTables(List<(NETOP.Shape shape, NETOP.Table table)> tableShapes,NETOP.Application netApp,ITableFormatHelper tableFormatHelper,dynamic selection)
+		{
+			int totalTables = tableShapes.Count;
+			_logger.LogInformation($"找到 {totalTables} 个表格形状");
+
+			if(totalTables==0)
+			{
+				Toast.Show(ResourceManager.GetString("Toast_FormatTables_NoSelection"),Toast.ToastType.Warning);
+				return;
+			}
+
+			// 直接使用传入的 netApp，让 WrapTable 内部处理 slide 的获取（与美化文本保持一致）
+			foreach(var (shape, table) in tableShapes)
+			{
+				var iTable = AdapterUtils.WrapTable(netApp, shape, table);
+				if(iTable!=null)
+				{
+					tableFormatHelper.FormatTables(iTable);
+				}
+			}
+
+			Toast.Show(ResourceManager.GetString("Toast_FormatTables_Success",totalTables),Toast.ToastType.Success);
+		}
+
+		private bool TryRefreshContext(ref NETOP.Application netApp,out IApplication abstractApp)
+		{
+			netApp=ApplicationHelper.EnsureValidNetApplication(netApp);
+			if(netApp==null)
+			{
+				abstractApp=null;
+				return false;
+			}
+
+			abstractApp=ApplicationHelper.GetAbstractApplication(netApp);
+			if(abstractApp==null)
+			{
+				_logger.LogWarning("无法获取抽象 Application");
+				return false;
+			}
+			return true;
+		}
+
+		private dynamic GetSelectionWithRetry(ref NETOP.Application netApp,ref IApplication abstractApp)
+		{
+			var selection = _shapeHelper.ValidateSelection(abstractApp, showWarningWhenInvalid: false);
+			if(selection!=null)
+			{
+				return selection;
+			}
+
+			_logger.LogWarning("返回 null，尝试刷新 Application 后重试");
+			if(!TryRefreshContext(ref netApp,out abstractApp))
+			{
+				return null;
+			}
+
+			return _shapeHelper.ValidateSelection(abstractApp,showWarningWhenInvalid: false);
+		}
+
+		#endregion 内部实现
 	}
 }

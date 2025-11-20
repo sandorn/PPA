@@ -1,221 +1,207 @@
+using NetOffice.OfficeApi.Enums;
 using PPA.Core;
+using PPA.Core.Abstraction.Business;
+using PPA.Core.Abstraction.Infrastructure;
+using PPA.Core.Abstraction.Presentation;
+using PPA.Core.Adapters;
+using PPA.Core.Logging;
 using PPA.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using MSOP = Microsoft.Office.Interop.PowerPoint;
 using NETOP = NetOffice.PowerPointApi;
-using Office = Microsoft.Office.Core;
 
 namespace PPA.Shape
 {
 	public static class MSOICrop
 	{
-		#region Public Methods
+		private static readonly ILogger _logger = LoggerProvider.GetLogger();
 
 		/// <summary>
-		/// 裁剪形状到幻灯片范围
+		/// MsoMergeCmd 到 idMso 命令的映射字典
 		/// </summary>
-		/// <param name="nativeApp">原生 COM Application 对象（MSOP.Application）</param>
-		public static void CropShapesToSlide(MSOP.Application nativeApp)
+		private static readonly Dictionary<MsoMergeCmd,string> MergeCmdToIdMso = new Dictionary<MsoMergeCmd,string>
 		{
-			if(nativeApp == null)
+			{ MsoMergeCmd.msoMergeIntersect, OfficeCommands.ShapesIntersect },
+			{ MsoMergeCmd.msoMergeUnion, OfficeCommands.ShapesUnion },
+			{ MsoMergeCmd.msoMergeCombine, OfficeCommands.ShapesCombine },
+			{ MsoMergeCmd.msoMergeSubtract, OfficeCommands.ShapesSubtract }
+		};
+
+		public static void CropShapesToSlide(NETOP.Application netApp)
+		{
+			netApp=ApplicationHelper.EnsureValidNetApplication(netApp);
+			if(netApp==null)
 			{
-				Profiler.LogMessage("CropShapesToSlide: 传入的 Application 对象为空", "ERROR");
+				_logger.LogError("无法获取 Application");
 				return;
 			}
 
 			ExHandler.Run(() =>
 			{
-				var sel = nativeApp.ActiveWindow.Selection;
-				var slide = nativeApp.ActiveWindow.View.Slide;
-
-				float slideWidth = nativeApp.ActivePresentation.PageSetup.SlideWidth;
-				float slideHeight = nativeApp.ActivePresentation.PageSetup.SlideHeight;
-
-				// 获取要处理的形状列表
-				var shapesToCrop = new List<MSOP.Shape>();
-
-				// 情况1：有选中的形状
-				if(sel!=null&&sel.Type==MSOP.PpSelectionType.ppSelectionShapes)
+				var window = ExHandler.SafeGet(() => netApp.ActiveWindow, defaultValue:(NETOP.DocumentWindow)null);
+				if(window==null)
 				{
-					Profiler.LogMessage($"处理选中的 {sel.ShapeRange.Count} 个形状");
-
-					for(int i = 1;i<=sel.ShapeRange.Count;i++)
-					{
-						var shape = sel.ShapeRange[i];
-						if(ShouldCropShape(shape,slideWidth,slideHeight))
-						{
-							shapesToCrop.Add(shape);
-						}
-					}
-				}
-				// 情况2：没有选中的形状，处理幻灯片上所有形状
-				else
-				{
-					Profiler.LogMessage("没有选中形状，处理幻灯片上所有形状");
-
-					for(int i = 1;i<=slide.Shapes.Count;i++)
-					{
-						var shape = slide.Shapes[i];
-						if(ShouldCropShape(shape,slideWidth,slideHeight))
-						{
-							shapesToCrop.Add(shape);
-						}
-					}
+					Toast.Show(ResourceManager.GetString("Toast_NoSlide"),Toast.ToastType.Warning);
+					return;
 				}
 
+				var view = ExHandler.SafeGet(() => window.View, defaultValue:(NETOP.View)null);
+				var slide = view?.Slide as NETOP.Slide;
+				var pageSetup = netApp.ActivePresentation?.PageSetup;
+				float slideWidth = pageSetup?.SlideWidth ?? 0;
+				float slideHeight = pageSetup?.SlideHeight ?? 0;
+				if(slide==null||slideWidth<=0||slideHeight<=0)
+				{
+					Toast.Show(ResourceManager.GetString("Toast_NoSlideSize"),Toast.ToastType.Warning);
+					return;
+				}
+
+				var shapesToCrop = CollectShapesToCrop(netApp, window.Selection, slide, slideWidth, slideHeight);
 				if(shapesToCrop.Count==0)
 				{
 					Toast.Show(ResourceManager.GetString("Toast_CropShapes_None"),Toast.ToastType.Warning);
 					return;
 				}
 
-				Profiler.LogMessage($"开始裁剪 {shapesToCrop.Count} 个形状");
-
-				// 逐个处理形状
-				foreach(var shape in shapesToCrop)
+				_logger.LogInformation($"开始裁剪 {shapesToCrop.Count} 个形状");
+				foreach(var shapeAdapter in shapesToCrop)
 				{
-					Profiler.LogMessage($"裁剪形状: Id={shape.Id}, Name={shape.Name}");
+					var nativeShape = AdapterUtils.UnwrapShape(shapeAdapter);
+					var ownerSlide = AdapterUtils.UnwrapSlide(shapeAdapter.Slide) ?? slide;
+					if(nativeShape==null||ownerSlide==null)
+					{
+						_logger.LogWarning("无法还原形状或幻灯片，跳过当前项");
+						continue;
+					}
 
-					// 创建辅助矩形（无填充、无线条）
-					MSOP.Shape rect = slide.Shapes.AddShape(Office.MsoAutoShapeType.msoShapeRectangle, 0, 0, slideWidth, slideHeight);
-
-					// 设置辅助矩形为透明
-					rect.Fill.Visible=Office.MsoTriState.msoFalse;
-					rect.Line.Visible=Office.MsoTriState.msoFalse;
-
-					// 执行裁剪
-					BooleanCrop(slide,shape,rect);
+					_logger.LogInformation($"裁剪形状: Id={nativeShape.Id}, Name={nativeShape.Name}");
+					var rect = CreateMaskRectangle(ownerSlide, slideWidth, slideHeight);
+					BooleanCrop(ownerSlide,nativeShape,rect);
 				}
 			});
 		}
 
-		#endregion Public Methods
-
-		#region Private Methods
-
-		private static void BooleanCrop(
-			MSOP.Slide slide,MSOP.Shape shape1,
-			MSOP.Shape slideRect,
-			Office.MsoMergeCmd mergeCmd = Office.MsoMergeCmd.msoMergeIntersect)
+		private static List<IShape> CollectShapesToCrop(NETOP.Application app,NETOP.Selection selection,NETOP.Slide slide,float slideWidth,float slideHeight)
 		{
-			// --- 辅助函数：安全地执行一个操作，忽略COM异常 ---
-			static void SafeSet(Action action)
+			var shapes = new List<IShape>();
+
+			void TryAddShape(NETOP.Shape candidate)
 			{
-				try
+				if(candidate==null)
+					return;
+				if(!ShouldCropShape(candidate,slideWidth,slideHeight))
+					return;
+
+				var wrapped = AdapterUtils.WrapShape(app, candidate, slide);
+				if(wrapped!=null)
 				{
-					action();
-				} catch(COMException ex) { Profiler.LogMessage($"异常信息: {ex.Message}"); }
+					shapes.Add(wrapped);
+				} else
+				{
+					_logger.LogWarning("WrapShape 失败，跳过当前形状");
+				}
 			}
 
-			// 存储需要恢复的属性
-			int? originalRGBFill = null;
-			int? originalRGBLine = null;
-			float? originalLineWeight = null;
-			int? originalTextRGB = null;
-			bool hasText = false;
-			int originalZOrder = shape1.ZOrderPosition;
-
-			// 安全地获取原始形状属性
-			SafeSet(() =>
+			if(selection!=null&&selection.Type==NetOffice.PowerPointApi.Enums.PpSelectionType.ppSelectionShapes)
 			{
-				if(shape1.Fill.Visible!=Office.MsoTriState.msoFalse)
-					originalRGBFill=shape1.Fill.ForeColor.RGB;
-			});
-
-			SafeSet(() =>
-			{
-				if(shape1.Line.Visible!=Office.MsoTriState.msoFalse)
+				var range = selection.ShapeRange;
+				for(int i = 1;i<=range.Count;i++)
 				{
-					originalRGBLine=shape1.Line.ForeColor.RGB;
-					originalLineWeight=shape1.Line.Weight;
+					var shape = range[i];
+					TryAddShape(shape);
 				}
-			});
-
-			SafeSet(() =>
+			} else
 			{
-				if(shape1.TextFrame2.HasText==Office.MsoTriState.msoTrue)
+				foreach(NETOP.Shape shape in slide.Shapes)
 				{
-					originalTextRGB=shape1.TextFrame2.TextRange.Font.Fill.ForeColor.RGB;
-					hasText=true;
+					TryAddShape(shape);
 				}
-			});
+			}
+			return shapes;
+		}
 
-			// 确保原始形状是最后一个被选中的
-			slideRect.ZOrder(Office.MsoZOrderCmd.msoBringToFront);
-			shape1.ZOrder(Office.MsoZOrderCmd.msoBringToFront);
+		private static NETOP.Shape CreateMaskRectangle(NETOP.Slide slide,float width,float height)
+		{
+			var rect = slide.Shapes.AddShape(MsoAutoShapeType.msoShapeRectangle, 0, 0, width, height);
+			rect.Fill.Visible=MsoTriState.msoFalse;
+			rect.Line.Visible=MsoTriState.msoFalse;
+			return rect;
+		}
 
-			// 记录合并前形状标识
+		private static void BooleanCrop(NETOP.Slide slide,NETOP.Shape target,NETOP.Shape mask,MsoMergeCmd mergeCmd = MsoMergeCmd.msoMergeIntersect)
+		{
+			// --- 步骤 1: 在运算前，保存主形状的 Z-Order 和幻灯片上所有形状的快照 ---
+			int originalZOrder = target.ZOrderPosition;
 			var beforeShapes = new HashSet<string>();
-			foreach(MSOP.Shape shape in slide.Shapes)
+			foreach(NETOP.Shape s in slide.Shapes)
 			{
-				beforeShapes.Add($"{shape.Id}|{shape.Name}");
+				beforeShapes.Add($"{s.Id}|{s.Name}");
 			}
-
-			MSOP.Shape newShape = null;
 
 			ExHandler.Run(() =>
 			{
-				// 创建形状范围并执行合并操作
-				var shapeRange = slide.Shapes.Range(new object[] { slideRect.Name, shape1.Name });
-				shapeRange.MergeShapes(mergeCmd);
+				// --- 步骤 2: 选中形状并执行布尔运算 ---
+				var shapeNames = new string[] { target.Name, mask.Name };
+				var shapeRange = slide.Shapes.Range((object)shapeNames);
+				shapeRange.Select();
 
-				// 查找新生成的形状
-				foreach(MSOP.Shape shape in slide.Shapes)
+				var version = slide.Application.Version;
+				if(System.Version.Parse(version)>=System.Version.Parse("15.0"))
+				{
+					if(!MergeCmdToIdMso.TryGetValue(mergeCmd,out string idMso))
+					{
+						throw new ArgumentOutOfRangeException(nameof(mergeCmd),mergeCmd,"Unsupported merge command.");
+					}
+
+					_logger.LogInformation($"执行布尔运算命令: {idMso}");
+					slide.Application.CommandBars.ExecuteMso(idMso);
+				} else
+				{
+					_logger.LogWarning($"PowerPoint 版本 {version} 过低，不支持基于 idMso 的布尔运算。");
+					Toast.Show(ResourceManager.GetString("Toast_OperationFailed_UnsupportedVersion"),Toast.ToastType.Error);
+					return;
+				}
+
+				// 等待操作完成
+				System.Threading.Thread.Sleep(100);
+
+				// --- 步骤 3: 通过对比新旧形状列表，找到结果形状 ---
+				NETOP.Shape finalShape = null;
+				foreach(NETOP.Shape shape in slide.Shapes)
 				{
 					string key = $"{shape.Id}|{shape.Name}";
 					if(!beforeShapes.Contains(key))
 					{
-						newShape=shape;
+						finalShape=shape;
 						break;
 					}
 				}
 
-				// 安全地恢复原始属性到新形状
-				if(newShape!=null)
+				if(finalShape!=null)
 				{
-					// 恢复填充色
-					if(originalRGBFill.HasValue)
-						SafeSet(() => newShape.Fill.ForeColor.RGB=originalRGBFill.Value);
-
-					// 恢复轮廓
-					if(originalRGBLine.HasValue)
-						SafeSet(() => newShape.Line.ForeColor.RGB=originalRGBLine.Value);
-
-					if(originalLineWeight.HasValue)
+					_logger.LogInformation($"找到结果形状: Id={finalShape.Id}, Name={finalShape.Name}，正在调整 Z-Order。");
+					// --- 步骤 4: 调整结果形状的 Z-Order ---
+					ExHandler.SafeSet(() =>
 					{
-						float weightToSet = originalLineWeight.Value;
-						if(weightToSet<=0) weightToSet=1.0f; // 修复：确保线条粗细有效
-						SafeSet(() => newShape.Line.Weight=weightToSet);
-					}
-
-					// 恢复文本格式
-					if(hasText&&originalTextRGB.HasValue)
-						SafeSet(() => newShape.TextFrame2.TextRange.Font.Fill.ForeColor.RGB=originalTextRGB.Value);
-
-					// 恢复Z轴顺序
-					SafeSet(() =>
-					{
-						newShape.ZOrder(Office.MsoZOrderCmd.msoSendToBack);
+						finalShape.ZOrder(MsoZOrderCmd.msoSendToBack);
 						for(int i = 1;i<originalZOrder;i++)
-							newShape.ZOrder(Office.MsoZOrderCmd.msoBringForward);
+							finalShape.ZOrder(MsoZOrderCmd.msoBringForward);
 					});
+				} else
+				{
+					_logger.LogWarning("未能找到布尔运算的结果形状，无法调整 Z-Order。");
 				}
 			});
 		}
 
-		#endregion Private Methods
-
-		#region Private Methods
-
-		// 辅助方法：判断形状是否需要裁剪
-		private static bool ShouldCropShape(MSOP.Shape shape,float slideWidth,float slideHeight)
+		private static bool ShouldCropShape(NETOP.Shape shape,float slideWidth,float slideHeight)
 		{
-			// 排除占位符、OLE控件、批注等不需要裁剪的形状类型
-			if(shape.Type==Office.MsoShapeType.msoPlaceholder||
-				shape.Type==Office.MsoShapeType.msoOLEControlObject||
-				shape.Type==Office.MsoShapeType.msoComment)
+			if(shape==null)
+				return false;
+
+			if(shape.Type==MsoShapeType.msoPlaceholder||
+				shape.Type==MsoShapeType.msoOLEControlObject||
+				shape.Type==MsoShapeType.msoComment)
 			{
 				return false;
 			}
@@ -225,121 +211,17 @@ namespace PPA.Shape
 				float left = shape.Left, top = shape.Top;
 				float right = left + shape.Width, bottom = top + shape.Height;
 
-				// 检查是否超出幻灯片边界
 				if(left<-0.5f||top<-0.5f||right>slideWidth+0.5f||bottom>slideHeight+0.5f)
 				{
-					// 检查是否与幻灯片有重叠区域
 					return !(right<=0||bottom<=0||left>=slideWidth||top>=slideHeight);
-				} else
-				{
-					// 如果不超出幻灯片边界，直接返回 false
-					return false;
 				}
-			} catch(COMException)
+
+				return false;
+			} catch
 			{
-				// 处理可能出现的COM异常（如形状已被删除）
 				return false;
 			}
 		}
-
-		#endregion Private Methods
-	}
-
-	public static class ShapeForUtils
-	{
-		#region Public Methods
-
-		/// <summary>
-		/// 将源形状的格式（样式）应用到目标形状，实现类似“格式刷”的功能。 仅当两者类型一致时才执行，避免样式应用异常。
-		/// </summary>
-		/// <param name="sourceShape"> 格式来源形状。 </param>
-		/// <param name="targetShape"> 要应用格式的目标形状。 </param>
-		public static void ApplyShapeFormat(MSOP.Shape sourceShape,MSOP.Shape targetShape)
-		{
-			// 判断类型是否一致
-			if(sourceShape.Type==targetShape.Type&&
-				sourceShape.AutoShapeType==targetShape.AutoShapeType)
-			{
-				sourceShape.PickUp();
-				targetShape.Apply();
-			} else
-			{
-				// 可根据需要抛出异常或记录日志
-				Profiler.LogMessage("源形状与目标形状类型不一致，未执行格式刷。");
-			}
-		}
-
-		/// <summary>
-		/// 使用 AddShape 方法手动创建形状副本。 适用于简单形状的复制，需手动复制位置、大小、填充、线条等属性。
-		/// </summary>
-		/// <param name="slide"> 目标幻灯片对象。 </param>
-		/// <param name="shape"> 要复制的形状对象。 </param>
-		/// <returns> 复制后的新形状对象。 </returns>
-		/// 调用方法：var newShape = ShapeUtils.CopyShapeUsingAddShape(slide, shape1);
-		public static MSOP.Shape CopyShapeUsingAddShape(MSOP.Slide slide,MSOP.Shape shape)
-		{
-			var copyShape = slide.Shapes.AddShape(
-				shape.AutoShapeType,
-				shape.Left,
-				shape.Top,
-				shape.Width,
-				shape.Height
-			);
-
-			// 复制填充、线条等属性
-			copyShape.Fill.ForeColor.RGB=shape.Fill.ForeColor.RGB;
-			copyShape.Line.ForeColor.RGB=shape.Line.ForeColor.RGB;
-			copyShape.Rotation=shape.Rotation;
-
-			return copyShape;
-		}
-
-		/// <summary>
-		/// 使用 Group 和 Ungroup 方法复制复杂形状。 适用于复杂形状的复制，但代码稍显繁琐。
-		/// </summary>
-		/// <param name="slide"> 目标幻灯片对象。 </param>
-		/// <param name="shape"> 要复制的形状对象。 </param>
-		/// <returns> 复制后的新形状对象。 </returns>
-		public static MSOP.Shape CopyShapeUsingGroupAndUngroup(MSOP.Slide slide,MSOP.Shape shape)
-		{
-			var tempShape = slide.Shapes.AddShape(
-				Office.MsoAutoShapeType.msoShapeRectangle,
-				0, 0, 1, 1
-			);
-
-			var group = slide.Shapes.Range(new object[] { shape.Name, tempShape.Name }).Group();
-			var copyShape = group.Ungroup()[1];
-
-			// 删除临时形状
-			tempShape.Delete();
-
-			return copyShape;
-		}
-
-		/// <summary>
-		/// 使用 PickUp 和 Apply 方法复制形状样式。 适用于快速复制样式，但不会复制内容（如文本或图片）。
-		/// </summary>
-		/// <param name="slide"> 目标幻灯片对象。 </param>
-		/// <param name="shape"> 要复制的形状对象。 </param>
-		/// <returns> 复制后的新形状对象。 </returns>
-		public static MSOP.Shape CopyShapeUsingPickUpAndApply(MSOP.Slide slide,MSOP.Shape shape)
-		{
-			var copyShape = slide.Shapes.AddShape(
-				shape.AutoShapeType,
-				shape.Left,
-				shape.Top,
-				shape.Width,
-				shape.Height
-			);
-
-			// 复制样式
-			shape.PickUp();
-			copyShape.Apply();
-
-			return copyShape;
-		}
-
-		#endregion Public Methods
 	}
 }
 
@@ -351,4 +233,4 @@ msoMergeCombine 1	组合	合并形状但保留重叠区域的边界
 msoMergeFragment    2	拆分	将重叠区域分割为独立形状
 msoMergeIntersect   3	相交	保留所有形状的重叠区域
 msoMergeSubtract    4	剪除	从第一个形状中减去后续形
- */
+*/

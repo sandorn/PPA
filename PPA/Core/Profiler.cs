@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace PPA.Core
@@ -23,6 +24,16 @@ namespace PPA.Core
 		/// </summary>
 		public static string LogFilePath { get; set; } = "Profiler.log";
 
+		/// <summary>
+		/// 最多保留的日志文件数量
+		/// </summary>
+		public static int MaxLogFiles { get; set; } = 10;
+
+		/// <summary>
+		/// 日志文件最长保留时间
+		/// </summary>
+		public static TimeSpan? MaxLogAge { get; set; } = TimeSpan.FromDays(7);
+
 		#endregion Public Properties
 
 		#region Private Fields
@@ -42,18 +53,27 @@ namespace PPA.Core
 		/// 测量无返回值方法的执行时间 自动记录性能数据到调试输出和可选的文件日志
 		/// </summary>
 		/// <param name="action"> 要执行的操作 </param>
+		/// <param name="message"> 消息内容 </param>
+		/// <param name="logLevel"> 日志级别（如：INFO, WARN, ERROR等） </param>
+		/// <param name="methodIdentifier"> 方法标识符（如果提供则使用，否则自动获取） </param>
 		/// <param name="callerMethod"> 方法名称（默认为调用者方法名） </param>
-		/// <param name="filePath"> 调用者文件路径（默认为调用者文件路径） </param>
+		/// <param name="callerFile"> 调用者文件路径（默认为调用者文件路径） </param>
 		/// <returns> 执行耗时 </returns>
-		public static TimeSpan Time(Action action,[CallerMemberName] string callerMethod = "",[CallerFilePath] string filePath = "")
+		public static TimeSpan Time(Action action,string message = null,string logLevel = "INFO",string methodIdentifier = null,[CallerMemberName] string callerMethod = "",[CallerFilePath] string callerFile = "")
 		{
 			var sw = Stopwatch.StartNew();
 			action();
 			sw.Stop();
 
 			// 直接调用LogMessage方法记录性能数据
-			string message = $"执行耗时: {sw.Elapsed.TotalMilliseconds:F3} ms";
-			LogMessage(message,"性能监控",callerMethod,filePath);
+			message=$"{message} 执行耗时: {sw.Elapsed.TotalMilliseconds:F3} ms";
+			if(string.IsNullOrEmpty(methodIdentifier))
+			{
+				methodIdentifier=string.IsNullOrEmpty(callerFile)
+					? callerMethod
+					: $"{Path.GetFileNameWithoutExtension(callerFile)}.{callerMethod}";
+			}
+			LogMessage(message,logLevel,methodIdentifier,callerMethod,callerFile);
 			return sw.Elapsed;
 		}
 
@@ -62,22 +82,81 @@ namespace PPA.Core
 		/// </summary>
 		/// <typeparam name="T"> 返回值类型 </typeparam>
 		/// <param name="func"> 要执行的函数 </param>
+		/// <param name="message"> 消息内容 </param>
+		/// <param name="logLevel"> 日志级别（如：INFO, WARN, ERROR等） </param>
+		/// <param name="methodIdentifier"> 方法标识符（如果提供则使用，否则自动获取） </param>
 		/// <param name="callerMethod"> 方法名称（默认为调用者方法名） </param>
-		/// <param name="filePath"> 调用者文件路径（默认为调用者文件路径） </param>
+		/// <param name="callerFile"> 调用者文件路径（默认为调用者文件路径） </param>
 		/// <returns> 元组：方法返回值和执行耗时 </returns>
-		public static (T result, TimeSpan elapsed) Time<T>(Func<T> func,[CallerMemberName] string callerMethod = "",[CallerFilePath] string filePath = "")
+		public static (T result, TimeSpan elapsed) Time<T>(Func<T> func,string message = null,string logLevel = "INFO",string methodIdentifier = null,[CallerMemberName] string callerMethod = "",[CallerFilePath] string callerFile = "")
 		{
 			var sw = Stopwatch.StartNew();
 			var result = func();
 			sw.Stop();
 
 			// 直接调用LogMessage方法记录性能数据
-			string message = $"执行耗时: {sw.Elapsed.TotalMilliseconds:F3} ms";
-			LogMessage(message,"性能监控",callerMethod,filePath);
+			message=$"{message} 执行耗时: {sw.Elapsed.TotalMilliseconds:F3} ms";
+			if(string.IsNullOrEmpty(methodIdentifier))
+			{
+				methodIdentifier=string.IsNullOrEmpty(callerFile)
+					? callerMethod
+					: $"{Path.GetFileNameWithoutExtension(callerFile)}.{callerMethod}";
+			}
+			LogMessage(message,logLevel,methodIdentifier,callerMethod,callerFile);
 			return (result, sw.Elapsed);
 		}
 
 		#endregion Public Methods
+
+		/// <summary>
+		/// 根据当前策略清理多余或过期的日志文件。
+		/// </summary>
+		/// <param name="directory"> 日志目录。 </param>
+		/// <param name="searchPattern"> 匹配的日志文件模式。 </param>
+		public static void CleanupLogFiles(string directory,string searchPattern = "PPA_*.log")
+		{
+			try
+			{
+				if(string.IsNullOrEmpty(directory)||!Directory.Exists(directory))
+				{
+					return;
+				}
+
+				var files = new DirectoryInfo(directory)
+					.GetFiles(searchPattern,SearchOption.TopDirectoryOnly)
+					.OrderByDescending(f => f.CreationTimeUtc)
+					.ToList();
+
+				if(files.Count==0)
+				{
+					return;
+				}
+
+				var maxFiles = MaxLogFiles>0 ? MaxLogFiles : int.MaxValue;
+				var maxAge = MaxLogAge;
+
+				for(int i = 0;i<files.Count;i++)
+				{
+					var file = files[i];
+					bool exceedsCount = i>=maxFiles;
+					bool exceedsAge = maxAge.HasValue && (DateTime.UtcNow-file.CreationTimeUtc)>maxAge.Value;
+
+					if(exceedsCount||exceedsAge)
+					{
+						try
+						{
+							file.Delete();
+						} catch
+						{
+							// 忽略删除失败
+						}
+					}
+				}
+			} catch
+			{
+				// 忽略清理异常
+			}
+		}
 
 		/// <summary>
 		/// 强制把缓冲日志写入文件
@@ -102,14 +181,18 @@ namespace PPA.Core
 		/// </summary>
 		/// <param name="message"> 日志消息内容 </param>
 		/// <param name="logLevel"> 日志级别（如：INFO, WARN, ERROR等） </param>
-		/// <param name="callerMethod"> 调用者方法名（自动获取） </param>
-		/// <param name="filePath"> 调用者文件路径（自动获取） </param>
-		public static void LogMessage(string message,string logLevel = "INFO",[CallerMemberName] string callerMethod = "",[CallerFilePath] string filePath = "")
+		/// <param name="methodIdentifier"> 可选的调用位置标识符（如果提供则使用，否则自动获取） </param>
+		/// <param name="callerMethod"> 调用者方法名（自动获取，当 methodIdentifier 为空时使用） </param>
+		/// <param name="callerFile"> 调用者文件路径（自动获取，当 methodIdentifier 为空时使用） </param>
+		public static void LogMessage(string message,string logLevel = "INFO",string methodIdentifier = null,[CallerMemberName] string callerMethod = "",[CallerFilePath] string callerFile = "")
 		{
-			// 构建日志标识符，包含文件名和方法名
-			string methodIdentifier = string.IsNullOrEmpty(filePath)
-				? callerMethod
-				: $"{Path.GetFileNameWithoutExtension(filePath)}.{callerMethod}";
+			// 如果未提供 methodIdentifier，则自动构建
+			if(string.IsNullOrEmpty(methodIdentifier))
+			{
+				methodIdentifier=string.IsNullOrEmpty(callerFile)
+					? callerMethod
+					: $"{Path.GetFileNameWithoutExtension(callerFile)}.{callerMethod}";
+			}
 
 			var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}]\t[{logLevel}]\t{methodIdentifier}\t{message}";
 
@@ -147,7 +230,7 @@ namespace PPA.Core
 					// 延迟初始化写入器
 					_writer=new StreamWriter(LogFilePath,append: true)
 					{
-						AutoFlush = true
+						AutoFlush=true
 					};
 				} catch
 				{
@@ -165,7 +248,7 @@ namespace PPA.Core
 					_writer.WriteLine(_buffer.Dequeue());
 				}
 				_writer.Flush();
-				_lastFlushTime = DateTime.UtcNow;
+				_lastFlushTime=DateTime.UtcNow;
 			} catch
 			{
 				// 写入失败时清理资源
@@ -192,10 +275,12 @@ namespace PPA.Core.Extensions
 		/// <remarks> 注意：此方法会使所有Action获得Time()方法 </remarks>
 		public static TimeSpan Time(
 			this Action action,
+			string logLevel = "INFO",
+			string methodIdentifier = null,
 			[CallerMemberName] string callerMethod = "",
-			[CallerFilePath] string filePath = "")
+			[CallerFilePath] string callerFile = "")
 		{
-			return Profiler.Time(action,callerMethod,filePath);
+			return Profiler.Time(action,logLevel,methodIdentifier,callerMethod,callerFile);
 		}
 
 		/// <summary>
@@ -204,29 +289,35 @@ namespace PPA.Core.Extensions
 		/// <remarks> 注意：此方法会使所有Func获得Time()方法 </remarks>
 		public static (TResult Result, TimeSpan Elapsed) Time<TResult>(
 			this Func<TResult> func,
+			string logLevel = "INFO",
+			string methodIdentifier = null,
 			[CallerMemberName] string callerMethod = "",
-			[CallerFilePath] string filePath = "")
+			[CallerFilePath] string callerFile = "")
 		{
-			return Profiler.Time(func,callerMethod,filePath);
+			return Profiler.Time(func,logLevel,methodIdentifier,callerMethod,callerFile);
 		}
 
 		// 可选：添加常用参数类型的重载
 		public static TimeSpan Time<Targs>(
 			this Action<Targs> action,
 			Targs arg,
+			string logLevel = "INFO",
+			string methodIdentifier = null,
 			[CallerMemberName] string callerMethod = "",
-			[CallerFilePath] string filePath = "")
+			[CallerFilePath] string callerFile = "")
 		{
-			return Time(() => action(arg),callerMethod,filePath);
+			return Time(() => action(arg),logLevel,methodIdentifier,callerMethod,callerFile);
 		}
 
 		public static (TResult Result, TimeSpan Elapsed) Time<Targs, TResult>(
 			this Func<Targs,TResult> func,
 			Targs arg,
+			string logLevel = "INFO",
+			string methodIdentifier = null,
 			[CallerMemberName] string callerMethod = "",
-			[CallerFilePath] string filePath = "")
+			[CallerFilePath] string callerFile = "")
 		{
-			return Time(() => func(arg),callerMethod,filePath);
+			return Time(() => func(arg),logLevel,methodIdentifier,callerMethod,callerFile);
 		}
 
 		/// <summary>
@@ -235,11 +326,18 @@ namespace PPA.Core.Extensions
 		/// <param name="_"> 任意对象（仅用于扩展方法语法，实际未使用） </param>
 		/// <param name="message"> 日志消息内容 </param>
 		/// <param name="logLevel"> 日志级别（如：INFO, WARN, ERROR等） </param>
+		/// <param name="methodIdentifier"> 方法标识符（如果提供则使用，否则自动获取） </param>
 		/// <param name="callerMethod"> 调用者方法名（自动获取） </param>
-		/// <param name="filePath"> 调用者文件路径（自动获取） </param>
-		public static void Log(this object _,string message,string logLevel = "INFO",[CallerMemberName] string callerMethod = "",[CallerFilePath] string filePath = "")
+		/// <param name="callerFile"> 调用者文件路径（自动获取） </param>
+		public static void Log(this object _,string message,string logLevel = "INFO",string methodIdentifier = null,[CallerMemberName] string callerMethod = "",[CallerFilePath] string callerFile = "")
 		{
-			Profiler.LogMessage(message,logLevel,callerMethod,filePath);
+			if(string.IsNullOrEmpty(methodIdentifier))
+			{
+				methodIdentifier=string.IsNullOrEmpty(callerFile)
+					? callerMethod
+					: $"{Path.GetFileNameWithoutExtension(callerFile)}.{callerMethod}";
+			}
+			Profiler.LogMessage(message,logLevel,methodIdentifier);
 		}
 
 		#endregion Public Methods

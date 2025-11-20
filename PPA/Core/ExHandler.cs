@@ -1,5 +1,8 @@
+using PPA.Core.Abstraction.Infrastructure;
+using PPA.Core.Logging;
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -40,32 +43,47 @@ namespace PPA.Core
 
 		#region Methods
 
+		private static ILogger Logger => LoggerProvider.GetLogger();
+
 		// 无返回值方法（带调用方法名捕获）
 		public static void Run(
 			Action action,
-			string context = null,
+			string message = null,
 			bool? enableTiming = null, // 局部覆盖参数
+			string logLevel = "INFO",
+			string methodIdentifier = null,
 			[CallerMemberName] string callerMethod = "",
-			[CallerFilePath] string callerFile = "")
+			[CallerFilePath] string callerFile = "",
+			bool logOnSuccess = false)
 		{
 			TimeSpan elapsed = TimeSpan.Zero;
-			// 决策逻辑：优先使用局部参数，否则使用全局默认值
+			// 决策逻辑：优先使用局部参数，否则使用全局默认值 如果未提供 methodIdentifier，则自动构建
+			if(string.IsNullOrEmpty(methodIdentifier))
+			{
+				methodIdentifier=string.IsNullOrEmpty(callerFile)
+					? callerMethod
+					: $"{Path.GetFileNameWithoutExtension(callerFile)}.{callerMethod}";
+			}
+
 			bool shouldTime = enableTiming ?? EnableTiming;
 
 			try
 			{
 				if(shouldTime)
 				{
-					elapsed=Profiler.Time(action,callerMethod,callerFile);
+					elapsed=Profiler.Time(action,message,logLevel,methodIdentifier,callerMethod,callerFile);
 				} else
 				{
 					action();
-					Profiler.LogMessage(context,"ExHandler",callerMethod,callerFile);
+					if(logOnSuccess&&!string.IsNullOrWhiteSpace(message))
+					{
+						Logger.LogInformation(message,callerMethod,callerFile);
+					}
 				}
 			} catch(Exception ex)
 			{
 				HandleException(ex,
-					effectiveContext: context??callerMethod,
+					message: message,
 					callerMethod: callerMethod,
 					callerFile: callerFile);
 			}
@@ -74,14 +92,21 @@ namespace PPA.Core
 		// 有返回值方法（带调用方法名捕获）
 		public static T Run<T>(
 			Func<T> func,
-			string context = null,
+			string message = null,
 			bool? enableTiming = null, // 局部覆盖参数
+			string logLevel = "INFO",
 			[CallerMemberName] string callerMethod = "",
 			[CallerFilePath] string callerFile = "",
-			T defaultValue = default)
+			T defaultValue = default,
+			bool logOnSuccess = false)
 		{
 			TimeSpan elapsed = TimeSpan.Zero;
 			T result = defaultValue;
+			// 如果未提供 methodIdentifier，则自动构建
+			string methodIdentifier = string.IsNullOrEmpty(callerFile)
+				? callerMethod
+				: $"{Path.GetFileNameWithoutExtension(callerFile)}.{callerMethod}";
+
 			// 决策逻辑：优先使用局部参数，否则使用全局默认值
 			bool shouldTime = enableTiming ?? EnableTiming;
 
@@ -89,69 +114,70 @@ namespace PPA.Core
 			{
 				if(shouldTime)
 				{
-					(result, elapsed)=Profiler.Time(func,callerMethod,callerFile);
+					(result, elapsed)=Profiler.Time(func,message,logLevel,methodIdentifier,callerMethod,callerFile);
 				} else
 				{
 					result=func();
-					Profiler.LogMessage(context,"ExHandler",callerMethod,callerFile);
+					if(logOnSuccess&&!string.IsNullOrWhiteSpace(message))
+					{
+						Logger.LogInformation(message,callerMethod,callerFile);
+					}
 				}
 
 				return result;
 			} catch(Exception ex)
 			{
 				HandleException(ex,
-					effectiveContext: context??callerMethod,
+					message: message,
 					callerMethod: callerMethod,
 					callerFile: callerFile);
 				return defaultValue;
 			}
 		}
 
-		// 获取实际抛出异常的方法名
-		private static string GetActualMethodName(Exception ex)
-		{
-			try
-			{
-				// 从堆栈中获取第一个非系统方法
-				var stackTrace = new StackTrace(ex, fNeedFileInfo: true);
-				foreach(StackFrame frame in stackTrace.GetFrames())
-				{
-					var method = frame.GetMethod();
-					if(method==null) continue;
-
-					// 跳过系统方法
-					var declaringType = method.DeclaringType;
-					if(declaringType==null) continue;
-
-					if(declaringType.Namespace?.StartsWith("System.")!=false||
-						declaringType.Namespace.StartsWith("Microsoft."))
-					{
-						continue;
-					}
-					return $"{declaringType.Name}.{method.Name}";
-				}
-			} catch { /* 安全捕获 */ }
-
-			return null;
-		}
-
 		/// <summary>
 		/// 统一异常处理方法 记录异常信息、调用位置、耗时等详细信息
 		/// </summary>
 		/// <param name="ex"> 捕获的异常 </param>
-		/// <param name="effectiveContext"> 操作上下文（保留用于未来扩展） </param>
+		/// <param name="message"> 消息 </param>
 		/// <param name="callerMethod"> 调用方法名 </param>
 		/// <param name="callerFile"> 调用文件路径 </param>
-		private static void HandleException(Exception ex,string effectiveContext,string callerMethod,string callerFile)
+		private static void HandleException(Exception ex,string message,string callerMethod,string callerFile)
 		{
-			// effectiveContext 保留用于未来扩展，当前未使用
-			_=effectiveContext;
-
 			try
 			{
-				// 输出调试信息
-				Profiler.LogMessage(ExFormatter.FormatFullException(ex),"ExHandler",callerMethod,callerFile);
+				var fullMessage = ExFormatter.FormatFullException(ex);
+				Logger.LogError($"{message} | Exception:\n{fullMessage}",ex,callerMethod,callerFile);
 			} catch {/* 防止日志失败导致二次异常 */}
+		}
+
+		/// <summary>
+		/// 安全获取值：执行 return_function 函数，如果发生异常则返回默认值 这是一个轻量级的异常处理辅助方法，不记录日志，适用于简单的属性访问
+		/// </summary>
+		/// <typeparam name="T"> 返回值类型 </typeparam>
+		/// <param name="return_function"> 获取值的函数 </param>
+		/// <param name="defaultValue"> 默认值，如果 return_function 抛出异常则返回此值 </param>
+		/// <returns> return_function 的返回值，或发生异常时返回 defaultValue </returns>
+		/// <remarks>
+		/// 此方法适用于简单的属性访问或方法调用，不需要详细的异常日志记录。 如果需要详细的异常日志和调用信息，请使用
+		/// <see cref="Run{T}(Func{T}, string, bool?, string, string, T)" /> 方法。
+		/// </remarks>
+		public static T SafeGet<T>(Func<T> return_function,T defaultValue = default)
+		{
+			try { return return_function(); } catch { return defaultValue; }
+		}
+
+		/// <summary>
+		/// 安全执行操作：执行 action，如果发生异常则静默忽略 这是一个轻量级的异常处理辅助方法，不记录日志，适用于简单的属性设置
+		/// </summary>
+		/// <param name="action"> 要执行的操作 </param>
+		/// <remarks>
+		/// 此方法适用于简单的属性设置或方法调用，不需要详细的异常日志记录。 如果需要详细的异常日志和调用信息，请使用
+		/// <see cref="Run(Action, string, bool?, string, string)" /> 方法。
+		/// </remarks>
+		public static void SafeSet(Action action)
+		{
+			try { action(); } catch { }
 		}
 
 		#endregion Methods
@@ -177,10 +203,18 @@ namespace PPA.Core
 			sb.Append($"[{ex.GetType().Name}] {ex.Message}");
 			sb.Append($"\n{"HResult:",-10} 0x{ex.HResult:X8}");
 
+			// 获取实际抛出异常的方法名
+			var actualMethod = GetActualMethodName(ex);
+
+			if(!string.IsNullOrWhiteSpace(actualMethod))
+			{
+				sb.Append($"\n{"Thrown at:",-10} {actualMethod}");
+			}
+
 			if(!string.IsNullOrWhiteSpace(ex.StackTrace))
 			{
 				sb.Append($"\n{"Stack Trace:",-10}");
-				sb.Append(FormatStackTrace(ex.StackTrace));
+				sb.Append("\n          "+string.Join("\n          ",ex.StackTrace.Split(['\r','\n'],StringSplitOptions.RemoveEmptyEntries)));
 			}
 
 			if(ex.InnerException!=null)
@@ -190,10 +224,36 @@ namespace PPA.Core
 			}
 		}
 
-		private static string FormatStackTrace(string stackTrace)
+		/// <summary>
+		/// 从异常堆栈中获取第一个非系统方法名
+		/// </summary>
+		/// <param name="ex"> 异常对象 </param>
+		/// <returns> 方法名，格式为 TypeName.MethodName，如果无法获取则返回 null </returns>
+		private static string GetActualMethodName(Exception ex)
 		{
-			var lines = stackTrace.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
-			return "\n          "+string.Join("\n          ",lines);
+			try
+			{
+				// 从堆栈中获取第一个非系统方法
+				var stackTrace = new StackTrace(ex, fNeedFileInfo: true);
+				foreach(StackFrame frame in stackTrace.GetFrames())
+				{
+					var method = frame.GetMethod();
+					if(method==null) continue;
+
+					// 跳过系统方法
+					var declaringType = method.DeclaringType;
+					if(declaringType==null) continue;
+
+					var ns = declaringType.Namespace;
+					if(ns!=null&&(ns.StartsWith("System.")||ns.StartsWith("Microsoft.")))
+					{
+						continue;
+					}
+					return $"{declaringType.Name}.{method.Name}";
+				}
+			} catch { /* 安全捕获 */ }
+
+			return null;
 		}
 
 		#endregion Methods

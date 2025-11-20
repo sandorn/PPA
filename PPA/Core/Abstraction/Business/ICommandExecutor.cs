@@ -1,40 +1,48 @@
 using System;
-using System.Collections.Generic;
-using PPA.Core.Abstraction.Presentation;
 
 namespace PPA.Core.Abstraction.Business
 {
 	/// <summary>
-	/// Office 原生命令执行器接口
-	/// 用于执行 PowerPoint 内置菜单命令和功能区命令
+	/// Office 原生命令执行器接口 用于执行 PowerPoint 内置菜单命令和功能区命令
 	/// </summary>
+	/// <remarks>
+	/// 此接口定义了执行 PowerPoint 命令的三种方式：
+	/// <list type="bullet">
+	/// <item>
+	/// <description> <see cref="ExecuteMso(string)" /> - 通过 MSO 命令名称执行（推荐方式，跨版本兼容性好） </description>
+	/// </item>
+	/// <item>
+	/// <description> <see cref="ExecuteCommandById(int)" /> - 通过命令 ID 执行（传统方式，需要查找命令 ID） </description>
+	/// </item>
+	/// <item>
+	/// <description> <see cref="ExecuteMenuPath(string)" /> - 通过菜单路径执行（例如 "File|Save As"） </description>
+	/// </item>
+	/// </list>
+	/// 实现类应优先使用 <see cref="ExecuteMso(string)" /> 方法，因为它更简洁且兼容性更好。
+	/// </remarks>
 	public interface ICommandExecutor
 	{
 		/// <summary>
 		/// 通过 MSO 命令名称执行命令（推荐方式）
 		/// </summary>
-		/// <param name="msoCommandName">MSO 命令名称，例如 "Paste", "Copy", "Bold"</param>
-		/// <returns>是否执行成功</returns>
+		/// <param name="msoCommandName"> MSO 命令名称，例如 "Paste", "Copy", "Bold" </param>
+		/// <returns> 是否执行成功 </returns>
 		bool ExecuteMso(string msoCommandName);
 
 		/// <summary>
 		/// 执行命令并返回详细结果
 		/// </summary>
-		/// <remarks>
-		/// 使用原生 COM 对象的 FindControl 方法查找命令。如果 FindControl 失败，则返回失败结果。
-		/// 传统方式，保留，未使用。
-		/// </remarks>
-		/// <param name="commandId">命令 ID</param>
-		/// <returns>命令执行结果详情</returns>
+		/// <remarks> 使用原生 COM 对象的 FindControl 方法查找命令。如果 FindControl 失败，则返回失败结果。 传统方式，保留，未使用。 </remarks>
+		/// <param name="commandId"> 命令 ID </param>
+		/// <returns> 命令执行结果详情 </returns>
 		CommandExecutionResult ExecuteCommandById(int commandId);
 
 		/// <summary>
 		/// 通过菜单路径执行命令（例如 "File|Save As"）
 		/// </summary>
-		/// <param name="menuPath">菜单路径，使用 "|" 分隔层级</param>
-		/// <returns>是否执行成功</returns>
+		/// <param name="menuPath"> 菜单路径，使用 "|" 分隔层级 </param>
+		/// <returns> 是否执行成功 </returns>
 		bool ExecuteMenuPath(string menuPath);
-
 	}
 
 	/// <summary>
@@ -88,4 +96,3 @@ namespace PPA.Core.Abstraction.Business
 		public Exception Exception { get; set; }
 	}
 }
-

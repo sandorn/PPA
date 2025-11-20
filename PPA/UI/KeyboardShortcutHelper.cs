@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
-using PPA.Core;
 using PPA.Core.Abstraction.Business;
+using PPA.Core.Abstraction.Infrastructure;
+using PPA.Core.Logging;
 using PPA.Formatting;
 using PPA.Shape;
 using System;
@@ -22,6 +23,9 @@ namespace PPA.UI
 		private static bool _initialized = false;
 		private static NETOP.Application _app;
 		private static MessageWindow _messageWindow;
+		private static IServiceProvider _serviceProvider;
+		private static IApplicationProvider _applicationProvider;
+		private static ILogger _logger = LoggerProvider.GetLogger();
 
 		#endregion Private Fields
 
@@ -53,14 +57,17 @@ namespace PPA.UI
 		/// <summary>
 		/// 初始化快捷键系统
 		/// </summary>
-		/// <param name="app"> PowerPoint 应用程序实例 </param>
-		public static void Initialize(NETOP.Application app)
+		/// <param name="applicationProvider"> 应用程序上下文提供者 </param>
+		public static void Initialize(IApplicationProvider applicationProvider)
 		{
-			if(_initialized||app==null) return;
+			if(_initialized||applicationProvider?.NetApplication==null) return;
 
 			try
 			{
-				_app=app;
+				_applicationProvider=applicationProvider;
+				_serviceProvider=applicationProvider.ServiceProvider;
+				_logger=applicationProvider.ServiceProvider?.GetService<ILogger>()??LoggerProvider.GetLogger();
+				_app=applicationProvider.NetApplication;
 
 				// 创建消息窗口用于接收热键消息
 				_messageWindow=new MessageWindow();
@@ -70,10 +77,10 @@ namespace PPA.UI
 				RegisterGlobalShortcuts();
 
 				_initialized=true;
-				Profiler.LogMessage("快捷键系统初始化成功（全局快捷键）","INFO");
+				_logger.LogInformation("快捷键系统初始化成功（全局快捷键）");
 			} catch(Exception ex)
 			{
-				Profiler.LogMessage($"快捷键系统初始化失败: {ex.Message}","WARN");
+				_logger.LogWarning($"快捷键系统初始化失败: {ex.Message}");
 			}
 		}
 
@@ -96,10 +103,10 @@ namespace PPA.UI
 				_shortcuts.Clear();
 				_app=null;
 				_initialized=false;
-				Profiler.LogMessage("快捷键系统已注销","INFO");
+				_logger.LogInformation("快捷键系统已注销");
 			} catch(Exception ex)
 			{
-				Profiler.LogMessage($"快捷键系统注销失败: {ex.Message}","WARN");
+				_logger.LogWarning($"快捷键系统注销失败: {ex.Message}");
 			}
 		}
 
@@ -118,10 +125,10 @@ namespace PPA.UI
 				// 重新注册快捷键
 				RegisterGlobalShortcuts();
 
-				Profiler.LogMessage("快捷键已重新加载","INFO");
+				_logger.LogInformation("快捷键已重新加载");
 			} catch(Exception ex)
 			{
-				Profiler.LogMessage($"重新加载快捷键失败: {ex.Message}","WARN");
+				_logger.LogWarning($"重新加载快捷键失败: {ex.Message}");
 			}
 		}
 
@@ -153,7 +160,7 @@ namespace PPA.UI
 						var helper = ResolveTableBatchHelper();
 						if(helper==null)
 						{
-							Profiler.LogMessage("警告：无法获取 ITableBatchHelper 服务", "WARN");
+							_logger.LogWarning("警告：无法获取 ITableBatchHelper 服务");
 							return;
 						}
 						helper.FormatTables(app);
@@ -169,7 +176,7 @@ namespace PPA.UI
 						var helper = ResolveTextBatchHelper();
 						if(helper==null)
 						{
-							Profiler.LogMessage("警告：无法获取 ITextBatchHelper 服务", "WARN");
+							_logger.LogWarning("警告：无法获取 ITextBatchHelper 服务");
 							return;
 						}
 						helper.FormatText(app);
@@ -185,7 +192,7 @@ namespace PPA.UI
 						var helper = ResolveChartBatchHelper();
 						if(helper==null)
 						{
-							Profiler.LogMessage("警告：无法获取 IChartBatchHelper 服务", "WARN");
+							_logger.LogWarning("警告：无法获取 IChartBatchHelper 服务");
 							return;
 						}
 						helper.FormatCharts(app);
@@ -196,13 +203,22 @@ namespace PPA.UI
 			if(!string.IsNullOrWhiteSpace(shortcuts.CreateBoundingBox))
 			{
 				RegisterShortcut(hWnd,HOTKEY_CREATE_BOUNDING_BOX,shortcuts.CreateBoundingBox,
-					(app) => ShapeBatchHelper.Bt601_Click(app),"插入形状");
+					(app) =>
+					{
+						var helper = ResolveShapeBatchHelper();
+						if(helper==null)
+						{
+							_logger.LogWarning("警告：无法获取 IShapeBatchHelper 服务");
+							return;
+						}
+						helper.CreateBoundingBox(app);
+					},"插入形状");
 			}
 		}
 
 		private static ITextBatchHelper ResolveTextBatchHelper()
 		{
-			var serviceProvider = Globals.ThisAddIn?.ServiceProvider;
+			var serviceProvider = _serviceProvider ?? _applicationProvider?.ServiceProvider;
 			if(serviceProvider==null)
 			{
 				return null;
@@ -215,8 +231,8 @@ namespace PPA.UI
 			}
 
 			var textHelper = serviceProvider.GetService<ITextFormatHelper>();
-		var shapeHelper = ResolveShapeHelper(serviceProvider);
-		if(textHelper!=null)
+			var shapeHelper = ResolveShapeHelper(serviceProvider);
+			if(textHelper!=null)
 			{
 				return new TextBatchHelper(textHelper,shapeHelper);
 			}
@@ -226,7 +242,7 @@ namespace PPA.UI
 
 		private static IChartBatchHelper ResolveChartBatchHelper()
 		{
-			var serviceProvider = Globals.ThisAddIn?.ServiceProvider;
+			var serviceProvider = _serviceProvider ?? _applicationProvider?.ServiceProvider;
 			if(serviceProvider==null)
 			{
 				return null;
@@ -240,7 +256,7 @@ namespace PPA.UI
 
 			var formatHelper = serviceProvider.GetService<IChartFormatHelper>();
 			var shapeHelper = ResolveShapeHelper(serviceProvider);
-		if(formatHelper!=null)
+			if(formatHelper!=null)
 			{
 				return new ChartBatchHelper(formatHelper,shapeHelper);
 			}
@@ -250,7 +266,7 @@ namespace PPA.UI
 
 		private static ITableBatchHelper ResolveTableBatchHelper()
 		{
-			var serviceProvider = Globals.ThisAddIn?.ServiceProvider;
+			var serviceProvider = _serviceProvider ?? _applicationProvider?.ServiceProvider;
 			if(serviceProvider==null)
 			{
 				return null;
@@ -274,10 +290,28 @@ namespace PPA.UI
 
 		private static IShapeHelper ResolveShapeHelper(IServiceProvider serviceProvider = null)
 		{
-			serviceProvider ??= Globals.ThisAddIn?.ServiceProvider;
+			serviceProvider??=_serviceProvider??_applicationProvider?.ServiceProvider;
 			var helper = serviceProvider?.GetService<IShapeHelper>();
 			// 如果无法从 DI 获取，创建新实例
-			return helper ?? new ShapeUtils();
+			return helper??new ShapeUtils();
+		}
+
+		private static IShapeBatchHelper ResolveShapeBatchHelper()
+		{
+			var serviceProvider = _serviceProvider ?? _applicationProvider?.ServiceProvider;
+			if(serviceProvider==null)
+			{
+				return null;
+			}
+
+			var batchHelper = serviceProvider.GetService<IShapeBatchHelper>();
+			if(batchHelper!=null)
+			{
+				return batchHelper;
+			}
+
+			var shapeHelper = ResolveShapeHelper(serviceProvider);
+			return shapeHelper!=null ? new ShapeBatchHelper(shapeHelper) : null;
 		}
 
 		/// <summary>
@@ -293,15 +327,15 @@ namespace PPA.UI
 					_shortcuts[hotkeyId]=action;
 					// 显示完整的快捷键（Ctrl + 配置的值）
 					string fullShortcut = $"Ctrl+{shortcut}";
-					Profiler.LogMessage($"注册快捷键: {fullShortcut} ({actionName})","INFO");
+					_logger.LogInformation($"注册快捷键: {fullShortcut} ({actionName})");
 				} else
 				{
 					string fullShortcut = $"Ctrl+{shortcut}";
-					Profiler.LogMessage($"注册快捷键 {fullShortcut} ({actionName}) 失败（可能已被占用）","WARN");
+					_logger.LogWarning($"注册快捷键 {fullShortcut} ({actionName}) 失败（可能已被占用）");
 				}
 			} else
 			{
-				Profiler.LogMessage($"快捷键格式无效: {shortcut} ({actionName})，跳过注册","WARN");
+				_logger.LogWarning($"快捷键格式无效: {shortcut} ({actionName})，跳过注册");
 			}
 		}
 
@@ -378,7 +412,7 @@ namespace PPA.UI
 					action(_app);
 				} catch(Exception ex)
 				{
-					Profiler.LogMessage($"执行快捷键失败: {ex.Message}","ERROR");
+					_logger.LogError($"执行快捷键失败: {ex.Message}",ex);
 				}
 			}
 		}
