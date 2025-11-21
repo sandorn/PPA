@@ -1,7 +1,6 @@
 using PPA.Core;
 using PPA.Core.Abstraction.Business;
 using PPA.Core.Abstraction.Infrastructure;
-using PPA.Core.Abstraction.Presentation;
 using PPA.Core.Logging;
 using System;
 using Office = NetOffice.OfficeApi;
@@ -11,28 +10,9 @@ namespace PPA.Utilities
 	/// <summary>
 	/// Office 原生命令执行器 提供执行 PowerPoint 内置菜单命令和功能区命令的功能
 	/// </summary>
-	/// <remarks>
-	/// 此类实现了 <see cref="ICommandExecutor" /> 接口，提供三种命令执行方式：
-	/// <list type="bullet">
-	/// <item>
-	/// <description> <see cref="ExecuteMso(string)" /> - 通过 MSO 命令名称执行（推荐方式） </description>
-	/// </item>
-	/// <item>
-	/// <description> <see cref="ExecuteCommandById(int)" /> - 通过命令 ID 执行（传统方式） </description>
-	/// </item>
-	/// <item>
-	/// <description> <see cref="ExecuteMenuPath(string)" /> - 通过菜单路径执行（例如 "File|Save As"） </description>
-	/// </item>
-	/// </list>
-	/// 优先使用 <see cref="ExecuteMso(string)" /> 方法，因为它更简洁且跨版本兼容性更好。
-	/// </remarks>
-	/// <remarks> 初始化 CommandExecutor 实例 </remarks>
-	/// <param name="application"> 应用程序抽象接口，不能为 null </param>
-	/// <param name="logger"> 日志记录器，如果为 null 则使用默认日志记录器 </param>
-	/// <exception cref="ArgumentNullException"> 当 application 为 null 时抛出 </exception>
-	public class CommandExecutor(IApplication application,ILogger logger = null):ICommandExecutor
+	public class CommandExecutor(IApplicationProvider applicationProvider,ILogger logger = null):ICommandExecutor
 	{
-		private readonly IApplication _abstractApp = application??throw new ArgumentNullException(nameof(application));
+		private readonly IApplicationProvider _applicationProvider = applicationProvider??throw new ArgumentNullException(nameof(applicationProvider));
 		private readonly ILogger _logger = logger??LoggerProvider.GetLogger();
 
 		/// <summary>
@@ -50,7 +30,7 @@ namespace PPA.Utilities
 
 			return ExHandler.Run<bool>(() =>
 			{
-				var netApp = ApplicationHelper.EnsureValidNetApplication(_abstractApp);
+				var netApp = ApplicationHelper.EnsureValidNetApplication(_applicationProvider.NetApplication);
 				if(netApp==null)
 				{
 					_logger.LogError("无法获取有效的 Application");
@@ -75,7 +55,7 @@ namespace PPA.Utilities
 
 			return ExHandler.Run<CommandExecutionResult>(() =>
 			{
-				var netApp = ApplicationHelper.EnsureValidNetApplication(_abstractApp);
+				var netApp = ApplicationHelper.EnsureValidNetApplication(_applicationProvider.NetApplication);
 				if(netApp==null)
 				{
 					result.Success=false;
@@ -137,7 +117,7 @@ namespace PPA.Utilities
 
 			return ExHandler.Run(() =>
 			{
-				var netApp = ApplicationHelper.EnsureValidNetApplication(_abstractApp);
+				var netApp = ApplicationHelper.EnsureValidNetApplication(_applicationProvider.NetApplication);
 				if(netApp==null)
 				{
 					_logger.LogError("无法获取有效的 Application");

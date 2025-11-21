@@ -3,7 +3,6 @@ using PPA.Core;
 using PPA.Core.Abstraction.Business;
 using PPA.Core.Abstraction.Infrastructure;
 using PPA.Core.Abstraction.Presentation;
-using PPA.Core.Adapters;
 using PPA.Core.Logging;
 using PPA.Utilities;
 using System;
@@ -22,39 +21,19 @@ namespace PPA.Shape
 		#region IShapeHelper 实现
 
 		/// <summary>
-		/// 创建单个矩形
+		/// 创建单个矩形 (NetOffice 版本)
 		/// </summary>
-		public IShape AddOneShape(ISlide slide,float left,float top,float width,float height,float rotation = 0)
+		public NETOP.Shape AddOneShape(NETOP.Slide slide, float left, float top, float width, float height, float rotation = 0)
 		{
-			if(slide==null) throw new ArgumentNullException(nameof(slide));
-
-			// 使用 AdapterUtils 统一转换
-			var netSlide = AdapterUtils.UnwrapSlide(slide);
-			var netApp = AdapterUtils.UnwrapApplicationFromSlide(slide);
-
-			if(netSlide==null||netApp==null) return null;
-
-			var netShape = AddOneShapeInternal(netSlide, left, top, width, height, rotation);
-			if(netShape!=null)
-			{
-				return AdapterUtils.WrapShape(netApp,netShape);
-			}
-			return null;
+			return AddOneShapeInternal(slide, left, top, width, height, rotation);
 		}
 
 		/// <summary>
-		/// 获取形状的边框宽度
+		/// 获取形状的边框宽度 (NetOffice 版本)
 		/// </summary>
-		public (float top, float left, float right, float bottom) GetShapeBorderWeights(IShape shape)
+		public (float top, float left, float right, float bottom) GetShapeBorderWeights(NETOP.Shape shape)
 		{
-			if(shape==null) return (0, 0, 0, 0);
-
-			// 使用 AdapterUtils 统一转换
-			var netShape = AdapterUtils.UnwrapShape(shape);
-
-			if(netShape==null) return (0, 0, 0, 0);
-
-			return GetShapeBorderWeightsInternal(netShape);
+			return GetShapeBorderWeightsInternal(shape);
 		}
 
 		/// <summary>
@@ -106,38 +85,20 @@ namespace PPA.Shape
 		/// <summary>
 		/// 尝试获取当前幻灯片
 		/// </summary>
-		public ISlide TryGetCurrentSlide(IApplication app)
+		public NETOP.Slide TryGetCurrentSlide(NETOP.Application app)
 		{
-			if(app==null) return null;
-
-			// 使用 AdapterUtils 统一转换
-			var netApp = AdapterUtils.UnwrapApplication(app);
-
-			if(netApp==null) return null;
-
-			var currentApp = netApp;
-			var netSlide = TryGetCurrentSlideInternal(ref currentApp);
-			if(netSlide!=null)
-			{
-				// 如果内部刷新了 Application，需要使用最新实例包装
-				return AdapterUtils.WrapSlide(currentApp,netSlide);
-			}
-			return null;
+			if (app == null) return null;
+			var currentApp = app;
+			return TryGetCurrentSlideInternal(ref currentApp);
 		}
 
 		/// <summary>
 		/// 验证并返回当前选择的对象
 		/// </summary>
-		public object ValidateSelection(IApplication app,bool requireMultipleShapes = false,bool showWarningWhenInvalid = true)
+		public object ValidateSelection(NETOP.Application app, bool requireMultipleShapes = false, bool showWarningWhenInvalid = true)
 		{
-			if(app==null) return null;
-
-			// 使用 AdapterUtils 统一转换
-			var netApp = AdapterUtils.UnwrapApplication(app);
-
-			if(netApp==null) return null;
-
-			return ValidateSelectionInternal(netApp,requireMultipleShapes,showWarningWhenInvalid);
+			if (app == null) return null;
+			return ValidateSelectionInternal(app, requireMultipleShapes, showWarningWhenInvalid);
 		}
 
 		#endregion IShapeHelper 实现

@@ -39,7 +39,7 @@
     <PublishUrl>publish\</PublishUrl>
     <InstallUrl />
     <TargetCulture>zh-chs</TargetCulture>
-    <ApplicationVersion>1.2.0.0</ApplicationVersion>
+    <ApplicationVersion>1.3.0.0</ApplicationVersion>
     <AutoIncrementApplicationRevision>true</AutoIncrementApplicationRevision>
     <UpdateEnabled>true</UpdateEnabled>
     <UpdateInterval>7</UpdateInterval>
@@ -249,16 +249,6 @@
     <Compile Include="Core\Abstraction\Infrastructure\LogLevel.cs" />
     <Compile Include="Core\Abstraction\Presentation\ApplicationType.cs" />
     <Compile Include="Core\Abstraction\Presentation\FeatureSupportLevel.cs" />
-    <Compile Include="Core\Abstraction\Presentation\IApplication.cs" />
-    <Compile Include="Core\Abstraction\Presentation\IChart.cs" />
-    <Compile Include="Core\Abstraction\Presentation\IComWrapper.cs" />
-    <Compile Include="Core\Abstraction\Presentation\IPresentation.cs" />
-    <Compile Include="Core\Abstraction\Presentation\ISlide.cs" />
-    <Compile Include="Core\Abstraction\Presentation\IShape.cs" />
-    <Compile Include="Core\Abstraction\Presentation\ITable.cs" />
-    <Compile Include="Core\Abstraction\Presentation\ITableCell.cs" />
-    <Compile Include="Core\Abstraction\Presentation\ITextRange.cs" />
-    <Compile Include="Core\Abstraction\Presentation\IApplicationFactory.cs" />
     <Compile Include="Core\Abstraction\Presentation\IRibbonXmlProvider.cs" />
     <Compile Include="Core\Abstraction\Presentation\IRibbonIconProvider.cs" />
     <Compile Include="Core\Abstraction\Presentation\IRibbonCommandRouter.cs" />
@@ -268,34 +258,31 @@
     <Compile Include="Core\Abstraction\Business\IShapeHelper.cs" />
     <Compile Include="Core\Abstraction\Business\ICommandExecutor.cs" />
     <Compile Include="Core\Abstraction\Business\OfficeCommands.cs" />
-    <Compile Include="Core\Adapters\PowerPoint\PowerPointApplicationFactory.cs" />
-    <Compile Include="Core\Adapters\AdapterUtils.cs" />
-    <Compile Include="Core\Adapters\PowerPoint\PowerPointApplication.cs" />
-    <Compile Include="Core\Adapters\PowerPoint\PowerPointPresentation.cs" />
-    <Compile Include="Core\Adapters\PowerPoint\PowerPointSlide.cs" />
-    <Compile Include="Core\Adapters\PowerPoint\PowerPointShape.cs" />
-    <Compile Include="Core\Adapters\PowerPoint\PowerPointTable.cs" />
-    <Compile Include="Core\Adapters\PowerPoint\PowerPointTableCell.cs" />
-    <Compile Include="Core\Adapters\PowerPoint\PowerPointTextRange.cs" />
-    <Compile Include="Core\Adapters\PowerPoint\PowerPointChart.cs" />
-    <Compile Include="Core\Adapters\CompositeApplicationFactory.cs" />
+    <Compile Include="Core\Abstraction\Business\ISelectionService.cs" />
     <Compile Include="Utilities\Toast.cs" />
     <Compile Include="Utilities\FileLocator.cs" />
     <Compile Include="Utilities\ApplicationHelper.cs" />
     <Compile Include="Utilities\ComListExtensions.cs" />
     <Compile Include="Utilities\CommandExecutor.cs" />
-    <Compile Include="Formatting\TableFormatHelper.cs" />
-    <Compile Include="Formatting\TextFormatHelper.cs" />
-    <Compile Include="Formatting\ChartFormatHelper.cs" />
-    <Compile Include="Formatting\TableBatchHelper.cs" />
-    <Compile Include="Formatting\TextBatchHelper.cs" />
-    <Compile Include="Formatting\Selection\ShapeSelectionFactory.cs" />
-    <Compile Include="Formatting\ChartBatchHelper.cs" />
-    <Compile Include="Formatting\ShapeBatchHelper.cs" />
-    <Compile Include="Formatting\FormattingConfig.cs" />
     <Compile Include="Utilities\AsyncOperationHelper.cs" />
-    <Compile Include="Formatting\UndoHelper.cs" />
-    <Compile Include="Formatting\AlignHelper.cs" />
+    <Compile Include="Manipulation\AlignHelper.cs" />
+    <Compile Include="Manipulation\ChartBatchHelper.cs" />
+    <Compile Include="Manipulation\ChartFormatHelper.cs" />
+    <Compile Include="Manipulation\ConfigHelper.cs" />
+    <Compile Include="Manipulation\FormattingConfig.cs" />
+    <Compile Include="Manipulation\SelectionService.cs" />
+    <Compile Include="Manipulation\ShapeBatchHelper.cs" />
+    <Compile Include="Manipulation\ShapeSelectionFactory.cs" />
+    <Compile Include="Manipulation\TableBatchHelper.cs" />
+    <Compile Include="Manipulation\TableFormatHelper.cs" />
+    <Compile Include="Manipulation\TextBatchHelper.cs" />
+    <Compile Include="Manipulation\TextFormatHelper.cs" />
+    <Compile Include="Manipulation\UndoHelper.cs" />
+    <Compile Include="Manipulation\Config\LoggingConfig.cs" />
+    <Compile Include="Manipulation\Config\ShortcutsConfig.cs" />
+    <Compile Include="Manipulation\Config\TableFormattingConfig.cs" />
+    <Compile Include="Manipulation\Config\TextFormattingConfig.cs" />
+    <Compile Include="Manipulation\Config\ChartFormattingConfig.cs" />
     <Compile Include="Shape\ShapeUtils.cs" />
     <Compile Include="Shape\MSOICrop.cs" />
     <Compile Include="UI\CustomRibbon.cs" />

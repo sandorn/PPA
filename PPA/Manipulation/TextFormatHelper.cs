@@ -3,11 +3,10 @@ using PPA.Core;
 using PPA.Core.Abstraction.Business;
 using PPA.Core.Abstraction.Infrastructure;
 using PPA.Core.Abstraction.Presentation;
-using PPA.Core.Adapters;
 using PPA.Core.Logging;
 using NETOP = NetOffice.PowerPointApi;
 
-namespace PPA.Formatting
+namespace PPA.Manipulation
 {
 	/// <summary>
 	/// 文本格式化辅助类 提供文本形状的格式化功能
@@ -72,31 +71,6 @@ namespace PPA.Formatting
 				// 设置悬挂缩进（使用配置）
 				textFrame.Ruler.Levels[1].LeftMargin=ConfigHelper.CmToPoints(config.LeftIndent);
 			});
-		}
-
-		/// <summary>
-		/// 应用文本格式化到指定抽象形状
-		/// </summary>
-		/// <param name="shape"> 抽象形状对象 </param>
-		public void ApplyTextFormatting(IShape shape)
-		{
-			_logger.LogInformation($"启动，shape={shape?.GetType().Name??"null"}");
-			if(shape==null)
-			{
-				_logger.LogWarning("shape 为 null，返回");
-				return;
-			}
-
-			// 使用 AdapterUtils 统一转换
-			var native = AdapterUtils.UnwrapShape(shape);
-			if(native!=null)
-			{
-				_logger.LogInformation("成功获取 NetOffice.Shape，使用 PowerPoint 格式化");
-				ApplyTextFormatting(native);
-				return;
-			}
-
-			_logger.LogError($"未知的形状类型 {shape.GetType().FullName}，无法格式化");
 		}
 	}
 }

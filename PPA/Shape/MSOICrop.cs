@@ -3,7 +3,6 @@ using PPA.Core;
 using PPA.Core.Abstraction.Business;
 using PPA.Core.Abstraction.Infrastructure;
 using PPA.Core.Abstraction.Presentation;
-using PPA.Core.Adapters;
 using PPA.Core.Logging;
 using PPA.Utilities;
 using System;
@@ -56,55 +55,63 @@ namespace PPA.Shape
 					return;
 				}
 
-				var shapesToCrop = CollectShapesToCrop(netApp, window.Selection, slide, slideWidth, slideHeight);
+				var (shapesToCrop, collectionsToDispose) = CollectShapesToCrop(netApp, window.Selection, slide, slideWidth, slideHeight);
 				if(shapesToCrop.Count==0)
 				{
 					Toast.Show(ResourceManager.GetString("Toast_CropShapes_None"),Toast.ToastType.Warning);
 					return;
 				}
 
-				_logger.LogInformation($"开始裁剪 {shapesToCrop.Count} 个形状");
-				foreach(var shapeAdapter in shapesToCrop)
+				try
 				{
-					var nativeShape = AdapterUtils.UnwrapShape(shapeAdapter);
-					var ownerSlide = AdapterUtils.UnwrapSlide(shapeAdapter.Slide) ?? slide;
-					if(nativeShape==null||ownerSlide==null)
+					_logger.LogInformation($"开始裁剪 {shapesToCrop.Count} 个形状");
+					foreach(var nativeShape in shapesToCrop)
 					{
-						_logger.LogWarning("无法还原形状或幻灯片，跳过当前项");
-						continue;
-					}
+						if(nativeShape==null)
+						{
+							_logger.LogWarning("形状对象无效，跳过当前项");
+							continue;
+						}
 
-					_logger.LogInformation($"裁剪形状: Id={nativeShape.Id}, Name={nativeShape.Name}");
-					var rect = CreateMaskRectangle(ownerSlide, slideWidth, slideHeight);
-					BooleanCrop(ownerSlide,nativeShape,rect);
+						_logger.LogInformation($"裁剪形状: Id={nativeShape.Id}, Name={nativeShape.Name}");
+						BooleanCrop(slide,nativeShape,slideWidth,slideHeight);
+					}
+				}
+				finally
+				{
+					// 释放所有收集到的形状对象
+					foreach(var shape in shapesToCrop)
+					{
+						try { shape.Dispose(); } catch { /* ignore */ }
+					}
+					// 释放集合对象
+					collectionsToDispose.DisposeAll();
 				}
 			});
 		}
 
-		private static List<IShape> CollectShapesToCrop(NETOP.Application app,NETOP.Selection selection,NETOP.Slide slide,float slideWidth,float slideHeight)
+		private static (List<NETOP.Shape> shapesToCrop, List<IDisposable> collectionsToDispose) CollectShapesToCrop(NETOP.Application app,NETOP.Selection selection,NETOP.Slide slide,float slideWidth,float slideHeight)
 		{
-			var shapes = new List<IShape>();
+			var shapesToCrop = new List<NETOP.Shape>();
+			var collectionsToDispose = new List<IDisposable>();
 
 			void TryAddShape(NETOP.Shape candidate)
 			{
 				if(candidate==null)
 					return;
 				if(!ShouldCropShape(candidate,slideWidth,slideHeight))
+				{
+					candidate.Dispose(); // 如果不需要裁剪，立即释放
 					return;
-
-				var wrapped = AdapterUtils.WrapShape(app, candidate, slide);
-				if(wrapped!=null)
-				{
-					shapes.Add(wrapped);
-				} else
-				{
-					_logger.LogWarning("WrapShape 失败，跳过当前形状");
 				}
+
+				shapesToCrop.Add(candidate);
 			}
 
 			if(selection!=null&&selection.Type==NetOffice.PowerPointApi.Enums.PpSelectionType.ppSelectionShapes)
 			{
 				var range = selection.ShapeRange;
+				collectionsToDispose.Add(range);  // 延迟释放
 				for(int i = 1;i<=range.Count;i++)
 				{
 					var shape = range[i];
@@ -112,86 +119,140 @@ namespace PPA.Shape
 				}
 			} else
 			{
-				foreach(NETOP.Shape shape in slide.Shapes)
+				var slideShapes = slide.Shapes;
+				collectionsToDispose.Add(slideShapes);  // 延迟释放
+				foreach(NETOP.Shape shape in slideShapes)
 				{
 					TryAddShape(shape);
 				}
 			}
-			return shapes;
+			return (shapesToCrop, collectionsToDispose);
 		}
 
-		private static NETOP.Shape CreateMaskRectangle(NETOP.Slide slide,float width,float height)
+		private static void BooleanCrop(NETOP.Slide slide,NETOP.Shape target,float slideWidth,float slideHeight,MsoMergeCmd mergeCmd = MsoMergeCmd.msoMergeIntersect)
 		{
-			var rect = slide.Shapes.AddShape(MsoAutoShapeType.msoShapeRectangle, 0, 0, width, height);
-			rect.Fill.Visible=MsoTriState.msoFalse;
-			rect.Line.Visible=MsoTriState.msoFalse;
-			return rect;
-		}
-
-		private static void BooleanCrop(NETOP.Slide slide,NETOP.Shape target,NETOP.Shape mask,MsoMergeCmd mergeCmd = MsoMergeCmd.msoMergeIntersect)
-		{
-			// --- 步骤 1: 在运算前，保存主形状的 Z-Order 和幻灯片上所有形状的快照 ---
-			int originalZOrder = target.ZOrderPosition;
-			var beforeShapes = new HashSet<string>();
-			foreach(NETOP.Shape s in slide.Shapes)
+			// 创建遮罩矩形
+			NETOP.Shape mask = null;
+			try
 			{
-				beforeShapes.Add($"{s.Id}|{s.Name}");
+				mask = slide.Shapes.AddShape(MsoAutoShapeType.msoShapeRectangle, 0, 0, slideWidth, slideHeight);
+				mask.Fill.Visible=MsoTriState.msoFalse;
+				mask.Line.Visible=MsoTriState.msoFalse;
+
+				// --- 步骤 1: 在运算前，保存主形状的 Z-Order 和幻灯片上所有形状的快照 ---
+				int originalZOrder = target.ZOrderPosition;
+				var beforeShapes = new HashSet<string>();
+				using(var slideShapes1 = slide.Shapes)
+				{
+					foreach(NETOP.Shape s in slideShapes1)
+					{
+						using(s)
+						{
+							beforeShapes.Add($"{s.Id}|{s.Name}");
+						}
+					}
+				}
+
+				ExHandler.Run(() =>
+				{
+					// --- 步骤 2: 选中形状并执行布尔运算 ---
+					var shapeNames = new string[] { target.Name, mask.Name };
+					using(var shapeRange = slide.Shapes.Range((object)shapeNames))
+					{
+						shapeRange.Select();
+
+						var version = slide.Application.Version;
+						if(System.Version.Parse(version)>=System.Version.Parse("15.0"))
+						{
+							if(!MergeCmdToIdMso.TryGetValue(mergeCmd,out string idMso))
+							{
+								throw new ArgumentOutOfRangeException(nameof(mergeCmd),mergeCmd,"Unsupported merge command.");
+							}
+
+							_logger.LogInformation($"执行布尔运算命令: {idMso}");
+							slide.Application.CommandBars.ExecuteMso(idMso);
+						} else
+						{
+							_logger.LogWarning($"PowerPoint 版本 {version} 过低，不支持基于 idMso 的布尔运算。");
+							Toast.Show(ResourceManager.GetString("Toast_OperationFailed_UnsupportedVersion"),Toast.ToastType.Error);
+							return;
+						}
+
+						// 等待操作完成
+						System.Threading.Thread.Sleep(100);
+
+						// --- 步骤 3: 通过对比新旧形状列表，找到结果形状 ---
+						string finalShapeName = null;
+						using(var slideShapes2 = slide.Shapes)
+						{
+							foreach(NETOP.Shape shape in slideShapes2)
+							{
+								using(shape)
+								{
+									string key = $"{shape.Id}|{shape.Name}";
+									if(!beforeShapes.Contains(key))
+									{
+										finalShapeName = shape.Name;
+										break;
+									}
+								}
+							}
+						}
+
+						if(!string.IsNullOrEmpty(finalShapeName))
+						{
+							// 重新获取结果形状，因为之前的引用已在 using 块中释放
+							using(var finalShape = slide.Shapes[finalShapeName])
+							{
+								_logger.LogInformation($"找到结果形状: Id={finalShape.Id}, Name={finalShape.Name}，正在调整 Z-Order。");
+								// --- 步骤 4: 调整结果形状的 Z-Order ---
+								ExHandler.SafeSet(() =>
+								{
+									finalShape.ZOrder(MsoZOrderCmd.msoSendToBack);
+									for(int i = 1;i<originalZOrder;i++)
+										finalShape.ZOrder(MsoZOrderCmd.msoBringForward);
+								});
+							}
+						} else
+						{
+							_logger.LogWarning("未能找到布尔运算的结果形状，无法调整 Z-Order。");
+						}
+					}
+				});
 			}
-
-			ExHandler.Run(() =>
+			catch
 			{
-				// --- 步骤 2: 选中形状并执行布尔运算 ---
-				var shapeNames = new string[] { target.Name, mask.Name };
-				var shapeRange = slide.Shapes.Range((object)shapeNames);
-				shapeRange.Select();
-
-				var version = slide.Application.Version;
-				if(System.Version.Parse(version)>=System.Version.Parse("15.0"))
+				// 如果创建遮罩或执行布尔运算失败，确保释放遮罩
+				if(mask!=null)
 				{
-					if(!MergeCmdToIdMso.TryGetValue(mergeCmd,out string idMso))
+					try
 					{
-						throw new ArgumentOutOfRangeException(nameof(mergeCmd),mergeCmd,"Unsupported merge command.");
+						// 尝试释放遮罩（布尔运算后可能已被删除，忽略异常）
+						mask.Dispose();
 					}
-
-					_logger.LogInformation($"执行布尔运算命令: {idMso}");
-					slide.Application.CommandBars.ExecuteMso(idMso);
-				} else
-				{
-					_logger.LogWarning($"PowerPoint 版本 {version} 过低，不支持基于 idMso 的布尔运算。");
-					Toast.Show(ResourceManager.GetString("Toast_OperationFailed_UnsupportedVersion"),Toast.ToastType.Error);
-					return;
-				}
-
-				// 等待操作完成
-				System.Threading.Thread.Sleep(100);
-
-				// --- 步骤 3: 通过对比新旧形状列表，找到结果形状 ---
-				NETOP.Shape finalShape = null;
-				foreach(NETOP.Shape shape in slide.Shapes)
-				{
-					string key = $"{shape.Id}|{shape.Name}";
-					if(!beforeShapes.Contains(key))
+					catch
 					{
-						finalShape=shape;
-						break;
+						// 忽略释放失败（对象可能已被删除）
 					}
 				}
-
-				if(finalShape!=null)
+				throw;
+			}
+			finally
+			{
+				// 确保遮罩被释放（布尔运算后可能已经被删除，这里只是保险措施）
+				if(mask!=null)
 				{
-					_logger.LogInformation($"找到结果形状: Id={finalShape.Id}, Name={finalShape.Name}，正在调整 Z-Order。");
-					// --- 步骤 4: 调整结果形状的 Z-Order ---
-					ExHandler.SafeSet(() =>
+					try
 					{
-						finalShape.ZOrder(MsoZOrderCmd.msoSendToBack);
-						for(int i = 1;i<originalZOrder;i++)
-							finalShape.ZOrder(MsoZOrderCmd.msoBringForward);
-					});
-				} else
-				{
-					_logger.LogWarning("未能找到布尔运算的结果形状，无法调整 Z-Order。");
+						// 尝试释放遮罩（如果已被删除，会抛出异常，忽略即可）
+						mask.Dispose();
+					}
+					catch
+					{
+						// 忽略释放失败（对象可能已被删除）
+					}
 				}
-			});
+			}
 		}
 
 		private static bool ShouldCropShape(NETOP.Shape shape,float slideWidth,float slideHeight)

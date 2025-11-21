@@ -1,5 +1,5 @@
 using PPA.Core;
-using PPA.Formatting;
+using PPA.Manipulation;
 using PPA.Utilities;
 using System;
 using System.ComponentModel;
@@ -665,6 +665,16 @@ namespace PPA.UI.Forms
 				return ResourceManager.GetString("ConfigDesc_Attr_Shortcuts_FormatChart","“美化图表”快捷键：填写数字或字母（如 3、C），实际为 Ctrl+键。");
 			if(p.EndsWith("/PPAConfig/Shortcuts/@CreateBoundingBox",StringComparison.OrdinalIgnoreCase))
 				return ResourceManager.GetString("ConfigDesc_Attr_Shortcuts_CreateBoundingBox","“插入形状”快捷键：填写数字或字母（如 4、I），实际为 Ctrl+键。");
+			
+			// LoggingConfig
+			if(p.EndsWith("/PPAConfig/Logging/@EnableFileLogging",StringComparison.OrdinalIgnoreCase))
+				return ResourceManager.GetString("ConfigDesc_Attr_Logging_EnableFileLogging","是否启用文件日志记录（true/false）。");
+			if(p.EndsWith("/PPAConfig/Logging/@MaxLogFiles",StringComparison.OrdinalIgnoreCase))
+				return ResourceManager.GetString("ConfigDesc_Attr_Logging_MaxLogFiles","最多保留的日志文件数量。");
+			if(p.EndsWith("/PPAConfig/Logging/@MaxLogAgeDays",StringComparison.OrdinalIgnoreCase))
+				return ResourceManager.GetString("ConfigDesc_Attr_Logging_MaxLogAgeDays","日志文件最长保留天数（天）。");
+			if(p.EndsWith("/PPAConfig/Logging/@MinimumLogLevel",StringComparison.OrdinalIgnoreCase))
+				return ResourceManager.GetString("ConfigDesc_Attr_Logging_MinimumLogLevel","最小写入日志级别（Debug、Information、Warning、Error）。");
 
 			return string.Empty;
 		}
@@ -707,6 +717,8 @@ namespace PPA.UI.Forms
 
 			if(p.EndsWith("/PPAConfig/Shortcuts",StringComparison.OrdinalIgnoreCase))
 				return ResourceManager.GetString("ConfigDesc_Elem_Shortcuts","快捷键配置：填写数字或字母，实际组合为 Ctrl+键。");
+			if(p.EndsWith("/PPAConfig/Logging",StringComparison.OrdinalIgnoreCase))
+				return ResourceManager.GetString("ConfigDesc_Elem_Logging","日志配置：文件日志开关、日志保留数量/天数、最小日志级别。");
 
 			return string.Empty;
 		}

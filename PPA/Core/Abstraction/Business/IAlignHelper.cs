@@ -38,16 +38,5 @@ namespace PPA.Core.Abstraction.Business
 		/// </list>
 		/// </remarks>
 		void ExecuteAlignment(NETOP.Application netApp,AlignmentType alignment,bool alignToSlideMode);
-
-		/// <summary>
-		/// 执行对齐操作（抽象接口版本）
-		/// </summary>
-		/// <param name="abstractApp"> 抽象应用程序实例，不能为 null </param>
-		/// <param name="alignment"> 对齐类型，参见 <see cref="AlignmentType" /> 枚举 </param>
-		/// <param name="alignToSlideMode"> 是否对齐到幻灯片。true 表示对齐到幻灯片边界，false 表示对齐到所选对象 </param>
-		/// <remarks> 此方法内部会将抽象接口转换为 NetOffice 对象，然后调用 NetOffice 版本的方法。 </remarks>
-		void ExecuteAlignment(IApplication abstractApp,AlignmentType alignment,bool alignToSlideMode);
-
-		// 注意：其他方法（AttachLeft, SetEqualWidth 等）保持为公共方法，但不强制在接口中定义 这些方法可以通过实例直接调用
 	}
 }

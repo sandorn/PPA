@@ -6,7 +6,7 @@ using System;
 using System.Threading.Tasks;
 using NETOP = NetOffice.PowerPointApi;
 
-namespace PPA.Formatting
+namespace PPA.Manipulation
 {
 	/// <summary>
 	/// 撤销操作助手类 提供统一的撤销/重做管理，支持描述性撤销名称和撤销组

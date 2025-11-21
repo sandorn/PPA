@@ -2,16 +2,13 @@ using NetOffice.OfficeApi.Enums;
 using PPA.Core;
 using PPA.Core.Abstraction.Business;
 using PPA.Core.Abstraction.Infrastructure;
-using PPA.Core.Abstraction.Presentation;
-using PPA.Core.Adapters;
 using PPA.Core.Logging;
-using PPA.Formatting.Selection;
 using PPA.Utilities;
 using System;
 using System.Collections.Generic;
 using NETOP = NetOffice.PowerPointApi;
 
-namespace PPA.Formatting
+namespace PPA.Manipulation
 {
 	/// <summary>
 	/// 表格批量操作辅助类 提供表格批量格式化功能，支持同步和异步操作
@@ -50,13 +47,13 @@ namespace PPA.Formatting
 			ExHandler.Run(() =>
 			{
 				var currentApp = netApp;
-				if(!TryRefreshContext(ref currentApp,out var abstractApp))
+				if(!TryRefreshContext(ref currentApp))
 				{
 					Toast.Show(ResourceManager.GetString("Toast_NoSlide"),Toast.ToastType.Warning);
 					return;
 				}
 
-				var selection = GetSelectionWithRetry(ref currentApp, ref abstractApp);
+				var selection = GetSelectionWithRetry(ref currentApp);
 
 				// 调试：记录选中对象信息
 				if(selection==null)
@@ -123,13 +120,30 @@ namespace PPA.Formatting
 			if(shape==null) return null;
 
 			bool hasTable = ExHandler.SafeGet(() => shape.HasTable == MsoTriState.msoTrue, defaultValue: false);
-			if(hasTable)
-			{
+													if(hasTable)
+													{
 				return ExHandler.SafeGet(() => shape.Table,defaultValue: (NETOP.Table) null);
 			}
 
 			// HasTable 不可用，尝试直接检查 Table 属性
 			return ExHandler.SafeGet(() => shape.Table,defaultValue: (NETOP.Table) null);
+		}
+
+		private void CollectTablesFromSelection(dynamic selection, NETOP.Application netApp, List<(NETOP.Shape shape, NETOP.Table table)> tableShapes)
+		{
+			var processedKeys = new HashSet<object>();
+
+			if (selection is NETOP.ShapeRange shapeRange)
+			{
+				foreach (NETOP.Shape shape in shapeRange)
+				{
+					AddTableShapeIfValid(shape, tableShapes, processedKeys);
+				}
+			}
+			else if (selection is NETOP.Shape shape)
+			{
+				AddTableShapeIfValid(shape, tableShapes, processedKeys);
+			}
 		}
 
 		/// <summary>
@@ -156,91 +170,6 @@ namespace PPA.Formatting
 		}
 
 		/// <summary>
-		/// 从选区收集表格形状
-		/// </summary>
-		/// <param name="selection"> 选区对象 </param>
-		/// <param name="netApp"> PowerPoint 应用程序对象 </param>
-		/// <param name="tableShapes"> 表格形状列表 </param>
-		private void CollectTablesFromSelection(object selection,NETOP.Application netApp,List<(NETOP.Shape shape, NETOP.Table table)> tableShapes)
-		{
-			if(selection==null) return;
-
-			var shapeSelection = ShapeSelectionFactory.Create(selection);
-			if(shapeSelection==null)
-			{
-				_logger.LogWarning("无法识别的选区类型，跳过表格处理");
-				return;
-			}
-
-			var processedKeys = new HashSet<object>();
-			foreach(var shape in shapeSelection)
-			{
-				AddTableShapeIfValid(shape,tableShapes,processedKeys);
-			}
-		}
-
-		/// <summary>
-		/// 从幻灯片收集所有表格形状
-		/// </summary>
-		/// <param name="slide"> 幻灯片对象 </param>
-		/// <param name="netApp"> PowerPoint 应用程序对象 </param>
-		/// <param name="tableShapes"> 表格形状列表 </param>
-		private void CollectTablesFromSlide(ISlide slide,NETOP.Application netApp,List<(NETOP.Shape shape, NETOP.Table table)> tableShapes)
-		{
-			var nativeSlide = AdapterUtils.UnwrapSlide(slide);
-			if(nativeSlide==null)
-			{
-				_logger.LogWarning("无法获取底层 NETOP.Slide 对象");
-				return;
-			}
-
-			var processedKeys = new HashSet<object>();
-
-			// 使用 NetOffice 枚举 注意：即使某些形状访问失败，我们仍然继续处理其他形状
-			using(nativeSlide)
-			{
-				try
-				{
-					var shapes = nativeSlide.Shapes;
-					foreach(NETOP.Shape shape in shapes)
-					{
-						// AddTableShapeIfValid 内部使用 SafeGet，即使单个形状失败也不会中断整个枚举
-						AddTableShapeIfValid(shape,tableShapes,processedKeys);
-					}
-				} catch(System.Exception ex)
-				{
-					_logger.LogWarning($"NetOffice 枚举失败: {ex.Message}，跳过当前幻灯片");
-					return;
-				}
-			}
-		}
-
-		/// <summary>
-		/// 从对象获取 NETOP.Shape
-		/// </summary>
-		/// <param name="shapeObj"> 形状对象 </param>
-		/// <returns> NETOP.Shape 对象，如果无法转换则返回 null </returns>
-		private NETOP.Shape GetNetShapeFromObject(object shapeObj)
-		{
-			if(shapeObj is NETOP.Shape directShape)
-				return directShape;
-
-			if(shapeObj is IShape abstractShape)
-				return AdapterUtils.UnwrapShape(abstractShape);
-
-			if(shapeObj is IComWrapper wrapper)
-				return wrapper.NativeObject as NETOP.Shape;
-
-			try
-			{
-				return (NETOP.Shape) (object) shapeObj;
-			} catch
-			{
-				return null;
-			}
-		}
-
-		/// <summary>
 		/// 处理收集到的表格
 		/// </summary>
 		/// <param name="tableShapes"> 表格形状列表 </param>
@@ -258,52 +187,51 @@ namespace PPA.Formatting
 				return;
 			}
 
-			// 直接使用传入的 netApp，让 WrapTable 内部处理 slide 的获取（与美化文本保持一致）
-			foreach(var (shape, table) in tableShapes)
+			try
 			{
-				var iTable = AdapterUtils.WrapTable(netApp, shape, table);
-				if(iTable!=null)
+				// 直接使用 NETOP.Table，移除抽象接口转换
+				foreach(var (shape, table) in tableShapes)
 				{
-					tableFormatHelper.FormatTables(iTable);
+					if(table!=null)
+					{
+						tableFormatHelper.FormatTables(table);
+					}
+				}
+
+				Toast.Show(ResourceManager.GetString("Toast_FormatTables_Success",totalTables),Toast.ToastType.Success);
+			}
+			finally
+			{
+				// 释放所有收集的 Shape 和 Table 对象
+				foreach(var (shape, table) in tableShapes)
+				{
+					shape?.Dispose();
+					table?.Dispose();
 				}
 			}
-
-			Toast.Show(ResourceManager.GetString("Toast_FormatTables_Success",totalTables),Toast.ToastType.Success);
 		}
 
-		private bool TryRefreshContext(ref NETOP.Application netApp,out IApplication abstractApp)
+		private bool TryRefreshContext(ref NETOP.Application netApp)
 		{
 			netApp=ApplicationHelper.EnsureValidNetApplication(netApp);
-			if(netApp==null)
-			{
-				abstractApp=null;
-				return false;
-			}
-
-			abstractApp=ApplicationHelper.GetAbstractApplication(netApp);
-			if(abstractApp==null)
-			{
-				_logger.LogWarning("无法获取抽象 Application");
-				return false;
-			}
-			return true;
+			return netApp!=null;
 		}
 
-		private dynamic GetSelectionWithRetry(ref NETOP.Application netApp,ref IApplication abstractApp)
+		private dynamic GetSelectionWithRetry(ref NETOP.Application netApp)
 		{
-			var selection = _shapeHelper.ValidateSelection(abstractApp, showWarningWhenInvalid: false);
+			var selection = _shapeHelper.ValidateSelection(netApp, showWarningWhenInvalid: false);
 			if(selection!=null)
 			{
 				return selection;
 			}
 
 			_logger.LogWarning("返回 null，尝试刷新 Application 后重试");
-			if(!TryRefreshContext(ref netApp,out abstractApp))
+			if(!TryRefreshContext(ref netApp))
 			{
 				return null;
 			}
 
-			return _shapeHelper.ValidateSelection(abstractApp,showWarningWhenInvalid: false);
+			return _shapeHelper.ValidateSelection(netApp,showWarningWhenInvalid: false);
 		}
 
 		#endregion 内部实现

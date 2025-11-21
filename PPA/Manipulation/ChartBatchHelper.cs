@@ -4,12 +4,11 @@ using PPA.Core.Abstraction.Business;
 using PPA.Core.Abstraction.Infrastructure;
 using PPA.Core.Abstraction.Presentation;
 using PPA.Core.Logging;
-using PPA.Formatting.Selection;
 using PPA.Utilities;
 using System;
 using NETOP = NetOffice.PowerPointApi;
 
-namespace PPA.Formatting
+namespace PPA.Manipulation
 {
 	/// <summary>
 	/// 图表批量操作辅助类
@@ -41,13 +40,14 @@ namespace PPA.Formatting
 			ExHandler.Run(() =>
 			{
 				var currentApp = netApp;
-				if(!TryRefreshContext(ref currentApp,out var abstractApp))
+				currentApp = ApplicationHelper.EnsureValidNetApplication(currentApp);
+				if(currentApp==null)
 				{
 					Toast.Show(ResourceManager.GetString("Toast_NoSlide"),Toast.ToastType.Warning);
 					return;
 				}
 
-				var selection = GetSelectionWithRetry(ref currentApp, ref abstractApp);
+				var selection = GetSelectionWithRetry(ref currentApp);
 
 				// 调试：记录选中对象信息
 				if(selection==null)
@@ -90,11 +90,20 @@ namespace PPA.Formatting
 		{
 			if(shape==null) return false;
 
-			bool hasChart = ExHandler.SafeGet(() => shape.HasChart == MsoTriState.msoTrue, defaultValue: false);
-			if(hasChart) return true;
+			// 1. 先检查形状类型
+			// msoChart (3) 是普通图表
+			// msoPlaceholder (14) 是占位符，可能包含图表
+			var shapeType = ExHandler.SafeGet(() => shape.Type, defaultValue: MsoShapeType.msoAutoShape);
+			
+			// 如果既不是 Chart 也不是 Placeholder，那通常不可能是图表
+			// 注意：如果未来发现其他类型（如 Group）也可能包含图表，需要在这里添加
+			if (shapeType != MsoShapeType.msoChart && shapeType != MsoShapeType.msoPlaceholder)
+			{
+				return false;
+			}
 
-			var chart = ExHandler.SafeGet(() => shape.Chart, defaultValue: (NETOP.Chart)null);
-			return chart!=null;
+			// 2. 再次确认 HasChart 属性 (双重检查)
+			return ExHandler.SafeGet(() => shape.HasChart == MsoTriState.msoTrue, defaultValue: false);
 		}
 
 		/// <summary>
@@ -112,7 +121,7 @@ namespace PPA.Formatting
 			int count = 0;
 			foreach(var shape in shapeSelection)
 			{
-				if(IsChartShape(shape))
+				if(shape!=null&&IsChartShape(shape))
 				{
 					chartFormatHelper.FormatChartText(shape);
 					count++;
@@ -128,39 +137,22 @@ namespace PPA.Formatting
 			}
 		}
 
-		private bool TryRefreshContext(ref NETOP.Application netApp,out IApplication abstractApp)
+		private dynamic GetSelectionWithRetry(ref NETOP.Application netApp)
 		{
-			netApp=ApplicationHelper.EnsureValidNetApplication(netApp);
-			if(netApp==null)
-			{
-				abstractApp=null;
-				return false;
-			}
-
-			abstractApp=ApplicationHelper.GetAbstractApplication(netApp);
-			if(abstractApp==null)
-			{
-				_logger.LogWarning("无法获取抽象 Application");
-				return false;
-			}
-			return true;
-		}
-
-		private dynamic GetSelectionWithRetry(ref NETOP.Application netApp,ref IApplication abstractApp)
-		{
-			var selection = _shapeHelper.ValidateSelection(abstractApp, showWarningWhenInvalid: false);
+			var selection = _shapeHelper.ValidateSelection(netApp, showWarningWhenInvalid: false);
 			if(selection!=null)
 			{
 				return selection;
 			}
 
 			_logger.LogWarning("返回 null，尝试刷新 Application 后重试");
-			if(!TryRefreshContext(ref netApp,out abstractApp))
+			netApp = ApplicationHelper.EnsureValidNetApplication(netApp);
+			if(netApp == null)
 			{
 				return null;
 			}
 
-			return _shapeHelper.ValidateSelection(abstractApp,showWarningWhenInvalid: false);
+			return _shapeHelper.ValidateSelection(netApp,showWarningWhenInvalid: false);
 		}
 
 		#endregion 内部实现

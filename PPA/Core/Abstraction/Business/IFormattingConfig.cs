@@ -1,4 +1,4 @@
-using PPA.Formatting;
+using PPA.Manipulation.Config;
 
 namespace PPA.Core.Abstraction.Business
 {

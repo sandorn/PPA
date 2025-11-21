@@ -3,13 +3,12 @@ using PPA.Core;
 using PPA.Core.Abstraction.Business;
 using PPA.Core.Abstraction.Infrastructure;
 using PPA.Core.Abstraction.Presentation;
-using PPA.Core.Adapters;
 using PPA.Core.Logging;
 using System;
 using System.Collections.Generic;
 using NETOP = NetOffice.PowerPointApi;
 
-namespace PPA.Formatting
+namespace PPA.Manipulation
 {
 	/// <summary>
 	/// 图表格式化辅助类 提供图表的格式化功能
@@ -34,20 +33,16 @@ namespace PPA.Formatting
 				return;
 			}
 
-			// 使用与 IsChartShape 完全相同的检查逻辑：先检查 HasChart，如果失败再尝试获取 Chart 某些情况下 HasChart 可能不准确，所以即使
-			// HasChart 为 false，也尝试直接获取 Chart
-			bool hasChart = ExHandler.SafeGet(() => shape.HasChart == MsoTriState.msoTrue, defaultValue: false);
-			NETOP.Chart chart = ExHandler.SafeGet(() => shape.Chart, defaultValue: (NETOP.Chart)null);
-
-			// 如果 HasChart 为 true 但 Chart 为 null，记录警告
-			if(hasChart&&chart==null)
-			{
-				_logger.LogWarning("HasChart 为 true 但无法获取 Chart 对象");
-			}
+			// 注意：调用此方法前，调用者应已验证 shape 是图表 (Type == msoChart)
+			// 因此这里不再重复检查 HasChart，以避免在非图表对象上触发不必要的异常
+			
+			// 安全获取 Chart 对象
+			NETOP.Chart chart = ExHandler.SafeGet(() => shape.Chart, defaultValue: null);
 
 			if(chart==null)
 			{
-				_logger.LogWarning("无法获取 Chart 对象");
+				// 如果 Type 是 Chart 但无法获取 Chart 对象，这可能是异常情况
+				_logger.LogWarning("无法获取 Chart 对象 (Shape.Type 应已确认为 msoChart)");
 				return;
 			}
 
@@ -68,29 +63,6 @@ namespace PPA.Formatting
 		}
 
 		/// <summary>
-		/// 格式化图表文本（抽象接口版本）
-		/// </summary>
-		/// <param name="shape"> 包含图表的抽象形状对象 </param>
-		public void FormatChartText(IShape shape)
-		{
-			if(shape==null)
-			{
-				_logger.LogWarning("shape 为 null，返回");
-				return;
-			}
-
-			// 使用 AdapterUtils 统一转换
-			var native = AdapterUtils.UnwrapShape(shape);
-			if(native!=null)
-			{
-				_logger.LogInformation("成功获取 NetOffice.Shape，使用 PowerPoint 格式化");
-				FormatChartText(native);
-				return;
-			}
-
-			_logger.LogError($"未知的形状类型 {shape.GetType().FullName}，无法格式化");
-		}
-		/// <summary>
 		/// 设置图表标题字体
 		/// </summary>
 		private void SetChartTitleFont(NETOP.Chart chart,string fontFamily,float size,bool bold)
@@ -103,14 +75,14 @@ namespace PPA.Formatting
 					return;
 				}
 
-				var chartTitle = ExHandler.SafeGet(() => chart.ChartTitle, defaultValue: (NETOP.ChartTitle)null);
+				var chartTitle = ExHandler.SafeGet(() => chart.ChartTitle, defaultValue: null);
 				if(chartTitle==null)
 				{
 					_logger.LogWarning("ChartTitle 为空，无法设置标题字体");
 					return;
 				}
 
-				var font = ExHandler.SafeGet(() => chartTitle.Font, defaultValue: (NETOP.ChartFont)null);
+				var font = ExHandler.SafeGet(() => chartTitle.Font, defaultValue: null);
 				if(font==null)
 				{
 					_logger.LogWarning("ChartTitle.Font 为空，无法设置标题字体");
@@ -136,14 +108,14 @@ namespace PPA.Formatting
 					return;
 				}
 
-				var legend = ExHandler.SafeGet(() => chart.Legend, defaultValue: (NETOP.Legend)null);
+				var legend = ExHandler.SafeGet(() => chart.Legend, defaultValue: null);
 				if(legend==null)
 				{
 					_logger.LogWarning("Legend 为空，无法设置图例字体");
 					return;
 				}
 
-				var font = ExHandler.SafeGet(() => legend.Font, defaultValue: (NETOP.ChartFont)null);
+				var font = ExHandler.SafeGet(() => legend.Font, defaultValue: null);
 				if(font==null)
 				{
 					_logger.LogWarning("Legend.Font 为空，无法设置图例字体");
@@ -168,14 +140,14 @@ namespace PPA.Formatting
 					return;
 				}
 
-				var dataTable = ExHandler.SafeGet(() => chart.DataTable, defaultValue: (object)null);
+				var dataTable = ExHandler.SafeGet(() => chart.DataTable, defaultValue: null);
 				if(dataTable==null)
 				{
 					_logger.LogWarning("DataTable 为空，无法设置数据表字体");
 					return;
 				}
 
-				var font = ExHandler.SafeGet(() => ((dynamic)dataTable).Font, defaultValue: (NETOP.ChartFont)null);
+				var font = ExHandler.SafeGet(() => ((dynamic)dataTable).Font, defaultValue: null);
 				if(font==null)
 				{
 					_logger.LogWarning("DataTable.Font 为空，无法设置数据表字体");
@@ -196,7 +168,7 @@ namespace PPA.Formatting
 		private void SetChartDataLabelsFont(NETOP.Chart chart,string fontFamily,float size)
 		{
 			// 1. 获取强类型的SeriesCollection，避免使用dynamic
-			var seriesCollection = ExHandler.SafeGet(() => chart.SeriesCollection() as NETOP.SeriesCollection, defaultValue: (NETOP.SeriesCollection)null);
+			var seriesCollection = ExHandler.SafeGet(() => chart.SeriesCollection() as NETOP.SeriesCollection, defaultValue: null);
 			if(seriesCollection==null)
 			{
 				_logger.LogWarning("无法获取图表的SeriesCollection。");
@@ -210,7 +182,7 @@ namespace PPA.Formatting
 				try
 				{
 					// 3. 通过索引获取强类型的Series对象
-					var series = ExHandler.SafeGet(() => seriesCollection[i], defaultValue: (NETOP.Series)null);
+					var series = ExHandler.SafeGet(() => seriesCollection[i], defaultValue:null);
 					if(series==null) continue;
 
 					// 调用辅助方法处理单个系列
@@ -233,11 +205,11 @@ namespace PPA.Formatting
 			if(!hasDataLabels) return;
 
 			// DataLabels 是一个方法，需要调用它
-			var dataLabels = ExHandler.SafeGet(() => series.DataLabels() as NETOP.DataLabels, defaultValue: (NETOP.DataLabels)null);
+			var dataLabels = ExHandler.SafeGet(() => series.DataLabels() as NETOP.DataLabels, defaultValue: null);
 			if(dataLabels==null) return;
 
 			// 获取字体对象
-			var font = ExHandler.SafeGet(() => dataLabels.Font, defaultValue: (NETOP.ChartFont)null);
+			var font = ExHandler.SafeGet(() => dataLabels.Font, defaultValue: null);
 			if(font!=null)
 			{
 				font.Name=fontFamily;
@@ -279,28 +251,50 @@ namespace PPA.Formatting
 		/// <param name="size"> 字体大小。 </param>
 		private void SafeSetAxis(NETOP.Chart chart,XlAxisType axisType,XlAxisGroup axisGroup,float size)
 		{
+			// 1. 使用 Invoker 检查 HasAxis 属性，避免直接调用 Axes() 抛出 COM 异常
+			// HasAxis 是一个带参数的属性：HasAxis(Index1, Index2)
+			bool hasAxis = false;
+			try
+			{
+				// 使用 NetOffice 的 Invoker 直接调用 COM 属性，绕过 C# dynamic 的限制
+				// Chart.HasAxis(AxisType, AxisGroup)
+				object result = chart.Invoker.PropertyGet(chart, "HasAxis", new object[] { axisType, axisGroup });
+				if (result is bool b)
+				{
+					hasAxis = b;
+				}
+			}
+			catch
+			{
+				// 如果 Invoker 调用失败，假设轴不存在
+				hasAxis = false;
+			}
+
+			if (!hasAxis)
+			{
+				if(axisGroup==XlAxisGroup.xlSecondary)
+				{
+					// 次坐标轴不存在是正常的
+					_logger.LogDebug($"图表不包含 {axisType}-{axisGroup} 坐标轴");
+				}
+				return;
+			}
+
 			// 从配置加载字体设置
 			var config = _config.Chart;
 			string fontFamily = config.RegularFont.Name;
 
 			// 使用 SafeGet 安全地获取坐标轴对象
-			NETOP.Axis axis = ExHandler.SafeGet(() => (NETOP.Axis)chart.Axes(axisType, axisGroup), defaultValue: (NETOP.Axis)null);
+			NETOP.Axis axis = ExHandler.SafeGet(() => (NETOP.Axis)chart.Axes(axisType, axisGroup), defaultValue:null);
 			if(axis==null)
 			{
-				// 对于次坐标轴，如果不存在是正常的，只记录 DEBUG 级别日志
-				if(axisGroup==XlAxisGroup.xlSecondary)
-				{
-					_logger.LogDebug($"图表不支持 {axisType}-{axisGroup} 坐标轴（这是正常的）");
-				} else
-				{
-					_logger.LogWarning($"坐标轴 {axisType}-{axisGroup} 对象为 null");
-				}
+				_logger.LogWarning($"坐标轴 {axisType}-{axisGroup} 对象为 null (HasAxis returned true)");
 				return;
 			}
 
 			// --- 优化核心：提取公共逻辑，减少重复代码 ---
 			// 1. 设置刻度线标签字体（使用 SafeGet 安全获取）
-			var tickLabels = ExHandler.SafeGet(() => axis.TickLabels, defaultValue: (NETOP.TickLabels)null);
+			var tickLabels = ExHandler.SafeGet(() => axis.TickLabels, defaultValue: null);
 			if(tickLabels!=null)
 			{
 				TrySetFont(tickLabels,fontFamily,size,"刻度标签");
@@ -310,7 +304,7 @@ namespace PPA.Formatting
 			bool hasTitle = ExHandler.SafeGet(() => axis.HasTitle, defaultValue: false);
 			if(hasTitle)
 			{
-				var axisTitle = ExHandler.SafeGet(() => axis.AxisTitle, defaultValue: (NETOP.AxisTitle)null);
+				var axisTitle = ExHandler.SafeGet(() => axis.AxisTitle, defaultValue: null);
 				if(axisTitle!=null)
 				{
 					TrySetFont(axisTitle,fontFamily,size,"坐标轴标题");

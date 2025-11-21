@@ -3,6 +3,7 @@ using PPA.Core;
 using PPA.Core.Abstraction.Infrastructure;
 using PPA.Core.DI;
 using PPA.Core.Logging;
+using PPA.Manipulation;
 using PPA.UI;
 using System;
 using MSOP = Microsoft.Office.Interop.PowerPoint;
@@ -171,12 +172,23 @@ namespace PPA
 				Profiler.LogFilePath=logPath;
 				Logger.LogInformation($"日志文件路径: {logPath}");
 				Profiler.CleanupLogFiles(logDir);
-
+				
 				var services = new ServiceCollection();
 				services.AddPPAServices();
 				_serviceProvider=services.BuildServiceProvider();
 				_logger=_serviceProvider.GetService<ILogger>()??_fallbackLogger;
 				_applicationProvider=_serviceProvider.GetService<ApplicationProvider>();
+				
+				// 应用配置中的日志策略
+				try
+				{
+					var formattingConfig = _serviceProvider.GetService<PPA.Core.Abstraction.Business.IFormattingConfig>() as FormattingConfig;
+					formattingConfig?.ApplyLoggingConfigToProfiler();
+				}
+				catch(Exception ex)
+				{
+					Logger.LogWarning($"应用日志配置失败: {ex.Message}");
+				}
 				UpdateApplicationProviderContext();
 				Logger.LogInformation("DI 容器初始化成功");
 			} catch(Exception ex)

@@ -2,13 +2,13 @@ using NetOffice.OfficeApi.Enums;
 using PPA.Core.Abstraction.Business;
 using PPA.Core.Abstraction.Infrastructure;
 using PPA.Core.Abstraction.Presentation;
-using PPA.Core.Adapters;
 using PPA.Core.Logging;
+using PPA.Utilities;
 using System.Collections.Generic;
 using System.Globalization;
 using NETOP = NetOffice.PowerPointApi;
 
-namespace PPA.Formatting
+namespace PPA.Manipulation
 {
 	/// <summary>
 	/// 表格格式化辅助类 提供表格的高性能格式化功能
@@ -62,60 +62,49 @@ namespace PPA.Formatting
 			var firstRowCells = new List<NETOP.Cell>();
 			var lastRowCells = new List<NETOP.Cell>();
 			var dataRowCells = new List<NETOP.Cell>();
+			var rowsToDispose = new List<NETOP.Row>();
 
-			// 第一步：收集所有单元格到不同集合
-			for(int r = 1;r<=rows;r++)
+			try
 			{
-				var row = tbl.Rows[r];
-				for(int c = 1;c<=cols;c++)
+				// 第一步：收集所有单元格到不同集合
+				for(int r = 1;r<=rows;r++)
 				{
-					var cell = row.Cells[c];
-					dataRowCells.Add(cell);
-					// 只收集引用，不立即处理
-					if(r==1)
-						firstRowCells.Add(cell);
-					else if(r==rows)
-						lastRowCells.Add(cell);
+					var row = tbl.Rows[r];
+					rowsToDispose.Add(row);
+					for(int c = 1;c<=cols;c++)
+					{
+						var cell = row.Cells[c];
+						dataRowCells.Add(cell);
+						// 只收集引用，不立即处理
+						if(r==1)
+							firstRowCells.Add(cell);
+						else if(r==rows)
+							lastRowCells.Add(cell);
+					}
 				}
+
+				//批量处理数据行
+				FormatDataRowCells(dataRowCells,fontName,fontNameFarEast,fontSize,dk1,thin,a2,useAutoNum,decimalPlacesValue,tableConfig.NegativeTextColor);
+
+				//批量处理标题行和尾行
+				FormatOutsideRowCells(firstRowCells,lastRowCells,
+					tableConfig.HeaderRowFont.Name,
+					tableConfig.HeaderRowFont.NameFarEast,
+					bigFontSize,
+					dk1,
+					thick,
+					a1);
 			}
-
-			//批量处理数据行
-			FormatDataRowCells(dataRowCells,fontName,fontNameFarEast,fontSize,dk1,thin,a2,useAutoNum,decimalPlacesValue,tableConfig.NegativeTextColor);
-
-			//批量处理标题行和尾行
-			FormatOutsideRowCells(firstRowCells,lastRowCells,
-				tableConfig.HeaderRowFont.Name,
-				tableConfig.HeaderRowFont.NameFarEast,
-				bigFontSize,
-				dk1,
-				thick,
-				a1);
+			finally
+			{
+				// 释放所有收集的 Row 和 Cell 对象
+				rowsToDispose.DisposeAll();
+				firstRowCells.DisposeAll();
+				lastRowCells.DisposeAll();
+				dataRowCells.DisposeAll();
+			}
 		}
 
-		/// <summary>
-		/// 对表格进行高性能格式化（抽象接口版本）。
-		/// </summary>
-		/// <param name="tbl"> 要格式化的抽象表格对象。 </param>
-		public void FormatTables(ITable tbl)
-		{
-			_logger.LogInformation($"启动，tbl={tbl?.GetType().Name??"null"}");
-			if(tbl==null)
-			{
-				_logger.LogWarning("tbl 为 null，返回");
-				return;
-			}
-
-			// 使用 AdapterUtils 统一转换
-			var native = AdapterUtils.UnwrapTable(tbl);
-			if(native!=null)
-			{
-				_logger.LogInformation("成功获取 NetOffice.Table，使用 PowerPoint 格式化");
-				FormatTables(native);
-				return;
-			}
-
-			_logger.LogError($"未知的表格类型 {tbl.GetType().FullName}，无法格式化");
-		}
 
 		/// <summary>
 		/// 批量处理首末行的单元格，减少重复操作和COM调用

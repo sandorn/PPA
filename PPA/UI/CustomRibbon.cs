@@ -3,7 +3,6 @@ using PPA.Core;
 using PPA.Core.Abstraction.Business;
 using PPA.Core.Abstraction.Infrastructure;
 using PPA.Core.Abstraction.Presentation;
-using PPA.Core.Adapters.PowerPoint;
 using PPA.Core.Logging;
 using PPA.Properties;
 using PPA.UI.Forms;
@@ -29,7 +28,6 @@ namespace PPA
 		private bool _disposed = false;
 		private bool _appInitialized = false;
 		private IApplicationProvider _applicationProvider;
-		private IApplication _abstractApp; // 抽象 Application 接口（用于 DI 和测试）
 		private int _lastShapeCount = -1; // 记录上次选中的形状数量，用于检测变化
 		private ILogger _logger = LoggerProvider.GetLogger();
 		private ILogger Logger => _logger??LoggerProvider.GetLogger();
@@ -39,6 +37,7 @@ namespace PPA
 
 		private IRibbonIconProvider _ribbonIconProvider;
 		private IRibbonCommandRouter _ribbonCommandRouter;
+		private ISelectionService _selectionService; // 新增字段
 
 		#endregion Private Fields
 
@@ -76,10 +75,9 @@ namespace PPA
 				_logger=serviceProvider.GetService<ILogger>()??_logger;
 			}
 
-			_abstractApp=ResolveAbstractApplication();
-
 			Logger.LogInformation("Application 设置成功");
 		}
+
 
 		public void SetApplicationProvider(IApplicationProvider applicationProvider)
 		{
@@ -93,18 +91,17 @@ namespace PPA
 				_ribbonXmlProvider=serviceProvider.GetService<IRibbonXmlProvider>();
 				_ribbonIconProvider=serviceProvider.GetService<IRibbonIconProvider>();
 				var shapeBatchHelper = serviceProvider.GetService<IShapeBatchHelper>();
+				_selectionService = serviceProvider.GetService<ISelectionService>(); // 新增
 
 				// 创建命令路由器（需要回调函数，所以在这里创建）
 				_ribbonCommandRouter=new RibbonCommandRouter(
 					serviceProvider,
-					applicationProvider,
 					_logger,
 					shapeBatchHelper,
 					() => GetNetOfficeApplication(),
-					() => GetAbstractApplication(),
+					_selectionService,
 					() => _tb101Press,
 					value => _tb101Press=value,
-					() => GetSelectedShapeCount(),
 					controlId => _ribbonUI?.InvalidateControl(controlId),
 					() => _ribbonUI?.Invalidate()
 				);
@@ -262,18 +259,19 @@ namespace PPA
 		/// <returns> NetOffice Application 对象，如果无法获取则返回 null </returns>
 		private NETOP.Application GetNetOfficeApplication()
 		{
-			var netApp = ApplicationHelper.GetNetOfficeApplication(_abstractApp);
-			if(netApp==null)
+			// 委托给 ApplicationHelper 处理获取和有效性验证（含自动重连逻辑）
+			var validApp = ApplicationHelper.EnsureValidNetApplication(_netApp);
+			
+			if (validApp != null)
 			{
-				Logger.LogWarning("GetNetOfficeApplication: 无法获取 NetOffice Application 对象");
-				return null;
+				_netApp = validApp;
+				_appInitialized = true;
 			}
-
-			_netApp=netApp;
-			_appInitialized=true;
-
-			// 每次获取后刷新抽象应用上下文，便于下游使用
-			_abstractApp??=ResolveAbstractApplication();
+			else
+			{
+				// 如果 EnsureValidNetApplication 返回 null，说明确实无法获取到有效的 App
+				_appInitialized = false;
+			}
 
 			return _netApp;
 		}
@@ -284,36 +282,7 @@ namespace PPA
 		/// <returns> 选中的形状数量，如果无法获取则返回 0 </returns>
 		private int GetSelectedShapeCount()
 		{
-			var app = GetNetOfficeApplication();
-			if(app==null)
-			{
-				return 0;
-			}
-
-			try
-			{
-				var selection = app.ActiveWindow?.Selection;
-				if(selection==null)
-				{
-					return 0;
-				}
-
-				// 检查是否有选中的形状
-				if(selection.Type==NetOffice.PowerPointApi.Enums.PpSelectionType.ppSelectionShapes)
-				{
-					var shapeRange = selection.ShapeRange;
-					if(shapeRange!=null)
-					{
-						return shapeRange.Count;
-					}
-				}
-
-				return 0;
-			} catch(Exception ex)
-			{
-				Logger.LogWarning($"获取选中形状数量失败: {ex.Message}");
-				return 0;
-			}
+			return _selectionService?.GetSelectedShapeCount() ?? 0;
 		}
 
 		/// <summary>
@@ -486,12 +455,6 @@ namespace PPA
 
 		#endregion Event Handlers
 
-		#region Async Operation Helpers
-
-		// ExecuteAsyncOperation 已移动到 AsyncOperationHelper 类中
-
-		#endregion Async Operation Helpers
-
 		#region Lifecycle Management (IDisposable)
 
 		/// <summary>
@@ -536,44 +499,5 @@ namespace PPA
 		}
 
 		#endregion Lifecycle Management (IDisposable)
-
-		/// <summary>
-		/// 获取抽象应用程序对象（带缓存）
-		/// </summary>
-		/// <remarks> 如果已缓存则直接返回，否则调用 ResolveAbstractApplication() 解析并缓存。 缓存机制避免重复创建适配器对象，提升性能。 </remarks>
-		/// <returns> IApplication 抽象应用程序对象，如果无法获取则返回 null </returns>
-		private IApplication GetAbstractApplication()
-		{
-			// 如果应用对象已初始化且缓存为空，重新解析
-			if(_abstractApp==null&&_appInitialized&&_netApp!=null)
-			{
-				_abstractApp=ResolveAbstractApplication();
-			}
-			return _abstractApp;
-		}
-
-		/// <summary>
-		/// 解析抽象应用程序对象
-		/// </summary>
-		/// <remarks>
-		/// 优先从 DI 容器的 IApplicationFactory 获取，如果失败则从 NetOffice Application 对象创建
-		/// PowerPointApplication 包装器。此方法会创建新的适配器对象，建议通过 GetAbstractApplication() 使用缓存版本。
-		/// </remarks>
-		/// <returns> IApplication 抽象应用程序对象，如果无法获取则返回 null </returns>
-		private IApplication ResolveAbstractApplication()
-		{
-			var serviceProvider = _applicationProvider?.ServiceProvider;
-			if(serviceProvider!=null)
-			{
-				var factory = serviceProvider.GetService<IApplicationFactory>();
-				var app = factory?.GetCurrent();
-				if(app!=null)
-				{
-					return app;
-				}
-			}
-
-			return _netApp!=null ? new PowerPointApplication(_netApp) : null;
-		}
 	}
 }

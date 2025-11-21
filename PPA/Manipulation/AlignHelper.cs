@@ -13,7 +13,7 @@ using static PPA.Core.Abstraction.Business.OfficeCommands;
 using AlignmentType = PPA.Core.Abstraction.Business.AlignmentType;
 using NETOP = NetOffice.PowerPointApi;
 
-namespace PPA.Formatting
+namespace PPA.Manipulation
 {
 	/// <summary>
 	/// 提供PowerPoint形状对齐、拉伸、吸附等相关操作的辅助方法。
@@ -23,11 +23,6 @@ namespace PPA.Formatting
 		private readonly IShapeHelper _shapeHelper;
 		private readonly ICommandExecutor _commandExecutor;
 		private readonly ILogger _logger;
-
-		// 缓存适配器对象，避免重复转换，提升性能
-		private IApplication _cachedAbstractApp; // 缓存的抽象接口
-
-		private NETOP.Application _cachedNetApp; // 缓存的 NetOffice 对象
 
 		/// <summary>
 		/// 构造函数，通过依赖注入获取服务
@@ -54,85 +49,12 @@ namespace PPA.Formatting
 			_logger=logger??LoggerProvider.GetLogger();
 		}
 
-		public void GuidesStretchHeight(IApplication abstractApp) => InvokeWithNative(abstractApp,GuidesStretchHeight);
-
-		public void GuideAlignBottom(IApplication abstractApp) => InvokeWithNative(abstractApp,GuideAlignBottom);
-
-		public void StretchBottom(IApplication abstractApp) => InvokeWithNative(abstractApp,StretchBottom);
-
-		public void SwapSize(IApplication abstractApp) => InvokeWithNative(abstractApp,SwapSize);
-
-		public void SetEqualHeight(IApplication abstractApp) => InvokeWithNative(abstractApp,SetEqualHeight);
-
-		public void GuidesStretchSize(IApplication abstractApp) => InvokeWithNative(abstractApp,GuidesStretchSize);
-
-		public void GuideAlignHCenter(IApplication abstractApp) => InvokeWithNative(abstractApp,GuideAlignHCenter);
-
-		public void StretchLeft(IApplication abstractApp) => InvokeWithNative(abstractApp,StretchLeft);
-
-		/// <summary>
-		/// 将抽象接口转换为 NetOffice 对象，带缓存优化
-		/// </summary>
-		/// <param name="abstractApp"> 抽象应用程序接口 </param>
-		/// <param name="action"> 需要执行的操作 </param>
-		private void InvokeWithNative(IApplication abstractApp,Action<NETOP.Application> action)
-		{
-			if(action==null) return;
-
-			// 使用缓存避免重复转换
-			NETOP.Application netApp;
-			if(_cachedAbstractApp==abstractApp&&_cachedNetApp!=null)
-			{
-				netApp=_cachedNetApp;
-			} else
-			{
-				netApp=ApplicationHelper.GetNetOfficeApplication(abstractApp);
-				if(netApp!=null)
-				{
-					_cachedAbstractApp=abstractApp;
-					_cachedNetApp=netApp;
-				}
-			}
-
-			if(netApp==null) return;
-			action(netApp);
-		}
-
-		/// <summary>
-		/// 将 NetOffice Application 转换为抽象接口，带缓存优化
-		/// </summary>
-		/// <param name="netApp"> NetOffice 应用程序对象 </param>
-		/// <returns> 抽象接口对象 </returns>
-		private IApplication GetAbstractApp(NETOP.Application netApp)
-		{
-			if(netApp==null) return null;
-
-			// 如果缓存的 NetOffice 对象匹配，直接返回缓存的抽象接口
-			if(_cachedNetApp==netApp&&_cachedAbstractApp!=null)
-			{
-				return _cachedAbstractApp;
-			}
-
-			// 使用 ApplicationHelper 进行转换（统一管理转换逻辑）
-			var abstractApp = ApplicationHelper.GetAbstractApplication(netApp);
-			_cachedNetApp=netApp;
-			_cachedAbstractApp=abstractApp;
-			return abstractApp;
-		}
-
-		public void GuidesStretchWidth(IApplication abstractApp) => InvokeWithNative(abstractApp,GuidesStretchWidth);
-
-		public void GuideAlignLeft(IApplication abstractApp) => InvokeWithNative(abstractApp,GuideAlignLeft);
-
-		public void StretchRight(IApplication abstractApp) => InvokeWithNative(abstractApp,StretchRight);
-
 		#region Public Methods
 
 		// 下吸附：将第二个形状的下边与第一个形状的上边对齐，只移动第二个形状且只垂直移动
 		public void AttachBottom(NETOP.Application netApp)
 		{
-			var abstractApp = GetAbstractApp(netApp);
-			var shapes = _shapeHelper.ValidateSelection(abstractApp, true) as dynamic;
+			var shapes = _shapeHelper.ValidateSelection(netApp, true) as dynamic;
 			if(shapes==null) return;
 
 			ExHandler.Run(() =>
@@ -147,17 +69,13 @@ namespace PPA.Formatting
 			});
 		}
 
-		public void GuideAlignRight(IApplication abstractApp) => InvokeWithNative(abstractApp,GuideAlignRight);
 
-		public void StretchTop(IApplication abstractApp) => InvokeWithNative(abstractApp,StretchTop);
 
-		public void AttachBottom(IApplication abstractApp) => InvokeWithNative(abstractApp,AttachBottom);
 
 		// 左吸附：将第二个形状的左边与第一个形状的右边对齐，只移动第二个形状且只水平移动
 		public void AttachLeft(NETOP.Application netApp)
 		{
-			var abstractApp = GetAbstractApp(netApp);
-			var shapes = _shapeHelper.ValidateSelection(abstractApp, true) as dynamic;
+			var shapes = _shapeHelper.ValidateSelection(netApp, true) as dynamic;
 			if(shapes==null) return;
 
 			ExHandler.Run(() =>
@@ -172,15 +90,12 @@ namespace PPA.Formatting
 			});
 		}
 
-		public void GuideAlignTop(IApplication abstractApp) => InvokeWithNative(abstractApp,GuideAlignTop);
 
-		public void AttachLeft(IApplication abstractApp) => InvokeWithNative(abstractApp,AttachLeft);
 
 		// 右吸附：将第二个形状的右边与第一个形状的左边对齐，只移动第二个形状且只水平移动
 		public void AttachRight(NETOP.Application netApp)
 		{
-			var abstractApp = GetAbstractApp(netApp);
-			var shapes = _shapeHelper.ValidateSelection(abstractApp, true) as dynamic;
+			var shapes = _shapeHelper.ValidateSelection(netApp, true) as dynamic;
 			if(shapes==null) return;
 
 			ExHandler.Run(() =>
@@ -195,15 +110,11 @@ namespace PPA.Formatting
 			});
 		}
 
-		public void GuideAlignVCenter(IApplication abstractApp) => InvokeWithNative(abstractApp,GuideAlignVCenter);
-
-		public void AttachRight(IApplication abstractApp) => InvokeWithNative(abstractApp,AttachRight);
 
 		// 上吸附：将第二个形状的上边与第一个形状的下边对齐，只移动第二个形状且只垂直移动
 		public void AttachTop(NETOP.Application netApp)
 		{
-			var abstractApp = GetAbstractApp(netApp);
-			var shapes = _shapeHelper.ValidateSelection(abstractApp, true) as dynamic;
+			var shapes = _shapeHelper.ValidateSelection(netApp, true) as dynamic;
 			if(shapes==null) return;
 
 			ExHandler.Run(() =>
@@ -218,13 +129,11 @@ namespace PPA.Formatting
 			});
 		}
 
-		public void AttachTop(IApplication abstractApp) => InvokeWithNative(abstractApp,AttachTop);
 
 		// 底对齐到下方最近的水平参考线
 		public void GuideAlignBottom(NETOP.Application netApp)
 		{
-			var abstractApp = GetAbstractApp(netApp);
-			var sel = _shapeHelper.ValidateSelection(abstractApp) as dynamic;
+			var sel = _shapeHelper.ValidateSelection(netApp) as dynamic;
 			if(sel==null) return;
 
 			ExHandler.Run(() =>
@@ -283,8 +192,7 @@ namespace PPA.Formatting
 		// 水平居中到最近的两条垂直参考线的中点
 		public void GuideAlignHCenter(NETOP.Application netApp)
 		{
-			var abstractApp = GetAbstractApp(netApp);
-			var sel = _shapeHelper.ValidateSelection(abstractApp) as dynamic;
+			var sel = _shapeHelper.ValidateSelection(netApp) as dynamic;
 			if(sel==null) return;
 
 			ExHandler.Run(() =>
@@ -343,8 +251,7 @@ namespace PPA.Formatting
 		// 左对齐到左侧最近的垂直参考线
 		public void GuideAlignLeft(NETOP.Application netApp)
 		{
-			var abstractApp = GetAbstractApp(netApp);
-			var sel = _shapeHelper.ValidateSelection(abstractApp) as dynamic;
+			var sel = _shapeHelper.ValidateSelection(netApp) as dynamic;
 			if(sel==null) return;
 
 			ExHandler.Run(() =>
@@ -403,8 +310,7 @@ namespace PPA.Formatting
 		// 右对齐到右侧最近的垂直参考线
 		public void GuideAlignRight(NETOP.Application netApp)
 		{
-			var abstractApp = GetAbstractApp(netApp);
-			var sel = _shapeHelper.ValidateSelection(abstractApp) as dynamic;
+			var sel = _shapeHelper.ValidateSelection(netApp) as dynamic;
 			if(sel==null) return;
 
 			ExHandler.Run(() =>
@@ -463,8 +369,7 @@ namespace PPA.Formatting
 		// 顶对齐到上方最近的水平参考线
 		public void GuideAlignTop(NETOP.Application netApp)
 		{
-			var abstractApp = GetAbstractApp(netApp);
-			var sel = _shapeHelper.ValidateSelection(abstractApp) as dynamic;
+			var sel = _shapeHelper.ValidateSelection(netApp) as dynamic;
 			if(sel==null) return;
 
 			ExHandler.Run(() =>
@@ -523,8 +428,7 @@ namespace PPA.Formatting
 		// 垂直居中到最近的两条水平参考线的中点
 		public void GuideAlignVCenter(NETOP.Application netApp)
 		{
-			var abstractApp = GetAbstractApp(netApp);
-			var sel = _shapeHelper.ValidateSelection(abstractApp) as dynamic;
+			var sel = _shapeHelper.ValidateSelection(netApp) as dynamic;
 			if(sel==null) return;
 
 			ExHandler.Run(() =>
@@ -583,8 +487,7 @@ namespace PPA.Formatting
 		// 高拉伸：高度拉伸到最近两条水平参考线之间并居中
 		public void GuidesStretchHeight(NETOP.Application netApp)
 		{
-			var abstractApp = GetAbstractApp(netApp);
-			var sel = _shapeHelper.ValidateSelection(abstractApp) as dynamic;
+			var sel = _shapeHelper.ValidateSelection(netApp) as dynamic;
 			if(sel==null) return;
 
 			ExHandler.Run(() =>
@@ -657,8 +560,7 @@ namespace PPA.Formatting
 		// 宽高都拉伸：宽度和高度都拉伸到最近两条参考线之间并居中
 		public void GuidesStretchSize(NETOP.Application netApp)
 		{
-			var abstractApp = GetAbstractApp(netApp);
-			var sel = _shapeHelper.ValidateSelection(abstractApp) as dynamic;
+			var sel = _shapeHelper.ValidateSelection(netApp) as dynamic;
 			if(sel==null) return;
 
 			ExHandler.Run(() =>
@@ -758,8 +660,7 @@ namespace PPA.Formatting
 		// 宽拉伸：宽度拉伸到最近两条垂直参考线之间并居中
 		public void GuidesStretchWidth(NETOP.Application netApp)
 		{
-			var abstractApp = GetAbstractApp(netApp);
-			var sel = _shapeHelper.ValidateSelection(abstractApp) as dynamic;
+			var sel = _shapeHelper.ValidateSelection(netApp) as dynamic;
 			if(sel==null) return;
 
 			ExHandler.Run(() =>
@@ -817,8 +718,7 @@ namespace PPA.Formatting
 		// 设置选中对象等高
 		public void SetEqualHeight(NETOP.Application netApp)
 		{
-			var abstractApp = GetAbstractApp(netApp);
-			var shapes = _shapeHelper.ValidateSelection(abstractApp, true) as dynamic;
+			var shapes = _shapeHelper.ValidateSelection(netApp, true) as dynamic;
 			if(shapes==null) return;
 
 			ExHandler.Run(() =>
@@ -833,8 +733,7 @@ namespace PPA.Formatting
 		// 设置选中对象等宽且等高
 		public void SetEqualSize(NETOP.Application netApp)
 		{
-			var abstractApp = GetAbstractApp(netApp);
-			var shapes = _shapeHelper.ValidateSelection(abstractApp, true) as dynamic;
+			var shapes = _shapeHelper.ValidateSelection(netApp, true) as dynamic;
 			if(shapes==null) return;
 
 			ExHandler.Run(() =>
@@ -849,13 +748,11 @@ namespace PPA.Formatting
 			});
 		}
 
-		public void SetEqualSize(IApplication abstractApp) => InvokeWithNative(abstractApp,netApp => SetEqualSize(netApp));
 
 		// 设置选中对象等宽
 		public void SetEqualWidth(NETOP.Application netApp)
 		{
-			var abstractApp = GetAbstractApp(netApp);
-			var shapes = _shapeHelper.ValidateSelection(abstractApp, true) as dynamic;
+			var shapes = _shapeHelper.ValidateSelection(netApp, true) as dynamic;
 			if(shapes==null) return;
 
 			ExHandler.Run(() =>
@@ -867,13 +764,11 @@ namespace PPA.Formatting
 			});
 		}
 
-		public void SetEqualWidth(IApplication abstractApp) => InvokeWithNative(abstractApp,netApp => SetEqualWidth(netApp));
 
 		// 下延伸：下边对齐最下侧，上边位置保持不变（高度变大，上边不动）
 		public void StretchBottom(NETOP.Application netApp)
 		{
-			var abstractApp = GetAbstractApp(netApp);
-			var shapes = _shapeHelper.ValidateSelection(abstractApp, true) as dynamic;
+			var shapes = _shapeHelper.ValidateSelection(netApp, true) as dynamic;
 			if(shapes==null) return;
 
 			ExHandler.Run(() =>
@@ -896,8 +791,7 @@ namespace PPA.Formatting
 		// 左延伸：左边对齐最左侧，右边位置保持不变（宽度变大，右边不动）
 		public void StretchLeft(NETOP.Application netApp)
 		{
-			var abstractApp = GetAbstractApp(netApp);
-			var shapes = _shapeHelper.ValidateSelection(abstractApp, true) as dynamic;
+			var shapes = _shapeHelper.ValidateSelection(netApp, true) as dynamic;
 			if(shapes==null) return;
 
 			ExHandler.Run(() =>
@@ -919,8 +813,7 @@ namespace PPA.Formatting
 		// 右延伸：右边对齐最右侧，左边位置保持不变（宽度变大，左边不动）
 		public void StretchRight(NETOP.Application netApp)
 		{
-			var abstractApp = GetAbstractApp(netApp);
-			var shapes = _shapeHelper.ValidateSelection(abstractApp, true) as dynamic;
+			var shapes = _shapeHelper.ValidateSelection(netApp, true) as dynamic;
 			if(shapes==null) return;
 
 			ExHandler.Run(() =>
@@ -944,8 +837,7 @@ namespace PPA.Formatting
 		// 上延伸：上边对齐最上侧，下边位置保持不变（高度变大，下边不动）
 		public void StretchTop(NETOP.Application netApp)
 		{
-			var abstractApp = GetAbstractApp(netApp);
-			var shapes = _shapeHelper.ValidateSelection(abstractApp, true) as dynamic;
+			var shapes = _shapeHelper.ValidateSelection(netApp, true) as dynamic;
 			if(shapes==null) return;
 
 			ExHandler.Run(() =>
@@ -967,8 +859,7 @@ namespace PPA.Formatting
 		// 交换两个选中对象的位置和大小
 		public void SwapSize(NETOP.Application netApp)
 		{
-			var abstractApp = GetAbstractApp(netApp);
-			var shapes = _shapeHelper.ValidateSelection(abstractApp, true) as dynamic;
+			var shapes = _shapeHelper.ValidateSelection(netApp, true) as dynamic;
 			if(shapes==null) return;
 
 			ExHandler.Run(() =>
@@ -1066,8 +957,7 @@ namespace PPA.Formatting
 			UndoHelper.BeginUndoEntry(netApp,UndoHelper.UndoNames.AlignShapes);
 			ExHandler.Run(() =>
 			{
-				var abstractApp = GetAbstractApp(netApp);
-				var sel = _shapeHelper.ValidateSelection(abstractApp) as dynamic;
+					var sel = _shapeHelper.ValidateSelection(netApp) as dynamic;
 				if(sel==null)
 				{
 					Toast.Show(ResourceManager.GetString("Toast_NoSelection"),Toast.ToastType.Warning);
@@ -1240,25 +1130,6 @@ namespace PPA.Formatting
 						break;
 				}
 			});
-		}
-
-		/// <summary>
-		/// 执行对齐操作（抽象接口版本）
-		/// </summary>
-		/// <param name="abstractApp"> 抽象应用程序实例 </param>
-		/// <param name="alignment"> 对齐类型 </param>
-		/// <param name="alignToSlideMode"> 是否对齐到幻灯片 </param>
-		public void ExecuteAlignment(IApplication abstractApp,AlignmentType alignment,bool alignToSlideMode)
-		{
-			// 使用统一的 ApplicationHelper 获取 NetOffice Application 对象
-			var netApp = ApplicationHelper.GetNetOfficeApplication(abstractApp);
-			if(netApp==null)
-			{
-				_logger.LogError("无法获取 NetOffice Application 对象");
-				return;
-			}
-
-			ExecuteAlignment(netApp,alignment,alignToSlideMode);
 		}
 
 		#endregion Public Methods

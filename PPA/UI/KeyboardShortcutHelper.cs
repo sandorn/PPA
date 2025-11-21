@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PPA.Core.Abstraction.Business;
 using PPA.Core.Abstraction.Infrastructure;
 using PPA.Core.Logging;
-using PPA.Formatting;
+using PPA.Manipulation;
 using PPA.Shape;
 using System;
 using System.Collections.Generic;

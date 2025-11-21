@@ -1,8 +1,5 @@
 using PPA.Core;
 using PPA.Core.Abstraction.Infrastructure;
-using PPA.Core.Abstraction.Presentation;
-using PPA.Core.Adapters;
-using PPA.Core.Adapters.PowerPoint;
 using PPA.Core.Logging;
 using MSOP = Microsoft.Office.Interop.PowerPoint;
 using NETOP = NetOffice.PowerPointApi;
@@ -23,11 +20,10 @@ namespace PPA.Utilities
 		/// 此方法返回的是 NetOffice 包装的 Application 对象（NETOP.Application）， 而不是原生 COM 对象。NetOffice 提供了更友好的
 		/// API 和更好的异常处理。 如果需要原生 COM 对象（MSOP.Application），请使用 GetNativeComApplication() 方法。
 		/// </remarks>
-		/// <param name="application"> 可选的 IApplication 接口，如果提供则优先使用 </param>
 		/// <returns> NetOffice Application 对象，如果无法获取则返回 null </returns>
-		public static NETOP.Application GetNetOfficeApplication(IApplication application = null)
+		public static NETOP.Application GetNetOfficeApplication()
 		{
-			return NetChannel.Resolve(application);
+			return NetChannel.Resolve();
 		}
 
 		/// <summary>
@@ -38,11 +34,10 @@ namespace PPA.Utilities
 		/// 而不是 NetOffice 包装的对象。原生 COM 对象在某些场景下需要直接访问底层 COM 接口。 如果需要 NetOffice
 		/// 对象（NETOP.Application），请使用 GetNetOfficeApplication() 方法。
 		/// </remarks>
-		/// <param name="application"> 可选的 IApplication 接口，如果提供则优先使用 </param>
 		/// <returns> 原生 COM Application 对象，如果无法获取则返回 null </returns>
-		public static MSOP.Application GetNativeComApplication(IApplication application = null)
+		public static MSOP.Application GetNativeComApplication()
 		{
-			return NativeChannel.Resolve(application);
+			return NativeChannel.Resolve();
 		}
 
 		/// <summary>
@@ -59,42 +54,6 @@ namespace PPA.Utilities
 		}
 
 		/// <summary>
-		/// 将 NetOffice Application 对象转换为抽象接口
-		/// </summary>
-		/// <remarks>
-		/// 此方法将 NETOP.Application 包装为 IApplication 接口。 如果 netApp 已经是某个 IApplication
-		/// 适配器的底层对象，会尝试复用该适配器。 否则会创建新的 PowerPointApplication 适配器。
-		/// </remarks>
-		/// <param name="netApp"> NetOffice Application 对象 </param>
-		/// <returns> IApplication 接口对象，如果 netApp 为 null 则返回 null </returns>
-		public static IApplication GetAbstractApplication(NETOP.Application netApp)
-		{
-			if(netApp==null) return null;
-
-			// 尝试从 DI 容器查找已存在的适配器
-			var provider = ApplicationProvider.Current;
-			var serviceProvider = provider?.ServiceProvider;
-			if(serviceProvider!=null)
-			{
-				try
-				{
-					var factoryObj = serviceProvider.GetService(typeof(IApplicationFactory)) as IApplicationFactory;
-					var existingApp = factoryObj?.GetCurrent();
-					if(existingApp!=null&&AdapterUtils.UnwrapApplication(existingApp)==netApp)
-					{
-						return existingApp;
-					}
-				} catch
-				{
-					// 忽略异常，继续创建新适配器
-				}
-			}
-
-			// 创建新的适配器对象
-			return new PowerPointApplication(netApp);
-		}
-
-		/// <summary>
 		/// 确保返回一个可用的 NetOffice Application（ActiveWindow 失效时自动刷新）
 		/// </summary>
 		/// <param name="netApp"> 现有的 NetOffice Application 对象 </param>
@@ -104,47 +63,16 @@ namespace PPA.Utilities
 			return NetChannel.EnsureValid(netApp);
 		}
 
-		/// <summary>
-		/// 从 IApplication 接口获取并确保返回一个可用的 NetOffice Application
-		/// </summary>
-		/// <param name="application"> IApplication 接口对象 </param>
-		/// <returns> 可用的 NetOffice Application；若无法获取则返回 null </returns>
-		public static NETOP.Application EnsureValidNetApplication(IApplication application)
-		{
-			var netApp = GetNetOfficeApplication(application);
-			return EnsureValidNetApplication(netApp);
-		}
-
 		private static class NetChannel
 		{
-			public static NETOP.Application Resolve(IApplication application)
+			public static NETOP.Application Resolve()
 			{
 				try
 				{
-					if(application!=null)
-					{
-						var unwrapped = AdapterUtils.UnwrapApplication(application);
-						if(unwrapped!=null)
-						{
-							return unwrapped;
-						}
-					}
-
 					var provider = ApplicationProvider.Current;
 					if(provider?.NetApplication!=null)
 					{
 						return provider.NetApplication;
-					}
-
-					var serviceProvider = provider?.ServiceProvider;
-					if(serviceProvider!=null)
-					{
-						var factoryObj = serviceProvider.GetService(typeof(IApplicationFactory)) as IApplicationFactory;
-						var resolvedFromFactory = factoryObj?.GetCurrent();
-						if(resolvedFromFactory!=null)
-						{
-							return AdapterUtils.UnwrapApplication(resolvedFromFactory);
-						}
 					}
 
 					return null;
@@ -159,7 +87,7 @@ namespace PPA.Utilities
 			{
 				if(netApp==null)
 				{
-					var fallback = Resolve(null);
+					var fallback = Resolve();
 					if(fallback==null)
 					{
 						_logger.LogWarning("Application 为 null 且无法重新获取");
@@ -173,7 +101,7 @@ namespace PPA.Utilities
 					return netApp;
 				}
 
-				var refreshed = Resolve(null);
+				var refreshed = Resolve();
 				if(refreshed!=null)
 				{
 					_logger.LogInformation("ActiveWindow 无效，已重新获取 Application");
@@ -187,7 +115,7 @@ namespace PPA.Utilities
 
 		private static class NativeChannel
 		{
-			public static MSOP.Application Resolve(IApplication application)
+			public static MSOP.Application Resolve()
 			{
 				try
 				{
@@ -197,7 +125,7 @@ namespace PPA.Utilities
 						return provider.NativeApplication;
 					}
 
-					var netApp = NetChannel.Resolve(application);
+					var netApp = NetChannel.Resolve();
 					return Resolve(netApp);
 				} catch(System.Exception ex)
 				{

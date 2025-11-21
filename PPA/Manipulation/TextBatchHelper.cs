@@ -2,14 +2,12 @@ using NetOffice.OfficeApi.Enums;
 using PPA.Core;
 using PPA.Core.Abstraction.Business;
 using PPA.Core.Abstraction.Infrastructure;
-using PPA.Core.Adapters;
 using PPA.Core.Logging;
-using PPA.Formatting.Selection;
 using PPA.Utilities;
 using System;
 using NETOP = NetOffice.PowerPointApi;
 
-namespace PPA.Formatting
+namespace PPA.Manipulation
 {
 	/// <summary>
 	/// 文本批量操作辅助类 提供文本批量格式化功能
@@ -51,8 +49,7 @@ namespace PPA.Formatting
 
 			ExHandler.Run(() =>
 			{
-				var abstractApp = ApplicationHelper.GetAbstractApplication(netApp);
-				var selection = _shapeHelper.ValidateSelection(abstractApp) as dynamic;
+				var selection = _shapeHelper.ValidateSelection(netApp) as dynamic;
 
 				// 调试：记录选中对象信息
 				if(selection==null)
@@ -162,11 +159,10 @@ namespace PPA.Formatting
 				return false;
 			}
 
-			// 包装并格式化
-			var iShape = AdapterUtils.WrapShape(netApp, shape);
-			if(iShape!=null)
+			// 直接使用 NETOP.Shape，移除抽象接口转换
+			if(shape!=null)
 			{
-				textFormatHelper.ApplyTextFormatting(iShape);
+				textFormatHelper.ApplyTextFormatting(shape);
 				return true;
 			}
 

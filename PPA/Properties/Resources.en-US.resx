@@ -660,6 +660,18 @@ Supports multi-language interface and customizable formatting parameters.</value
   <data name="ConfigDesc_Attr_Shortcuts_CreateBoundingBox" xml:space="preserve">
     <value>"Insert Shape" shortcut: Enter a number or letter (e.g., 4, I), actual combination is Ctrl+key.</value>
   </data>
+  <data name="ConfigDesc_Attr_Logging_EnableFileLogging" xml:space="preserve">
+    <value>Whether to enable file logging (true/false).</value>
+  </data>
+  <data name="ConfigDesc_Attr_Logging_MaxLogFiles" xml:space="preserve">
+    <value>Maximum number of log files to keep.</value>
+  </data>
+  <data name="ConfigDesc_Attr_Logging_MaxLogAgeDays" xml:space="preserve">
+    <value>Maximum log file age in days.</value>
+  </data>
+  <data name="ConfigDesc_Attr_Logging_MinimumLogLevel" xml:space="preserve">
+    <value>Minimum log level to write (Debug, Information, Warning, Error).</value>
+  </data>
   <!-- Configuration Descriptions - Element Descriptions -->
   <data name="ConfigDesc_Elem_PPAConfig" xml:space="preserve">
     <value>PPA configuration root node, containing table, text, chart formatting, and shortcut configurations.</value>
@@ -702,6 +714,9 @@ Supports multi-language interface and customizable formatting parameters.</value
   </data>
   <data name="ConfigDesc_Elem_Shortcuts" xml:space="preserve">
     <value>Shortcut configuration: Enter a number or letter, actual combination is Ctrl+key.</value>
+  </data>
+  <data name="ConfigDesc_Elem_Logging" xml:space="preserve">
+    <value>Logging configuration: file logging switch, log retention count/days, minimum log level.</value>
   </data>
   <!-- Configuration Descriptions - Label Text -->
   <data name="ConfigDesc_Label_Attribute" xml:space="preserve">

@@ -659,6 +659,18 @@
   <data name="ConfigDesc_Attr_Shortcuts_CreateBoundingBox" xml:space="preserve">
     <value>"插入形状"快捷键：填写数字或字母（如 4、I），实际为 Ctrl+键。</value>
   </data>
+  <data name="ConfigDesc_Attr_Logging_EnableFileLogging" xml:space="preserve">
+    <value>是否启用文件日志记录（true/false）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Logging_MaxLogFiles" xml:space="preserve">
+    <value>最多保留的日志文件数量。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Logging_MaxLogAgeDays" xml:space="preserve">
+    <value>日志文件最长保留天数（天）。</value>
+  </data>
+  <data name="ConfigDesc_Attr_Logging_MinimumLogLevel" xml:space="preserve">
+    <value>最小写入日志级别（Debug、Information、Warning、Error）。</value>
+  </data>
   <!-- 配置说明 - 元素说明 -->
   <data name="ConfigDesc_Elem_PPAConfig" xml:space="preserve">
     <value>PPA 配置根节点，包含表格、文本、图表格式及快捷键配置。</value>
@@ -701,6 +713,9 @@
   </data>
   <data name="ConfigDesc_Elem_Shortcuts" xml:space="preserve">
     <value>快捷键配置：填写数字或字母，实际组合为 Ctrl+键。</value>
+  </data>
+  <data name="ConfigDesc_Elem_Logging" xml:space="preserve">
+    <value>日志配置：文件日志开关、日志保留数量/天数、最小日志级别。</value>
   </data>
   <!-- 配置说明 - 标签文本 -->
   <data name="ConfigDesc_Label_Attribute" xml:space="preserve">

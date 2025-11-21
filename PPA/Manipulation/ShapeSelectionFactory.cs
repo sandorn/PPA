@@ -1,14 +1,12 @@
 using PPA.Core;
 using PPA.Core.Abstraction.Infrastructure;
-using PPA.Core.Abstraction.Presentation;
-using PPA.Core.Adapters;
 using PPA.Core.Logging;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NETOP = NetOffice.PowerPointApi;
 
-namespace PPA.Formatting.Selection
+namespace PPA.Manipulation
 {
 	/// <summary>
 	/// 表示可以被迭代处理的 PowerPoint 形状选区
@@ -92,54 +90,6 @@ namespace PPA.Formatting.Selection
 		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 	}
 
-	internal sealed class AbstractShapeSelection:IShapeSelection
-	{
-		private readonly IShape _shape;
-
-		public AbstractShapeSelection(IShape shape) => _shape=shape;
-
-		public int Count => _shape!=null ? 1 : 0;
-
-		public IEnumerator<NETOP.Shape> GetEnumerator()
-		{
-			if(_shape==null)
-			{
-				yield break;
-			}
-
-			var pptShape = AdapterUtils.UnwrapShape(_shape);
-			if(pptShape!=null)
-			{
-				yield return pptShape;
-			}
-		}
-
-		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-	}
-
-	internal sealed class AbstractShapeCollectionSelection:IShapeSelection
-	{
-		private readonly IEnumerable<IShape> _shapes;
-
-		public AbstractShapeCollectionSelection(IEnumerable<IShape> shapes) => _shapes=shapes??Enumerable.Empty<IShape>();
-
-		public int Count => _shapes.Count();
-
-		public IEnumerator<NETOP.Shape> GetEnumerator()
-		{
-			foreach(var abstractShape in _shapes)
-			{
-				var pptShape = AdapterUtils.UnwrapShape(abstractShape);
-				if(pptShape!=null)
-				{
-					yield return pptShape;
-				}
-			}
-		}
-
-		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-	}
-
 	internal static class ShapeSelectionFactory
 	{
 		public static IShapeSelection Create(object selection)
@@ -153,8 +103,6 @@ namespace PPA.Formatting.Selection
 			{
 				NETOP.Shape shape => new SingleShapeSelection(shape),
 				NETOP.ShapeRange shapeRange => new ShapeRangeSelection(shapeRange),
-				IShape abstractShape => new AbstractShapeSelection(abstractShape),
-				IEnumerable<IShape> abstractShapes => new AbstractShapeCollectionSelection(abstractShapes),
 				_ => null
 			};
 		}

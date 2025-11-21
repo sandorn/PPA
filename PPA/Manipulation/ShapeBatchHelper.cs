@@ -3,7 +3,6 @@ using PPA.Core;
 using PPA.Core.Abstraction.Business;
 using PPA.Core.Abstraction.Infrastructure;
 using PPA.Core.Abstraction.Presentation;
-using PPA.Core.Adapters;
 using PPA.Core.Logging;
 using PPA.Utilities;
 using System;
@@ -11,21 +10,15 @@ using System.Collections.Generic;
 using System.Linq;
 using NETOP = NetOffice.PowerPointApi;
 
-namespace PPA.Formatting
+namespace PPA.Manipulation
 {
 	/// <summary>
 	/// 形状批量操作辅助类
 	/// </summary>
-	internal class ShapeBatchHelper:IShapeBatchHelper
+	internal class ShapeBatchHelper(IShapeHelper shapeHelper, ILogger logger = null) : IShapeBatchHelper
 	{
-		private readonly IShapeHelper _shapeHelper;
-		private readonly ILogger _logger;
-
-		public ShapeBatchHelper(IShapeHelper shapeHelper,ILogger logger = null)
-		{
-			_shapeHelper=shapeHelper??throw new ArgumentNullException(nameof(shapeHelper));
-			_logger=logger??LoggerProvider.GetLogger();
-		}
+		private readonly IShapeHelper _shapeHelper = shapeHelper ?? throw new ArgumentNullException(nameof(shapeHelper));
+		private readonly ILogger _logger = logger ?? LoggerProvider.GetLogger();
 
 		/// <summary>
 		/// 根据选中对象创建矩形外框：
@@ -40,20 +33,21 @@ namespace PPA.Formatting
 
 			ExHandler.Run(() =>
 			{
-				if(!TryRefreshContext(ref netApp,out var abstractApp))
+				netApp = ApplicationHelper.EnsureValidNetApplication(netApp);
+				if(netApp == null)
 				{
 					Toast.Show(ResourceManager.GetString("Toast_NoSlide"),Toast.ToastType.Warning);
 					return;
 				}
 
-				var sel = GetSelectionWithRetry(ref netApp, ref abstractApp);
+				var sel = GetSelectionWithRetry(ref netApp);
 				if(sel==null)
 				{
 					Toast.Show(ResourceManager.GetString("Toast_NoValidSelection"),Toast.ToastType.Warning);
 					return;
 				}
 
-				var currentSlide = GetSlideWithRetry(ref netApp, ref abstractApp);
+				var currentSlide = GetSlideWithRetry(ref netApp);
 				if(currentSlide==null)
 				{
 					Toast.Show(ResourceManager.GetString("Toast_NoSlide"),Toast.ToastType.Warning);
@@ -82,9 +76,8 @@ namespace PPA.Formatting
 					// 处理单个形状
 					if(sel is NETOP.Shape shape)
 					{
-						// 需要将 NETOP.Shape 转换为 IShape
-						var abstractShape = AdapterUtils.WrapShape(netApp, shape);
-						var (top, left, bottom, right)=_shapeHelper.GetShapeBorderWeights(abstractShape);
+						// 直接使用 NETOP.Shape
+						var (top, left, bottom, right)=_shapeHelper.GetShapeBorderWeights(shape);
 
 						// 计算矩形参数
 						float rectLeft = shape.Left - left;
@@ -93,14 +86,10 @@ namespace PPA.Formatting
 						float rectHeight = shape.Height + (top + bottom);
 
 						// 创建矩形
-						var abstractSlide = currentSlide as IComWrapper<NETOP.Slide>;
-						if(abstractSlide!=null)
+						var nativeRect = _shapeHelper.AddOneShape(currentSlide, rectLeft, rectTop, rectWidth, rectHeight, shape.Rotation);
+						if(nativeRect != null)
 						{
-							var rect = _shapeHelper.AddOneShape(currentSlide, rectLeft, rectTop, rectWidth, rectHeight, shape.Rotation);
-							if(rect is IComWrapper<NETOP.Shape> rectWrapper)
-							{
-								createdShapes.Add(rectWrapper.NativeObject);
-							}
+							createdShapes.Add(nativeRect);
 						}
 					}
 					// 处理形状范围
@@ -111,9 +100,8 @@ namespace PPA.Formatting
 							for(int i = 1;i<=shapes.Count;i++)
 							{
 								var currentShape = shapes[i];
-								// 需要将 NETOP.Shape 转换为 IShape
-								var abstractShape = AdapterUtils.WrapShape(netApp, currentShape);
-								var (top, left, bottom, right)=_shapeHelper.GetShapeBorderWeights(abstractShape);
+								// 直接使用 NETOP.Shape
+								var (top, left, bottom, right)=_shapeHelper.GetShapeBorderWeights(currentShape);
 
 								// 计算矩形参数
 								float rectLeft = currentShape.Left - left;
@@ -122,10 +110,10 @@ namespace PPA.Formatting
 								float rectHeight = currentShape.Height + (top + bottom);
 
 								// 创建矩形
-								var rect = _shapeHelper.AddOneShape(currentSlide, rectLeft, rectTop, rectWidth, rectHeight, currentShape.Rotation);
-								if(rect is IComWrapper<NETOP.Shape> rectWrapper)
+								var nativeRect = _shapeHelper.AddOneShape(currentSlide, rectLeft, rectTop, rectWidth, rectHeight, currentShape.Rotation);
+								if(nativeRect != null)
 								{
-									createdShapes.Add(rectWrapper.NativeObject);
+									createdShapes.Add(nativeRect);
 								}
 							}
 						}
@@ -133,13 +121,8 @@ namespace PPA.Formatting
 
 					if(createdShapes.Count>0)
 					{
-						var abstractSlide = currentSlide as IComWrapper<NETOP.Slide>;
-						if(abstractSlide!=null)
-						{
-							var nativeSlide = abstractSlide.NativeObject;
-							var shapeNames = createdShapes.Select(s => s.Name).ToArray();
-							nativeSlide.Shapes.Range(shapeNames).Select();
-						}
+						var shapeNames = createdShapes.Select(s => s.Name).ToArray();
+						currentSlide.Shapes.Range(shapeNames).Select();
 						successMessage=string.Format(ResourceManager.GetString("Toast_CreateBoundingBox_Shapes"),createdShapes.Count);
 					}
 				}
@@ -164,12 +147,8 @@ namespace PPA.Formatting
 						}
 					} else
 					{
-						// 无选中的情况 - 需要从 ISlide 转换为 NETOP.Slide
-						var abstractSlide = currentSlide as IComWrapper<NETOP.Slide>;
-						if(abstractSlide!=null)
-						{
-							slidesToProcess.Add(abstractSlide.NativeObject);
-						}
+						// 无选中的情况 - currentSlide 已经是 NETOP.Slide
+						slidesToProcess.Add(currentSlide);
 						successMessage=ResourceManager.GetString("Toast_CreateBoundingBox_PageSize");
 					}
 
@@ -179,13 +158,11 @@ namespace PPA.Formatting
 						for(int i = 0;i<slidesToProcess.Count;i++)
 						{
 							var slide = slidesToProcess[i];
-							// 将 NETOP.Slide 转换为 ISlide
-							var abstractSlide = AdapterUtils.WrapSlide(netApp, slide);
-							var rect = _shapeHelper.AddOneShape(abstractSlide, 0, 0, slideWidth, slideHeight);
+							// 直接使用 NETOP.Slide
+							var nativeRect = _shapeHelper.AddOneShape(slide, 0, 0, slideWidth, slideHeight);
 
-							if(rect is IComWrapper<NETOP.Shape> rectWrapper)
+							if(nativeRect != null)
 							{
-								var nativeRect = rectWrapper.NativeObject;
 								createdShapes.Add(nativeRect);
 								// 如果是第一张幻灯片，则选中其上的矩形
 								if(i==0) nativeRect.Select();
@@ -215,20 +192,21 @@ namespace PPA.Formatting
 
 			ExHandler.Run(() =>
 			{
-				if(!TryRefreshContext(ref currentApp,out var abstractApp))
+				currentApp = ApplicationHelper.EnsureValidNetApplication(currentApp);
+				if(currentApp == null)
 				{
 					Toast.Show(ResourceManager.GetString("Toast_NoSlide"),Toast.ToastType.Warning);
 					return;
 				}
 
-				var slide = GetSlideWithRetry(ref currentApp, ref abstractApp);
+				var slide = GetSlideWithRetry(ref currentApp);
 				if(slide==null)
 				{
 					Toast.Show(ResourceManager.GetString("Toast_NoSlide"),Toast.ToastType.Warning);
 					return;
 				}
 
-				var selectionObj = GetSelectionWithRetry(ref currentApp, ref abstractApp);
+				var selectionObj = GetSelectionWithRetry(ref currentApp);
 				dynamic sel = selectionObj;
 				if(sel!=null)
 				{
@@ -259,9 +237,10 @@ namespace PPA.Formatting
 					{
 						shapesToHide.DisposeAll();
 					}
-				} else if(slide is IComWrapper<NETOP.Slide> { NativeObject: var nativeSlide })
+				} else
 				{
-					ShowAllHiddenShapes(currentApp,nativeSlide.Shapes);
+					// 直接使用 NETOP.Slide.Shapes
+					ShowAllHiddenShapes(currentApp,slide.Shapes);
 				}
 			});
 		}
@@ -306,57 +285,42 @@ namespace PPA.Formatting
 			}
 		}
 
-		private bool TryRefreshContext(ref NETOP.Application netApp,out IApplication abstractApp)
+		private dynamic GetSelectionWithRetry(ref NETOP.Application netApp)
 		{
-			netApp=ApplicationHelper.EnsureValidNetApplication(netApp);
-			if(netApp==null)
-			{
-				abstractApp=null;
-				return false;
-			}
-
-			abstractApp=ApplicationHelper.GetAbstractApplication(netApp);
-			if(abstractApp==null)
-			{
-				_logger.LogWarning("无法获取抽象 Application");
-				return false;
-			}
-
-			return true;
-		}
-
-		private dynamic GetSelectionWithRetry(ref NETOP.Application netApp,ref IApplication abstractApp)
-		{
-			var selection = _shapeHelper.ValidateSelection(abstractApp, showWarningWhenInvalid: false);
+			var selection = _shapeHelper.ValidateSelection(netApp, showWarningWhenInvalid: false);
 			if(selection!=null)
 			{
 				return selection;
 			}
 
 			_logger.LogWarning("返回 null，尝试刷新 Application 后重试");
-			if(!TryRefreshContext(ref netApp,out abstractApp))
+			
+			netApp = ApplicationHelper.EnsureValidNetApplication(netApp);
+			if(netApp == null)
 			{
 				return null;
 			}
 
-			return _shapeHelper.ValidateSelection(abstractApp,showWarningWhenInvalid: false);
+			return _shapeHelper.ValidateSelection(netApp,showWarningWhenInvalid: false);
 		}
 
-		private ISlide GetSlideWithRetry(ref NETOP.Application netApp,ref IApplication abstractApp)
+		private NETOP.Slide GetSlideWithRetry(ref NETOP.Application netApp)
 		{
-			var slide = _shapeHelper.TryGetCurrentSlide(abstractApp);
+			var slide = _shapeHelper.TryGetCurrentSlide(netApp);
 			if(slide!=null)
 			{
 				return slide;
 			}
 
 			_logger.LogWarning("返回 null，尝试刷新 Application 后重试");
-			if(!TryRefreshContext(ref netApp,out abstractApp))
+			
+			netApp = ApplicationHelper.EnsureValidNetApplication(netApp);
+			if(netApp == null)
 			{
 				return null;
 			}
 
-			return _shapeHelper.TryGetCurrentSlide(abstractApp);
+			return _shapeHelper.TryGetCurrentSlide(netApp);
 		}
 	}
 }
