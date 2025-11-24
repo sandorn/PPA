@@ -1,4 +1,3 @@
-using PPA.Core.Abstraction.Presentation;
 using NETOP = NetOffice.PowerPointApi;
 
 namespace PPA.Core.Abstraction.Business
@@ -6,9 +5,7 @@ namespace PPA.Core.Abstraction.Business
 	/// <summary>
 	/// 文本格式化辅助接口 提供文本形状的格式化功能，包括字体、颜色、边距等样式设置
 	/// </summary>
-	/// <remarks>
-	/// 此接口定义了文本格式化的接口，通过依赖注入使用，便于测试和扩展。 格式化参数从配置文件（ <see cref="IFormattingConfig" />）中读取。
-	/// </remarks>
+	/// <remarks> 此接口定义了文本格式化的接口，通过依赖注入使用，便于测试和扩展。 格式化参数从配置文件（ <see cref="IFormattingConfig" />）中读取。 </remarks>
 	public interface ITextFormatHelper
 	{
 		/// <summary>

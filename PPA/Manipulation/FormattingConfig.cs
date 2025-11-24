@@ -1,6 +1,6 @@
-using NetOffice.OfficeApi.Enums;
 using PPA.Core.Abstraction.Infrastructure;
 using PPA.Core.Logging;
+using PPA.Manipulation.Config;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,8 +9,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Serialization;
-using NETOP = NetOffice.PowerPointApi;
-using PPA.Manipulation.Config;
 
 namespace PPA.Manipulation
 {

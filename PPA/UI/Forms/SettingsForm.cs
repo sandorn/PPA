@@ -665,7 +665,7 @@ namespace PPA.UI.Forms
 				return ResourceManager.GetString("ConfigDesc_Attr_Shortcuts_FormatChart","“美化图表”快捷键：填写数字或字母（如 3、C），实际为 Ctrl+键。");
 			if(p.EndsWith("/PPAConfig/Shortcuts/@CreateBoundingBox",StringComparison.OrdinalIgnoreCase))
 				return ResourceManager.GetString("ConfigDesc_Attr_Shortcuts_CreateBoundingBox","“插入形状”快捷键：填写数字或字母（如 4、I），实际为 Ctrl+键。");
-			
+
 			// LoggingConfig
 			if(p.EndsWith("/PPAConfig/Logging/@EnableFileLogging",StringComparison.OrdinalIgnoreCase))
 				return ResourceManager.GetString("ConfigDesc_Attr_Logging_EnableFileLogging","是否启用文件日志记录（true/false）。");

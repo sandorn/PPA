@@ -120,8 +120,8 @@ namespace PPA.Manipulation
 			if(shape==null) return null;
 
 			bool hasTable = ExHandler.SafeGet(() => shape.HasTable == MsoTriState.msoTrue, defaultValue: false);
-													if(hasTable)
-													{
+			if(hasTable)
+			{
 				return ExHandler.SafeGet(() => shape.Table,defaultValue: (NETOP.Table) null);
 			}
 
@@ -129,20 +129,19 @@ namespace PPA.Manipulation
 			return ExHandler.SafeGet(() => shape.Table,defaultValue: (NETOP.Table) null);
 		}
 
-		private void CollectTablesFromSelection(dynamic selection, NETOP.Application netApp, List<(NETOP.Shape shape, NETOP.Table table)> tableShapes)
+		private void CollectTablesFromSelection(dynamic selection,NETOP.Application netApp,List<(NETOP.Shape shape, NETOP.Table table)> tableShapes)
 		{
 			var processedKeys = new HashSet<object>();
 
-			if (selection is NETOP.ShapeRange shapeRange)
+			if(selection is NETOP.ShapeRange shapeRange)
 			{
-				foreach (NETOP.Shape shape in shapeRange)
+				foreach(NETOP.Shape shape in shapeRange)
 				{
-					AddTableShapeIfValid(shape, tableShapes, processedKeys);
+					AddTableShapeIfValid(shape,tableShapes,processedKeys);
 				}
-			}
-			else if (selection is NETOP.Shape shape)
+			} else if(selection is NETOP.Shape shape)
 			{
-				AddTableShapeIfValid(shape, tableShapes, processedKeys);
+				AddTableShapeIfValid(shape,tableShapes,processedKeys);
 			}
 		}
 
@@ -199,8 +198,7 @@ namespace PPA.Manipulation
 				}
 
 				Toast.Show(ResourceManager.GetString("Toast_FormatTables_Success",totalTables),Toast.ToastType.Success);
-			}
-			finally
+			} finally
 			{
 				// 释放所有收集的 Shape 和 Table 对象
 				foreach(var (shape, table) in tableShapes)

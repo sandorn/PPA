@@ -2,7 +2,6 @@ using NetOffice.OfficeApi.Enums;
 using PPA.Core;
 using PPA.Core.Abstraction.Business;
 using PPA.Core.Abstraction.Infrastructure;
-using PPA.Core.Abstraction.Presentation;
 using PPA.Core.Logging;
 using PPA.Utilities;
 using System;
@@ -23,9 +22,9 @@ namespace PPA.Shape
 		/// <summary>
 		/// 创建单个矩形 (NetOffice 版本)
 		/// </summary>
-		public NETOP.Shape AddOneShape(NETOP.Slide slide, float left, float top, float width, float height, float rotation = 0)
+		public NETOP.Shape AddOneShape(NETOP.Slide slide,float left,float top,float width,float height,float rotation = 0)
 		{
-			return AddOneShapeInternal(slide, left, top, width, height, rotation);
+			return AddOneShapeInternal(slide,left,top,width,height,rotation);
 		}
 
 		/// <summary>
@@ -87,7 +86,7 @@ namespace PPA.Shape
 		/// </summary>
 		public NETOP.Slide TryGetCurrentSlide(NETOP.Application app)
 		{
-			if (app == null) return null;
+			if(app==null) return null;
 			var currentApp = app;
 			return TryGetCurrentSlideInternal(ref currentApp);
 		}
@@ -95,10 +94,10 @@ namespace PPA.Shape
 		/// <summary>
 		/// 验证并返回当前选择的对象
 		/// </summary>
-		public object ValidateSelection(NETOP.Application app, bool requireMultipleShapes = false, bool showWarningWhenInvalid = true)
+		public object ValidateSelection(NETOP.Application app,bool requireMultipleShapes = false,bool showWarningWhenInvalid = true)
 		{
-			if (app == null) return null;
-			return ValidateSelectionInternal(app, requireMultipleShapes, showWarningWhenInvalid);
+			if(app==null) return null;
+			return ValidateSelectionInternal(app,requireMultipleShapes,showWarningWhenInvalid);
 		}
 
 		#endregion IShapeHelper 实现

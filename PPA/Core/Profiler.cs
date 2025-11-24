@@ -1,10 +1,10 @@
+using PPA.Core.Abstraction.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using PPA.Core.Abstraction.Infrastructure;
 
 namespace PPA.Core
 {
@@ -34,7 +34,7 @@ namespace PPA.Core
 		/// 日志文件最长保留时间
 		/// </summary>
 		public static TimeSpan? MaxLogAge { get; set; } = TimeSpan.FromDays(7);
-		
+
 		/// <summary>
 		/// 最小写入日志级别（低于该级别的日志会被过滤）
 		/// </summary>
@@ -198,7 +198,7 @@ namespace PPA.Core
 			{
 				return;
 			}
-			
+
 			// 如果未提供 methodIdentifier，则自动构建
 			if(string.IsNullOrEmpty(methodIdentifier))
 			{
@@ -277,36 +277,39 @@ namespace PPA.Core
 			{
 				return LogLevel.Information;
 			}
-			
+
 			var text = logLevel.Trim();
-			
+
 			if(int.TryParse(text,out var numeric))
 			{
-				if(numeric>=(int)LogLevel.Debug&&numeric<=(int)LogLevel.Error)
+				if(numeric>=(int) LogLevel.Debug&&numeric<=(int) LogLevel.Error)
 				{
-					return (LogLevel)numeric;
+					return (LogLevel) numeric;
 				}
 			}
-			
+
 			switch(text.ToUpperInvariant())
 			{
 				case "DEBUG":
 					return LogLevel.Debug;
+
 				case "INFO":
 				case "INFORMATION":
 					return LogLevel.Information;
+
 				case "WARN":
 				case "WARNING":
 					return LogLevel.Warning;
+
 				case "ERROR":
 					return LogLevel.Error;
 			}
-			
+
 			if(Enum.TryParse<LogLevel>(text,true,out var parsed))
 			{
 				return parsed;
 			}
-			
+
 			return LogLevel.Information;
 		}
 

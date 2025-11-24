@@ -2,7 +2,6 @@ using NetOffice.OfficeApi.Enums;
 using PPA.Core;
 using PPA.Core.Abstraction.Business;
 using PPA.Core.Abstraction.Infrastructure;
-using PPA.Core.Abstraction.Presentation;
 using PPA.Core.Logging;
 using NETOP = NetOffice.PowerPointApi;
 

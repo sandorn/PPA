@@ -2,7 +2,6 @@ using NetOffice.OfficeApi.Enums;
 using PPA.Core;
 using PPA.Core.Abstraction.Business;
 using PPA.Core.Abstraction.Infrastructure;
-using PPA.Core.Abstraction.Presentation;
 using PPA.Core.Logging;
 using PPA.Shape;
 using PPA.Utilities;
@@ -69,9 +68,6 @@ namespace PPA.Manipulation
 			});
 		}
 
-
-
-
 		// 左吸附：将第二个形状的左边与第一个形状的右边对齐，只移动第二个形状且只水平移动
 		public void AttachLeft(NETOP.Application netApp)
 		{
@@ -89,8 +85,6 @@ namespace PPA.Manipulation
 				Toast.Show(ResourceManager.GetString("Align_AttachLeft_Success","已将第二个对象左边与第一个对象右边对齐"),Toast.ToastType.Success);
 			});
 		}
-
-
 
 		// 右吸附：将第二个形状的右边与第一个形状的左边对齐，只移动第二个形状且只水平移动
 		public void AttachRight(NETOP.Application netApp)
@@ -110,7 +104,6 @@ namespace PPA.Manipulation
 			});
 		}
 
-
 		// 上吸附：将第二个形状的上边与第一个形状的下边对齐，只移动第二个形状且只垂直移动
 		public void AttachTop(NETOP.Application netApp)
 		{
@@ -128,7 +121,6 @@ namespace PPA.Manipulation
 				Toast.Show(ResourceManager.GetString("Align_AttachTop_Success","已将第二个对象上边与第一个对象下边对齐"),Toast.ToastType.Success);
 			});
 		}
-
 
 		// 底对齐到下方最近的水平参考线
 		public void GuideAlignBottom(NETOP.Application netApp)
@@ -748,7 +740,6 @@ namespace PPA.Manipulation
 			});
 		}
 
-
 		// 设置选中对象等宽
 		public void SetEqualWidth(NETOP.Application netApp)
 		{
@@ -763,7 +754,6 @@ namespace PPA.Manipulation
 				Toast.Show(ResourceManager.GetString("Align_SetEqualWidth_Success","已设置等宽"),Toast.ToastType.Success);
 			});
 		}
-
 
 		// 下延伸：下边对齐最下侧，上边位置保持不变（高度变大，上边不动）
 		public void StretchBottom(NETOP.Application netApp)
@@ -957,7 +947,7 @@ namespace PPA.Manipulation
 			UndoHelper.BeginUndoEntry(netApp,UndoHelper.UndoNames.AlignShapes);
 			ExHandler.Run(() =>
 			{
-					var sel = _shapeHelper.ValidateSelection(netApp) as dynamic;
+				var sel = _shapeHelper.ValidateSelection(netApp) as dynamic;
 				if(sel==null)
 				{
 					Toast.Show(ResourceManager.GetString("Toast_NoSelection"),Toast.ToastType.Warning);

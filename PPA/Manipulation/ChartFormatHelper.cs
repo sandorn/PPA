@@ -2,7 +2,6 @@ using NetOffice.OfficeApi.Enums;
 using PPA.Core;
 using PPA.Core.Abstraction.Business;
 using PPA.Core.Abstraction.Infrastructure;
-using PPA.Core.Abstraction.Presentation;
 using PPA.Core.Logging;
 using System;
 using System.Collections.Generic;
@@ -18,8 +17,8 @@ namespace PPA.Manipulation
 	/// <param name="shapeHelper"> 形状工具服务（可选） </param>
 	internal class ChartFormatHelper(IFormattingConfig config,ILogger logger = null):IChartFormatHelper
 	{
-		private readonly IFormattingConfig _config = config ?? throw new ArgumentNullException(nameof(config));
-		private readonly ILogger _logger = logger ?? LoggerProvider.GetLogger();
+		private readonly IFormattingConfig _config = config??throw new ArgumentNullException(nameof(config));
+		private readonly ILogger _logger = logger??LoggerProvider.GetLogger();
 
 		/// <summary>
 		/// 格式化图表文本
@@ -33,9 +32,8 @@ namespace PPA.Manipulation
 				return;
 			}
 
-			// 注意：调用此方法前，调用者应已验证 shape 是图表 (Type == msoChart)
-			// 因此这里不再重复检查 HasChart，以避免在非图表对象上触发不必要的异常
-			
+			// 注意：调用此方法前，调用者应已验证 shape 是图表 (Type == msoChart) 因此这里不再重复检查 HasChart，以避免在非图表对象上触发不必要的异常
+
 			// 安全获取 Chart 对象
 			NETOP.Chart chart = ExHandler.SafeGet(() => shape.Chart, defaultValue: null);
 
@@ -251,26 +249,23 @@ namespace PPA.Manipulation
 		/// <param name="size"> 字体大小。 </param>
 		private void SafeSetAxis(NETOP.Chart chart,XlAxisType axisType,XlAxisGroup axisGroup,float size)
 		{
-			// 1. 使用 Invoker 检查 HasAxis 属性，避免直接调用 Axes() 抛出 COM 异常
-			// HasAxis 是一个带参数的属性：HasAxis(Index1, Index2)
+			// 1. 使用 Invoker 检查 HasAxis 属性，避免直接调用 Axes() 抛出 COM 异常 HasAxis 是一个带参数的属性：HasAxis(Index1, Index2)
 			bool hasAxis = false;
 			try
 			{
-				// 使用 NetOffice 的 Invoker 直接调用 COM 属性，绕过 C# dynamic 的限制
-				// Chart.HasAxis(AxisType, AxisGroup)
+				// 使用 NetOffice 的 Invoker 直接调用 COM 属性，绕过 C# dynamic 的限制 Chart.HasAxis(AxisType, AxisGroup)
 				object result = chart.Invoker.PropertyGet(chart, "HasAxis", new object[] { axisType, axisGroup });
-				if (result is bool b)
+				if(result is bool b)
 				{
-					hasAxis = b;
+					hasAxis=b;
 				}
-			}
-			catch
+			} catch
 			{
 				// 如果 Invoker 调用失败，假设轴不存在
-				hasAxis = false;
+				hasAxis=false;
 			}
 
-			if (!hasAxis)
+			if(!hasAxis)
 			{
 				if(axisGroup==XlAxisGroup.xlSecondary)
 				{

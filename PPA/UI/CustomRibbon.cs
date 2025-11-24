@@ -78,7 +78,6 @@ namespace PPA
 			Logger.LogInformation("Application 设置成功");
 		}
 
-
 		public void SetApplicationProvider(IApplicationProvider applicationProvider)
 		{
 			_applicationProvider=applicationProvider;
@@ -91,7 +90,7 @@ namespace PPA
 				_ribbonXmlProvider=serviceProvider.GetService<IRibbonXmlProvider>();
 				_ribbonIconProvider=serviceProvider.GetService<IRibbonIconProvider>();
 				var shapeBatchHelper = serviceProvider.GetService<IShapeBatchHelper>();
-				_selectionService = serviceProvider.GetService<ISelectionService>(); // 新增
+				_selectionService=serviceProvider.GetService<ISelectionService>(); // 新增
 
 				// 创建命令路由器（需要回调函数，所以在这里创建）
 				_ribbonCommandRouter=new RibbonCommandRouter(
@@ -261,16 +260,15 @@ namespace PPA
 		{
 			// 委托给 ApplicationHelper 处理获取和有效性验证（含自动重连逻辑）
 			var validApp = ApplicationHelper.EnsureValidNetApplication(_netApp);
-			
-			if (validApp != null)
+
+			if(validApp!=null)
 			{
-				_netApp = validApp;
-				_appInitialized = true;
-			}
-			else
+				_netApp=validApp;
+				_appInitialized=true;
+			} else
 			{
 				// 如果 EnsureValidNetApplication 返回 null，说明确实无法获取到有效的 App
-				_appInitialized = false;
+				_appInitialized=false;
 			}
 
 			return _netApp;
@@ -282,7 +280,7 @@ namespace PPA
 		/// <returns> 选中的形状数量，如果无法获取则返回 0 </returns>
 		private int GetSelectedShapeCount()
 		{
-			return _selectionService?.GetSelectedShapeCount() ?? 0;
+			return _selectionService?.GetSelectedShapeCount()??0;
 		}
 
 		/// <summary>

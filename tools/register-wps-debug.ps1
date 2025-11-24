@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$DebugRoot = "",  # 如果为空，自动检测 x64 或 Any CPU 目录
     [switch]$RegisterCom = $true  # 默认启用 COM 注册，因为 WPS 需要
 )

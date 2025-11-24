@@ -2,7 +2,6 @@ using NetOffice.OfficeApi.Enums;
 using PPA.Core;
 using PPA.Core.Abstraction.Business;
 using PPA.Core.Abstraction.Infrastructure;
-using PPA.Core.Abstraction.Presentation;
 using PPA.Core.Logging;
 using PPA.Utilities;
 using System;
@@ -15,10 +14,10 @@ namespace PPA.Manipulation
 	/// <summary>
 	/// 形状批量操作辅助类
 	/// </summary>
-	internal class ShapeBatchHelper(IShapeHelper shapeHelper, ILogger logger = null) : IShapeBatchHelper
+	internal class ShapeBatchHelper(IShapeHelper shapeHelper,ILogger logger = null):IShapeBatchHelper
 	{
-		private readonly IShapeHelper _shapeHelper = shapeHelper ?? throw new ArgumentNullException(nameof(shapeHelper));
-		private readonly ILogger _logger = logger ?? LoggerProvider.GetLogger();
+		private readonly IShapeHelper _shapeHelper = shapeHelper??throw new ArgumentNullException(nameof(shapeHelper));
+		private readonly ILogger _logger = logger??LoggerProvider.GetLogger();
 
 		/// <summary>
 		/// 根据选中对象创建矩形外框：
@@ -33,8 +32,8 @@ namespace PPA.Manipulation
 
 			ExHandler.Run(() =>
 			{
-				netApp = ApplicationHelper.EnsureValidNetApplication(netApp);
-				if(netApp == null)
+				netApp=ApplicationHelper.EnsureValidNetApplication(netApp);
+				if(netApp==null)
 				{
 					Toast.Show(ResourceManager.GetString("Toast_NoSlide"),Toast.ToastType.Warning);
 					return;
@@ -87,7 +86,7 @@ namespace PPA.Manipulation
 
 						// 创建矩形
 						var nativeRect = _shapeHelper.AddOneShape(currentSlide, rectLeft, rectTop, rectWidth, rectHeight, shape.Rotation);
-						if(nativeRect != null)
+						if(nativeRect!=null)
 						{
 							createdShapes.Add(nativeRect);
 						}
@@ -111,7 +110,7 @@ namespace PPA.Manipulation
 
 								// 创建矩形
 								var nativeRect = _shapeHelper.AddOneShape(currentSlide, rectLeft, rectTop, rectWidth, rectHeight, currentShape.Rotation);
-								if(nativeRect != null)
+								if(nativeRect!=null)
 								{
 									createdShapes.Add(nativeRect);
 								}
@@ -161,7 +160,7 @@ namespace PPA.Manipulation
 							// 直接使用 NETOP.Slide
 							var nativeRect = _shapeHelper.AddOneShape(slide, 0, 0, slideWidth, slideHeight);
 
-							if(nativeRect != null)
+							if(nativeRect!=null)
 							{
 								createdShapes.Add(nativeRect);
 								// 如果是第一张幻灯片，则选中其上的矩形
@@ -192,8 +191,8 @@ namespace PPA.Manipulation
 
 			ExHandler.Run(() =>
 			{
-				currentApp = ApplicationHelper.EnsureValidNetApplication(currentApp);
-				if(currentApp == null)
+				currentApp=ApplicationHelper.EnsureValidNetApplication(currentApp);
+				if(currentApp==null)
 				{
 					Toast.Show(ResourceManager.GetString("Toast_NoSlide"),Toast.ToastType.Warning);
 					return;
@@ -294,9 +293,9 @@ namespace PPA.Manipulation
 			}
 
 			_logger.LogWarning("返回 null，尝试刷新 Application 后重试");
-			
-			netApp = ApplicationHelper.EnsureValidNetApplication(netApp);
-			if(netApp == null)
+
+			netApp=ApplicationHelper.EnsureValidNetApplication(netApp);
+			if(netApp==null)
 			{
 				return null;
 			}
@@ -313,9 +312,9 @@ namespace PPA.Manipulation
 			}
 
 			_logger.LogWarning("返回 null，尝试刷新 Application 后重试");
-			
-			netApp = ApplicationHelper.EnsureValidNetApplication(netApp);
-			if(netApp == null)
+
+			netApp=ApplicationHelper.EnsureValidNetApplication(netApp);
+			if(netApp==null)
 			{
 				return null;
 			}

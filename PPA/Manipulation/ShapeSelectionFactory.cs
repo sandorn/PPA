@@ -3,7 +3,6 @@ using PPA.Core.Abstraction.Infrastructure;
 using PPA.Core.Logging;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using NETOP = NetOffice.PowerPointApi;
 
 namespace PPA.Manipulation

@@ -1,4 +1,3 @@
-using PPA.Core.Abstraction.Presentation;
 using NETOP = NetOffice.PowerPointApi;
 
 namespace PPA.Core.Abstraction.Business
@@ -7,8 +6,7 @@ namespace PPA.Core.Abstraction.Business
 	/// 形状工具辅助接口 提供形状相关的工具方法，包括创建、验证、选择等功能
 	/// </summary>
 	/// <remarks>
-	/// 此接口同时支持抽象接口类型（<see cref="IShape"/>）和 NetOffice 原生类型，
-	/// 逐步过渡到直接使用 NetOffice 类型以简化调用。
+	/// 此接口同时支持抽象接口类型（ <see cref="IShape" />）和 NetOffice 原生类型， 逐步过渡到直接使用 NetOffice 类型以简化调用。
 	/// </remarks>
 	public interface IShapeHelper
 	{
@@ -22,7 +20,7 @@ namespace PPA.Core.Abstraction.Business
 		/// <param name="height"> 高度 </param>
 		/// <param name="rotation"> 旋转角度（可选） </param>
 		/// <returns> 创建的 NetOffice 形状对象 </returns>
-		NETOP.Shape AddOneShape(NETOP.Slide slide, float left, float top, float width, float height, float rotation = 0);
+		NETOP.Shape AddOneShape(NETOP.Slide slide,float left,float top,float width,float height,float rotation = 0);
 
 		/// <summary>
 		/// 获取形状的边框宽度 (NetOffice 版本)
@@ -52,6 +50,6 @@ namespace PPA.Core.Abstraction.Business
 		/// <param name="requireMultipleShapes"> 是否要求必须选择多个形状 </param>
 		/// <param name="showWarningWhenInvalid"> 当选择无效时是否提示用户 </param>
 		/// <returns> 选择的对象（ShapeRange、Shape 或 null） </returns>
-		object ValidateSelection(NETOP.Application app, bool requireMultipleShapes = false, bool showWarningWhenInvalid = true);
+		object ValidateSelection(NETOP.Application app,bool requireMultipleShapes = false,bool showWarningWhenInvalid = true);
 	}
 }

@@ -1,7 +1,6 @@
 using NetOffice.OfficeApi.Enums;
 using PPA.Core.Abstraction.Business;
 using PPA.Core.Abstraction.Infrastructure;
-using PPA.Core.Abstraction.Presentation;
 using PPA.Core.Logging;
 using PPA.Utilities;
 using System.Collections.Generic;
@@ -94,8 +93,7 @@ namespace PPA.Manipulation
 					dk1,
 					thick,
 					a1);
-			}
-			finally
+			} finally
 			{
 				// 释放所有收集的 Row 和 Cell 对象
 				rowsToDispose.DisposeAll();
@@ -104,7 +102,6 @@ namespace PPA.Manipulation
 				dataRowCells.DisposeAll();
 			}
 		}
-
 
 		/// <summary>
 		/// 批量处理首末行的单元格，减少重复操作和COM调用

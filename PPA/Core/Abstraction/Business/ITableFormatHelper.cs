@@ -1,4 +1,3 @@
-using PPA.Core.Abstraction.Presentation;
 using NETOP = NetOffice.PowerPointApi;
 
 namespace PPA.Core.Abstraction.Business

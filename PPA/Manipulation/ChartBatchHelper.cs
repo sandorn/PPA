@@ -2,7 +2,6 @@ using NetOffice.OfficeApi.Enums;
 using PPA.Core;
 using PPA.Core.Abstraction.Business;
 using PPA.Core.Abstraction.Infrastructure;
-using PPA.Core.Abstraction.Presentation;
 using PPA.Core.Logging;
 using PPA.Utilities;
 using System;
@@ -40,7 +39,7 @@ namespace PPA.Manipulation
 			ExHandler.Run(() =>
 			{
 				var currentApp = netApp;
-				currentApp = ApplicationHelper.EnsureValidNetApplication(currentApp);
+				currentApp=ApplicationHelper.EnsureValidNetApplication(currentApp);
 				if(currentApp==null)
 				{
 					Toast.Show(ResourceManager.GetString("Toast_NoSlide"),Toast.ToastType.Warning);
@@ -90,20 +89,17 @@ namespace PPA.Manipulation
 		{
 			if(shape==null) return false;
 
-			// 1. 先检查形状类型
-			// msoChart (3) 是普通图表
-			// msoPlaceholder (14) 是占位符，可能包含图表
+			// 1. 先检查形状类型 msoChart (3) 是普通图表 msoPlaceholder (14) 是占位符，可能包含图表
 			var shapeType = ExHandler.SafeGet(() => shape.Type, defaultValue: MsoShapeType.msoAutoShape);
-			
-			// 如果既不是 Chart 也不是 Placeholder，那通常不可能是图表
-			// 注意：如果未来发现其他类型（如 Group）也可能包含图表，需要在这里添加
-			if (shapeType != MsoShapeType.msoChart && shapeType != MsoShapeType.msoPlaceholder)
+
+			// 如果既不是 Chart 也不是 Placeholder，那通常不可能是图表 注意：如果未来发现其他类型（如 Group）也可能包含图表，需要在这里添加
+			if(shapeType!=MsoShapeType.msoChart&&shapeType!=MsoShapeType.msoPlaceholder)
 			{
 				return false;
 			}
 
 			// 2. 再次确认 HasChart 属性 (双重检查)
-			return ExHandler.SafeGet(() => shape.HasChart == MsoTriState.msoTrue, defaultValue: false);
+			return ExHandler.SafeGet(() => shape.HasChart==MsoTriState.msoTrue,defaultValue: false);
 		}
 
 		/// <summary>
@@ -146,8 +142,8 @@ namespace PPA.Manipulation
 			}
 
 			_logger.LogWarning("返回 null，尝试刷新 Application 后重试");
-			netApp = ApplicationHelper.EnsureValidNetApplication(netApp);
-			if(netApp == null)
+			netApp=ApplicationHelper.EnsureValidNetApplication(netApp);
+			if(netApp==null)
 			{
 				return null;
 			}

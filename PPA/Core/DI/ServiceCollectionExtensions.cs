@@ -37,7 +37,7 @@ namespace PPA.Core.DI
 			// 注意：IRibbonCommandRouter 需要从 CustomRibbon 创建，因为它需要回调函数
 
 			// 注册格式化辅助服务（瞬态，每次请求创建新实例）
-			services.AddTransient<ISelectionService, SelectionService>();
+			services.AddTransient<ISelectionService,SelectionService>();
 			services.AddTransient<ITableFormatHelper,TableFormatHelper>();
 			services.AddTransient<ITextFormatHelper,TextFormatHelper>();
 			services.AddTransient<IChartFormatHelper,ChartFormatHelper>();
@@ -56,14 +56,9 @@ namespace PPA.Core.DI
 			// 平台抽象与适配器（仅 PowerPoint）：注册工厂 + IApplication 解析 注意：当前版本仅支持 PowerPoint，WPS 支持已废弃
 			// 抽象接口主要用于：1) 依赖注入集成 2) 单元测试支持 3) 代码解耦
 			// services.AddSingleton<PowerPointApplicationFactory>();
-			// services.AddSingleton<IApplicationFactory>(sp =>
-			// {
-			// 	var factories = new IApplicationFactory[]
-			// 	{
-			// 		sp.GetRequiredService<PowerPointApplicationFactory>()
-			// 	};
-			// 	return new CompositeApplicationFactory(factories);
-			// });
+			// services.AddSingleton<IApplicationFactory>(sp => { var factories = new
+			// IApplicationFactory[] { sp.GetRequiredService<PowerPointApplicationFactory>() };
+			// return new CompositeApplicationFactory(factories); });
 			// services.AddTransient<IApplication>(sp => sp.GetRequiredService<IApplicationFactory>()?.GetCurrent());
 
 			// 注意：其他业务服务（IBatchHelper 等）将在后续步骤注册

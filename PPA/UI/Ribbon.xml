@@ -18,7 +18,7 @@
 					<box id="box103">
 					<button id="Bt104" onAction="OnAction" screentip="将选中对象横向分布" getLabel="GetLabel" imageMso="AlignDistributeHorizontally" />
 					<button id="Bt114" onAction="OnAction" screentip="将选中对象纵向分布" getLabel="GetLabel" imageMso="AlignDistributeVertically" />
-					</box>
+					</box> 
 				</group>
 				<group id="group11" getLabel="GetLabel">
 					<box id="box120">

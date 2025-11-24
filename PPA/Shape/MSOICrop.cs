@@ -2,7 +2,6 @@ using NetOffice.OfficeApi.Enums;
 using PPA.Core;
 using PPA.Core.Abstraction.Business;
 using PPA.Core.Abstraction.Infrastructure;
-using PPA.Core.Abstraction.Presentation;
 using PPA.Core.Logging;
 using PPA.Utilities;
 using System;
@@ -55,7 +54,7 @@ namespace PPA.Shape
 					return;
 				}
 
-				var (shapesToCrop, collectionsToDispose) = CollectShapesToCrop(netApp, window.Selection, slide, slideWidth, slideHeight);
+				var (shapesToCrop, collectionsToDispose)=CollectShapesToCrop(netApp,window.Selection,slide,slideWidth,slideHeight);
 				if(shapesToCrop.Count==0)
 				{
 					Toast.Show(ResourceManager.GetString("Toast_CropShapes_None"),Toast.ToastType.Warning);
@@ -76,8 +75,7 @@ namespace PPA.Shape
 						_logger.LogInformation($"裁剪形状: Id={nativeShape.Id}, Name={nativeShape.Name}");
 						BooleanCrop(slide,nativeShape,slideWidth,slideHeight);
 					}
-				}
-				finally
+				} finally
 				{
 					// 释放所有收集到的形状对象
 					foreach(var shape in shapesToCrop)
@@ -135,7 +133,7 @@ namespace PPA.Shape
 			NETOP.Shape mask = null;
 			try
 			{
-				mask = slide.Shapes.AddShape(MsoAutoShapeType.msoShapeRectangle, 0, 0, slideWidth, slideHeight);
+				mask=slide.Shapes.AddShape(MsoAutoShapeType.msoShapeRectangle,0,0,slideWidth,slideHeight);
 				mask.Fill.Visible=MsoTriState.msoFalse;
 				mask.Line.Visible=MsoTriState.msoFalse;
 
@@ -157,7 +155,7 @@ namespace PPA.Shape
 				{
 					// --- 步骤 2: 选中形状并执行布尔运算 ---
 					var shapeNames = new string[] { target.Name, mask.Name };
-					using(var shapeRange = slide.Shapes.Range((object)shapeNames))
+					using(var shapeRange = slide.Shapes.Range((object) shapeNames))
 					{
 						shapeRange.Select();
 
@@ -192,7 +190,7 @@ namespace PPA.Shape
 									string key = $"{shape.Id}|{shape.Name}";
 									if(!beforeShapes.Contains(key))
 									{
-										finalShapeName = shape.Name;
+										finalShapeName=shape.Name;
 										break;
 									}
 								}
@@ -219,8 +217,7 @@ namespace PPA.Shape
 						}
 					}
 				});
-			}
-			catch
+			} catch
 			{
 				// 如果创建遮罩或执行布尔运算失败，确保释放遮罩
 				if(mask!=null)
@@ -229,15 +226,13 @@ namespace PPA.Shape
 					{
 						// 尝试释放遮罩（布尔运算后可能已被删除，忽略异常）
 						mask.Dispose();
-					}
-					catch
+					} catch
 					{
 						// 忽略释放失败（对象可能已被删除）
 					}
 				}
 				throw;
-			}
-			finally
+			} finally
 			{
 				// 确保遮罩被释放（布尔运算后可能已经被删除，这里只是保险措施）
 				if(mask!=null)
@@ -246,8 +241,7 @@ namespace PPA.Shape
 					{
 						// 尝试释放遮罩（如果已被删除，会抛出异常，忽略即可）
 						mask.Dispose();
-					}
-					catch
+					} catch
 					{
 						// 忽略释放失败（对象可能已被删除）
 					}

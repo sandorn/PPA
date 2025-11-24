@@ -5,7 +5,9 @@ namespace PPA.Core.Abstraction.Presentation
 	/// <summary>
 	/// Ribbon 命令路由接口 负责将按钮 ID 映射到相应的业务逻辑，实现 Ribbon UI 与业务逻辑的解耦
 	/// </summary>
-	/// <remarks> 此接口定义了 Ribbon 命令路由的接口，通过依赖注入使用，便于测试和扩展。 实现类负责处理所有 Ribbon 按钮点击事件，并根据按钮 ID 路由到相应的业务逻辑。 </remarks>
+	/// <remarks>
+	/// 此接口定义了 Ribbon 命令路由的接口，通过依赖注入使用，便于测试和扩展。 实现类负责处理所有 Ribbon 按钮点击事件，并根据按钮 ID 路由到相应的业务逻辑。
+	/// </remarks>
 	public interface IRibbonCommandRouter
 	{
 		/// <summary>
